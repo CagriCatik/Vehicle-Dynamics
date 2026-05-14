@@ -1,0 +1,39 @@
+simulation:
+  dt: 0.05
+  iteration_time: 120.0
+
+initial_state:
+  x: 0.0
+  y: 0.0
+  yaw_deg: 0.0
+  v: 0.05
+
+vehicle:
+  wheelbase: 0.60
+  max_accel: 4.5
+  max_steer_front_deg: 25.0
+  radius: 0.30
+
+trajectory:
+  target_v: 2.5        # m/s
+  amplitude: 1.5       # m  – lateral swing
+  frequency: 0.15      # Hz – wavelength = 2.5/0.15 = 16.7m  (tight slalom)
+
+obstacles: []          # no cones – pure sine analysis
+
+controller:
+  zeta: 100.0
+  ht: 0.01
+  tf: 1.5
+  alpha: 0.5
+  N: 8
+  phi_v: 0.01
+  phi_steer: 0.01
+  phi_obs: 0.01
+  q_x: 0.0
+  q_y: 25.0
+  q_yaw: 3.0
+  q_v: 20.0
+
+paths:
+  lut_json: "data/lut.json"

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import List, Optional, Tuple
 import numpy as np
 
@@ -11,21 +11,24 @@ def _get_pyplot():
     import matplotlib.pyplot as plt
     return plt
 
-
-# ----------------------------
 # Parameters and validation
-# ----------------------------
 
 @dataclass
 class VehicleParams:
-    wheelbase: float = 2.9
-    width: float = 2.0
-    length: float = 4.9
-    tire_radius: float = 0.4   # used as half wheel LENGTH proxy in plan view
-    tire_width: float = 0.3    # used as wheel WIDTH in plan view
-    wheel_track: float = 1.8   # full distance between wheel centers
-    rear_overhang: float = 1.0
-    front_overhang: float = 1.0
+    wheelbase: float | None = None
+    width: float | None = None
+    length: float | None = None
+    tire_radius: float | None = None
+    tire_width: float | None = None
+    wheel_track: float | None = None
+    rear_overhang: float | None = None
+    front_overhang: float | None = None
+
+    def __post_init__(self) -> None:
+        defaults = _default_vehicle_params()
+        for item in fields(self):
+            if getattr(self, item.name) is None:
+                object.__setattr__(self, item.name, defaults[item.name])
 
     @property
     def half_track(self) -> float:
@@ -39,6 +42,20 @@ class VehicleParams:
     @property
     def wheel_w(self) -> float:
         return self.tire_width
+
+
+def _default_vehicle_params() -> dict[str, float]:
+    return _plan_view_config()["default_vehicle"]
+
+
+def _plan_view_config() -> dict:
+    from vehicle_model.config import load_settings
+
+    return load_settings()["visualization"]["plan_view"]
+
+
+def _rendering_config() -> dict:
+    return _plan_view_config()["rendering"]
 
 
 def _R_row(theta: float) -> np.ndarray:
@@ -57,9 +74,9 @@ def _validate_params(p: VehicleParams) -> None:
         p.length = expected_len
 
 
-# ----------------------------
+
 # Geometry (2xN, row-rotated)
-# ----------------------------
+
 
 def _body_polygon(p: VehicleParams) -> np.ndarray:
     x_front = p.wheelbase + p.front_overhang
@@ -116,30 +133,43 @@ def _translate_all(parts: List[np.ndarray], x: float, y: float) -> List[np.ndarr
     return [poly + off for poly in parts]
 
 
-# ----------------------------
+def vehicle_polygons(
+    x: float,
+    y: float,
+    yaw: float,
+    steer_front: float,
+    params: VehicleParams,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Return body, front-right, front-left, rear-right, rear-left polygons."""
+    return tuple(_translate_all(_vehicle_parts(params, yaw, steer_front), x, y))
+
+
+
 # Arrow primitive
-# ----------------------------
+
 
 def draw_arrow(x: float, y: float, theta: float, length: float, color: str) -> None:
     plt = _get_pyplot()
-    ang = math.radians(30.0)
+    rendering = _rendering_config()
+    ang = math.radians(rendering["arrow_head_angle_deg"])
+    line_width = rendering["line_width"]
     dx = length * math.cos(theta)
     dy = length * math.sin(theta)
     x_end = x + dx
     y_end = y + dy
-    plt.plot([x, x_end], [y, y_end], color=color, linewidth=2)
-    hL = 0.4 * length
+    plt.plot([x, x_end], [y, y_end], color=color, linewidth=line_width)
+    hL = rendering["arrow_head_length_ratio"] * length
     lt = theta + math.pi - ang
     rt = theta + math.pi + ang
     lx = x_end + hL * math.cos(lt); ly = y_end + hL * math.sin(lt)
     rx = x_end + hL * math.cos(rt); ry = y_end + hL * math.sin(rt)
-    plt.plot([x_end, lx], [y_end, ly], color=color, linewidth=2)
-    plt.plot([x_end, rx], [y_end, ry], color=color, linewidth=2)
+    plt.plot([x_end, lx], [y_end, ly], color=color, linewidth=line_width)
+    plt.plot([x_end, rx], [y_end, ry], color=color, linewidth=line_width)
 
 
-# ----------------------------
+
 # Public API
-# ----------------------------
+
 
 def draw_vehicle(
     x: float,
@@ -148,47 +178,62 @@ def draw_vehicle(
     steer_front: float,
     params: VehicleParams,
     *,
-    color_front: str = "tab:blue",
-    color_rear: str = "tab:orange",
-    outline_color: str = "black",
+    color_front: Optional[str] = None,
+    color_rear: Optional[str] = None,
+    outline_color: Optional[str] = None,
     arrow_color: Optional[str] = None,
     color: Optional[str] = None
 ) -> None:
     plt = _get_pyplot()
+    plan_config = _plan_view_config()
+    colors = plan_config["colors"]
+    rendering = plan_config["rendering"]
+    line_width = rendering["line_width"]
+    color_front = colors["front"] if color_front is None else color_front
+    color_rear = colors["rear"] if color_rear is None else color_rear
+    outline_color = colors["outline"] if outline_color is None else outline_color
 
     if color is not None:
         outline_color = color_front = color_rear = color
 
-    body, fr, fl, rr, rl = _translate_all(_vehicle_parts(params, yaw, steer_front), x, y)
+    body, fr, fl, rr, rl = vehicle_polygons(x, y, yaw, steer_front, params)
 
-    plt.plot(body[0, :], body[1, :], color=outline_color, linewidth=2)
-    plt.plot(fr[0, :], fr[1, :], color=color_front, linewidth=2)
-    plt.plot(fl[0, :], fl[1, :], color=color_front, linewidth=2)
-    plt.plot(rr[0, :], rr[1, :], color=color_rear, linewidth=2)
-    plt.plot(rl[0, :], rl[1, :], color=color_rear, linewidth=2)
+    plt.plot(body[0, :], body[1, :], color=outline_color, linewidth=line_width)
+    plt.plot(fr[0, :], fr[1, :], color=color_front, linewidth=line_width)
+    plt.plot(fl[0, :], fl[1, :], color=color_front, linewidth=line_width)
+    plt.plot(rr[0, :], rr[1, :], color=color_rear, linewidth=line_width)
+    plt.plot(rl[0, :], rl[1, :], color=color_rear, linewidth=line_width)
 
     xb = x + params.wheelbase * math.cos(yaw)
     yb = y + params.wheelbase * math.sin(yaw)
-    plt.plot([x, xb], [y, yb], "--", color="0.4", linewidth=1.2)
-    plt.plot(x, y, "*k")
+    plt.plot(
+        [x, xb],
+        [y, yb],
+        "--",
+        color=rendering["centerline_color"],
+        linewidth=rendering["centerline_line_width"],
+    )
+    if rendering["draw_reference_star"]:
+        plt.plot(x, y, "*k")
 
     if arrow_color is not None:
-        draw_arrow(x, y, yaw, 0.6 * params.wheelbase, arrow_color)
+        draw_arrow(x, y, yaw, rendering["arrow_length_wheelbase_ratio"] * params.wheelbase, arrow_color)
 
 
-# ----------------------------
+
 # Demo UI (front-steer only)
-# ----------------------------
+
 
 def _fixed_axes(ax, p: VehicleParams) -> None:
+    rendering = _rendering_config()
     ax.set_aspect("equal", adjustable="box")
-    x_min = -p.rear_overhang - 0.6
-    x_max = p.wheelbase + p.front_overhang + 0.6
+    x_min = -p.rear_overhang - rendering["axis_padding_x"]
+    x_max = p.wheelbase + p.front_overhang + rendering["axis_padding_x"]
     y_half = 0.5 * p.width
     ax.set_xlim(x_min, x_max)
-    ax.set_ylim(-y_half - 1.0, y_half + 1.4)
-    ax.grid(True, linestyle="--", alpha=0.4)
-    ax.set_title("Planar Vehicle (front-steer only)")
+    ax.set_ylim(-y_half - rendering["axis_padding_y_lower"], y_half + rendering["axis_padding_y_upper"])
+    ax.grid(True, linestyle="--", alpha=rendering["grid_alpha"])
+    ax.set_title(rendering["title"])
 
 
 def demo_ui() -> None:
@@ -197,23 +242,33 @@ def demo_ui() -> None:
     import matplotlib.pyplot as plt
     from matplotlib.widgets import Slider
     from matplotlib.patches import Polygon
+    from vehicle_model.config import load_settings
 
+    settings = load_settings()
+    config = settings["visualization"]["plan_view_demo"]
+    plan_config = settings["visualization"]["plan_view"]
+    units = settings["units"]
+    colors_config = plan_config["colors"]
+    rendering = plan_config["rendering"]
     p = VehicleParams()
-    x0 = y0 = yaw0 = 0.0
-    front_deg0 = 0.0
-    v0 = 0.0
+    x0 = config["initial_x"]
+    y0 = config["initial_y"]
+    yaw0 = config["initial_yaw"]
+    front_deg0 = config["initial_front_steer_deg"]
+    v0 = config["initial_velocity"]
 
-    sample_hz = 10.0
+    sample_hz = config["sample_hz"]
     dt_sec = 1.0 / sample_hz
-    window_sec = 30.0
-    maxlen = int(window_sec * sample_hz) + 5
+    window_sec = config["time_window_sec"]
+    maxlen = int(window_sec * sample_hz) + config["history_extra_samples"]
 
-    fig = plt.figure(figsize=(12, 8))
+    fig = plt.figure(figsize=tuple(config["figure_size"]))
+    layout = config["layout"]
     gs = fig.add_gridspec(
         nrows=3, ncols=2,
-        width_ratios=[7.0, 1.4],
-        height_ratios=[2.6, 1.0, 1.0],
-        wspace=0.30, hspace=0.25
+        width_ratios=layout["width_ratios"],
+        height_ratios=layout["height_ratios"],
+        wspace=layout["wspace"], hspace=layout["hspace"]
     )
 
     ax_main = fig.add_subplot(gs[0, 0])
@@ -233,26 +288,26 @@ def demo_ui() -> None:
     _fixed_axes(ax_main, p)
 
     body, fr, fl, rr, rl = _translate_all(_vehicle_parts(p, yaw0, math.radians(front_deg0)), x0, y0)
-    colors = ["k", "tab:blue", "tab:blue", "tab:orange", "tab:orange"]
+    colors = [colors_config["outline"], colors_config["front"], colors_config["front"], colors_config["rear"], colors_config["rear"]]
     polys = [body, fr, fl, rr, rl]
     patches: List[Polygon] = []
     for poly, col in zip(polys, colors):
-        patch = Polygon(poly.T, closed=True, fill=False, lw=2, ec=col)
+        patch = Polygon(poly.T, closed=True, fill=False, lw=config["patch_line_width"], ec=col)
         ax_main.add_patch(patch)
         patches.append(patch)
 
-    arrow_color = "tab:green"
-    L = 0.6 * p.wheelbase
-    shaft, = ax_main.plot([], [], linewidth=2, solid_capstyle="round", color=arrow_color)
-    head_l, = ax_main.plot([], [], linewidth=2, color=arrow_color)
-    head_r, = ax_main.plot([], [], linewidth=2, color=arrow_color)
+    arrow_color = colors_config["arrow"]
+    L = config["arrow_length_wheelbase_ratio"] * p.wheelbase
+    shaft, = ax_main.plot([], [], linewidth=rendering["line_width"], solid_capstyle="round", color=arrow_color)
+    head_l, = ax_main.plot([], [], linewidth=rendering["line_width"], color=arrow_color)
+    head_r, = ax_main.plot([], [], linewidth=rendering["line_width"], color=arrow_color)
 
     def _set_arrow(x: float, y: float, theta: float) -> None:
-        ang = math.radians(30.0)
+        ang = math.radians(rendering["arrow_head_angle_deg"])
         x_end = x + L * math.cos(theta)
         y_end = y + L * math.sin(theta)
         shaft.set_data([x, x_end], [y, y_end])
-        hL = 0.4 * L
+        hL = rendering["arrow_head_length_ratio"] * L
         lt = theta + math.pi - ang
         rt = theta + math.pi + ang
         head_l.set_data([x_end, x_end + hL * math.cos(lt)],
@@ -262,26 +317,31 @@ def demo_ui() -> None:
 
     _set_arrow(x0, y0, yaw0)
 
+    info_position = config["info_text_position"]
     info_txt = info_ax.text(
-        0.5, 0.5, "",
+        info_position[0], info_position[1], "",
         ha="center", va="center",
-        fontfamily="monospace", fontsize=10,
-        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="0.6"),
+        fontfamily="monospace", fontsize=config["info_font_size"],
+        bbox=dict(
+            boxstyle=f"round,pad={config['info_box_pad']}",
+            facecolor="white",
+            edgecolor=config["info_box_edge_color"],
+        ),
         transform=info_ax.transAxes,
     )
 
     def _update_info(front_deg: float, vel_mps: float) -> None:
         info_txt.set_text(
-            f"front: {front_deg:5.1f} deg\nvelocity: {vel_mps*3.6:6.1f} km/h"
+            f"front: {front_deg:5.1f} deg\nvelocity: {vel_mps * units['mps_to_kmh']:6.1f} km/h"
         )
 
     _update_info(front_deg0, v0)
 
     s_front = Slider(ax=ax_front, label="Front steer (deg)",
-                     valmin=-30.0, valmax=30.0, valinit=front_deg0, valstep=0.1,
+                     valmin=config["front_steer_min_deg"], valmax=config["front_steer_max_deg"], valinit=front_deg0, valstep=config["front_steer_step_deg"],
                      orientation="vertical")
     s_vel = Slider(ax=ax_vel, label="Velocity (m/s)",
-                   valmin=0.0, valmax=30.0, valinit=v0, valstep=0.1,
+                   valmin=config["velocity_min"], valmax=config["velocity_max"], valinit=v0, valstep=config["velocity_step"],
                    orientation="vertical")
 
     def on_change(_):
@@ -302,7 +362,7 @@ def demo_ui() -> None:
     t0 = time.monotonic()
 
     def _style_ts(ax, ylabel: str, xlabel: Optional[str] = None):
-        ax.grid(True, linestyle="--", alpha=0.4)
+        ax.grid(True, linestyle="--", alpha=config["grid_alpha"])
         ax.set_ylabel(ylabel)
         if xlabel:
             ax.set_xlabel(xlabel)
@@ -313,10 +373,13 @@ def demo_ui() -> None:
 
     ax_ts_v_kmh = ax_ts_v.twinx()
     ax_ts_v_kmh.set_ylabel("Velocity (km/h)")
-    ax_ts_v_kmh.set_ylim(ax_ts_v.get_ylim()[0] * 3.6, ax_ts_v.get_ylim()[1] * 3.6)
+    ax_ts_v_kmh.set_ylim(
+        ax_ts_v.get_ylim()[0] * units["mps_to_kmh"],
+        ax_ts_v.get_ylim()[1] * units["mps_to_kmh"],
+    )
 
-    ln_f, = ax_ts_f.plot([], [], lw=1.8)
-    ln_v, = ax_ts_v.plot([], [], lw=1.8)
+    ln_f, = ax_ts_f.plot([], [], lw=config["time_series_line_width"])
+    ln_v, = ax_ts_v.plot([], [], lw=config["time_series_line_width"])
 
     def _auto_ylim(ax, data, pad=0.1, min_span=1.0):
         if not data:
@@ -349,11 +412,21 @@ def demo_ui() -> None:
 
         for ax_ts in (ax_ts_f, ax_ts_v):
             ax_ts.set_xlim(0.0, window_sec)
-        _auto_ylim(ax_ts_f, list(np.asarray(f_hist)[idx]), pad=0.15, min_span=2.0)
-        _auto_ylim(ax_ts_v, list(np.asarray(v_hist)[idx]), pad=0.15, min_span=0.5)
+        _auto_ylim(
+            ax_ts_f,
+            list(np.asarray(f_hist)[idx]),
+            pad=config["auto_ylim_pad"],
+            min_span=config["front_steer_min_span_deg"],
+        )
+        _auto_ylim(
+            ax_ts_v,
+            list(np.asarray(v_hist)[idx]),
+            pad=config["auto_ylim_pad"],
+            min_span=config["velocity_min_span"],
+        )
 
         v_lo, v_hi = ax_ts_v.get_ylim()
-        ax_ts_v_kmh.set_ylim(v_lo * 3.6, v_hi * 3.6)
+        ax_ts_v_kmh.set_ylim(v_lo * units["mps_to_kmh"], v_hi * units["mps_to_kmh"])
 
         fig.canvas.draw_idle()
 
@@ -371,7 +444,7 @@ def demo_ui() -> None:
     plt.show()
 
 
-__all__: Tuple[str, ...] = ("VehicleParams", "draw_vehicle", "draw_arrow", "demo_ui")
+__all__: Tuple[str, ...] = ("VehicleParams", "vehicle_polygons", "draw_vehicle", "draw_arrow", "demo_ui")
 
 if __name__ == "__main__":
     demo_ui()

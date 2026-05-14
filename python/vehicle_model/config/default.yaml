@@ -1,0 +1,280 @@
+units:
+  kmh_to_mps: 0.2777777778
+  mps_to_kmh: 3.6
+
+vehicle:
+  g: 9.81
+  lf: 1.7
+  lr: 1.2
+  mass: 800.0
+  Iz: 1000.0
+  hcog: 0.4
+  mu: 1.0489
+  min_v: -5.0
+  max_v: 89.408
+  max_acc: 9.51
+  min_acc: -13.26
+  max_steer: 0.3
+  min_steer: -0.3
+  max_steer_vel: 3.0
+  min_steer_vel: -3.0
+  width: 2.2
+  length: 5.1
+  l_pressure: 151685.0
+  tire_radius: 0.3118
+  rolling_resistance: 0.029
+  air_density: 1.225
+  drag_coefficient: 0.725
+  frontal_area: 1.6196
+  switch_v: 4.0
+  min_slip_speed: 0.5
+  low_speed_yaw_tau: 0.25
+  low_speed_lateral_tau: 0.25
+  MF_lat:
+    Bf: 17.0
+    Cf: 1.67
+    Df: 2651.0
+    Ef: 0.2
+    Br: 17.4
+    Cr: 1.7
+    Dr: 3452.0
+    Er: -0.08
+    Shfy: 0.007
+    Shry: 0.01
+    Svfy: 134.7
+    Svry: 194.07
+
+validation:
+  default_model: dynamic
+  allowed_models: [dynamic, kinematic]
+  sample_time: 0.04
+  base_horizon: 10
+  base_step: 25
+  multi_step: true
+  horizon_fixed: true
+  average_wheel_speeds: true
+  adaptive_horizon:
+    c1_scaler: 9
+    c2_scaler: 2
+    min_step: 5
+  vx_start: 55.0
+  max_rows: -1
+  data_schema:
+    delimiter: ","
+    comments: "#"
+    missing_line_warning: "Input line .* contained no data.*"
+    no_limit_value: -1
+    time_column: 0
+    raw_state_columns: {start: 1, stop: 9}
+    input_columns: {start: 8, stop: 10}
+    wheel_speed_columns: {start: 10, stop: 14}
+    roll_column: 14
+    raw_state_output_indices: [0, 1, 2, 3, 4, 5, 6, 7]
+    wheel_speed_output_indices: [0, 1, 2, 3]
+    ekin_inputs:
+      size: 4
+      acceleration_column: 0
+      steering_rate_column: 1
+      steering_angle_column: 2
+      steering_acceleration_column: 3
+      acceleration_raw_state_index: 7
+      steering_rate_input_index: 1
+      steering_angle_raw_state_index: 5
+      gradient_edge_order: 1
+  data:
+    racetrack: tms
+    dataset: autoverse_tms_purepursuit2
+    example_runs_dir: data/example_runs
+    racetracks_dir: data/racetracks
+    left_bound: inner_bound.csv
+    right_bound: outer_bound.csv
+    pitlane: pit_through_local.csv
+  plot:
+    whole_track: true
+    figure_size: [12.0, 8.0]
+    axis_margin: 10.0
+    title: "Animated Car Movement: Ground Truth vs. Model [{model}]"
+    label_font_size: 14
+    title_font_size: 18
+    arrow_length: 0.5
+    arrow_width: 0.1
+    arrow_history_horizon_multiplier: 2
+    true_arrow_color: green
+    predicted_arrow_color: red
+    true_vehicle_colors: [tab:green, tab:blue, tab:blue, tab:orange, tab:orange]
+    predicted_vehicle_colors: [tab:red, tab:purple, tab:purple, tab:brown, tab:brown]
+    true_vehicle_alpha: 0.95
+    predicted_vehicle_alpha: 0.8
+    vehicle_linewidth: 1.8
+    animation_interval_ms: 50
+    focus_window_size: 50.0
+    focus_x_half_width_ratio: 0.75
+    focus_y_half_width_ratio: 0.3333333333
+    telemetry:
+      enabled: true
+      figure_size: [18.0, 10.0]
+      window_sec: 12.0
+      panel_columns: 2
+      map_width_ratio: 2.2
+      panel_width_ratio: 1.0
+      hspace: 0.45
+      wspace: 0.35
+      grid_alpha: 0.35
+      line_width: 1.3
+      cursor_color: "0.15"
+      cursor_line_width: 0.8
+      zero_line_color: "0.75"
+      zero_line_width: 0.7
+      legend_font_size: 7
+      title_font_size: 9
+      label_font_size: 8
+      x_label: "time [s]"
+      y_padding_ratio: 0.12
+      min_y_span: 1.0
+      autoscale_y: true
+      panels:
+        - title: "Speed"
+          ylabel: "m/s"
+          series:
+            - {key: vx_true, label: "true vx", color: tab:green}
+            - {key: vx_pred, label: "model vx", color: tab:red, linestyle: "--"}
+        - title: "Steering Control"
+          ylabel: "deg, deg/s"
+          series:
+            - {key: steer_true_deg, label: "true steer", color: tab:blue}
+            - {key: steer_pred_deg, label: "model steer", color: tab:purple, linestyle: "--"}
+            - {key: steer_rate_command_deg_s, label: "steer rate cmd", color: tab:orange}
+        - title: "Body Response"
+          ylabel: "m/s, deg/s"
+          series:
+            - {key: vy_true, label: "true vy", color: tab:cyan}
+            - {key: yaw_rate_true_deg_s, label: "true yaw rate", color: tab:green}
+            - {key: yaw_rate_pred_deg_s, label: "model yaw rate", color: tab:red, linestyle: "--"}
+        - title: "Lateral Tire Forces"
+          ylabel: "N"
+          series:
+            - {key: force_front_lateral, label: "front true", color: tab:blue}
+            - {key: force_rear_lateral, label: "rear true", color: tab:orange}
+            - {key: force_front_lateral_pred, label: "front model", color: tab:blue, linestyle: "--"}
+            - {key: force_rear_lateral_pred, label: "rear model", color: tab:orange, linestyle: "--"}
+        - title: "Longitudinal Force Balance"
+          ylabel: "N"
+          series:
+            - {key: force_longitudinal_drive, label: "drive/brake", color: tab:green}
+            - {key: force_drag, label: "drag", color: tab:red}
+            - {key: force_rolling, label: "rolling", color: tab:brown}
+            - {key: force_longitudinal_net, label: "net Fx", color: black}
+        - title: "Slip Diagnostics"
+          ylabel: "deg, %"
+          series:
+            - {key: slip_front_deg, label: "alpha front", color: tab:blue}
+            - {key: slip_rear_deg, label: "alpha rear", color: tab:orange}
+            - {key: slip_balance_deg, label: "front-rear", color: tab:purple}
+            - {key: slip_ratio_percent, label: "kappa", color: tab:green}
+        - title: "Tire Utilization"
+          ylabel: "mu usage [-]"
+          series:
+            - {key: front_tire_utilization, label: "front axle", color: tab:blue}
+            - {key: rear_tire_utilization, label: "rear axle", color: tab:orange}
+        - title: "Prediction Error"
+          ylabel: "m, m/s, deg"
+          series:
+            - {key: position_error, label: "position", color: black}
+            - {key: vx_error, label: "vx", color: tab:green}
+            - {key: yaw_error_deg, label: "yaw", color: tab:red}
+    steering_wheel:
+      radius: 15.0
+      offset_x: 0.0
+      offset_y: 35.0
+      text_offset_x: 0.0
+      text_offset_y_extra: 10.0
+      inner_radius_ratio: 0.2
+      focus_radius_ratio: 0.05
+      focus_center_x_ratio: 0.1
+      focus_center_y_ratio: 0.2
+      focus_text_y_ratio: 0.1
+      steering_ratio: 0.0666
+      color: blue
+
+visualization:
+  plan_view:
+    tire_width: 0.30
+    wheel_track_width_ratio: 0.82
+    rendering:
+      title: "Planar Vehicle (front-steer only)"
+      line_width: 2.0
+      centerline_color: "0.4"
+      centerline_line_width: 1.2
+      draw_reference_star: true
+      arrow_head_angle_deg: 30.0
+      arrow_head_length_ratio: 0.4
+      arrow_length_wheelbase_ratio: 0.6
+      axis_padding_x: 0.6
+      axis_padding_y_lower: 1.0
+      axis_padding_y_upper: 1.4
+      grid_alpha: 0.4
+    colors:
+      outline: black
+      front: tab:blue
+      rear: tab:orange
+      arrow: tab:green
+    default_vehicle:
+      wheelbase: 2.9
+      width: 2.0
+      length: 4.9
+      tire_radius: 0.4
+      tire_width: 0.3
+      wheel_track: 1.8
+      rear_overhang: 1.0
+      front_overhang: 1.0
+  plan_view_demo:
+    figure_size: [12.0, 8.0]
+    layout:
+      width_ratios: [7.0, 1.4]
+      height_ratios: [2.6, 1.0, 1.0]
+      wspace: 0.30
+      hspace: 0.25
+    history_extra_samples: 5
+    initial_x: 0.0
+    initial_y: 0.0
+    initial_yaw: 0.0
+    initial_front_steer_deg: 0.0
+    initial_velocity: 0.0
+    sample_hz: 10.0
+    time_window_sec: 30.0
+    front_steer_min_deg: -30.0
+    front_steer_max_deg: 30.0
+    front_steer_step_deg: 0.1
+    velocity_min: 0.0
+    velocity_max: 30.0
+    velocity_step: 0.1
+    arrow_length_wheelbase_ratio: 0.6
+    patch_line_width: 2.0
+    time_series_line_width: 1.8
+    grid_alpha: 0.4
+    info_text_position: [0.5, 0.5]
+    info_font_size: 10
+    info_box_pad: 0.3
+    info_box_edge_color: "0.6"
+    auto_ylim_pad: 0.15
+    front_steer_min_span_deg: 2.0
+    velocity_min_span: 0.5
+
+tire_demo:
+  tire_data_dir: tire_data/yamls
+  front_tire_name: FRONT
+  rear_tire_name: REAR
+  n_points: 500
+  normal_load: 3112.0
+  slip_ratio_min: -1.0
+  slip_ratio_max: 1.0
+  slip_angle_min: -0.523599
+  slip_angle_max: 0.523599
+  camber: 0.0173
+  pressure: 200568.49
+  velocity_min: 0.1
+  velocity_max: 66.523599
+
+tire_model:
+  epsilon: 1.0e-6
+  zeta: 1.0
