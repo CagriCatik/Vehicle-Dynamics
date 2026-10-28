@@ -34,3 +34,4 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **19** | Virtuelle Sensoren, Schwimmwinkelbeobachter, Monte-Carlo-Robustheit (M7) | [ESTIMATION_ROBUSTNESS.md](ESTIMATION_ROBUSTNESS.md) |
 | **20** | Vertikaldynamik: Verifikation, Frequenzgänge, ISO-8608-Straßen (M8) | [VERTICAL_DYNAMICS.md](VERTICAL_DYNAMICS.md) |
 | **21** | Virtuelles Versuchslabor: YAML-Experimente, Verifikation, Berichte, CI (M9) | [EXPERIMENTS.md](EXPERIMENTS.md) |
+| **22** | Masterplan V3.0: Abgleich mit dem Code (Baseline, G01–G07, Reihenfolge M10) | [V3_BASELINE.md](V3_BASELINE.md) |

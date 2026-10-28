@@ -1,1056 +1,1153 @@
-# VEHICLE DYNAMICS – MASTER ENGINEERING PLAN V2.0
+# VEHICLE DYNAMICS – MASTER ENGINEERING PLAN V3.0
 
-**Projekt:** Vehicle Dynamics & Integrated Chassis Control Development Platform  
-**Entwicklungsansatz:** Simulation-First / Virtual Engineering  
-**Zielplattform:** Generisches, realistisch skaliertes Pkw-Modell  
+**Titel:** Advanced Vehicle Dynamics, Nonlinear Stability & Robust Motion Control Research Platform
+
 **Repository:** https://github.com/CagriCatik/Vehicle-Dynamics  
-**Projektstatus:** M0 bis M9 umgesetzt; offene Punkte siehe `docs/AUDIT.md`, Abschnitt 5. Ist-Zustand siehe `docs/AUDIT.md`, M1-Bericht siehe `docs/HANDLING_ANALYSIS.md`, M2 (Kontakt und Bilanzen) siehe `docs/VEHICLE_MODELS.md`, Abschnitt 2.3, M3 (Reifen) siehe `docs/TYRE_MODELS.md`, M4 (Kinematik) siehe `docs/CHASSIS_KINEMATICS.md`, M5 (Allokation, Schlupfregelung) siehe `docs/CONTROL_ALLOCATION.md`, M6 (Regler, Benchmark) siehe `docs/MOTION_CONTROL.md`, M7 (Sensorik, Schätzung, Robustheit) siehe `docs/ESTIMATION_ROBUSTNESS.md`, M8 (Vertikaldynamik) siehe `docs/VERTICAL_DYNAMICS.md`, M9 (Versuchslabor) siehe `docs/EXPERIMENTS.md`
+**Ausgangsbranch:** `main`  
+**Geprüfter Basis-Commit:** `8419ede724bc8a86526b52342021aef2cdac5553`  
+**Datum:** 28. Oktober 2026  
+**Vorheriger Plan:** Master Engineering Plan V2.0, M0–M9  
+**Neue Roadmap:** M10–M15  
+**Entwicklungsansatz:** Simulation First, Physics First, Structure First
 
 ---
 
-## 1. Projektziel und wissenschaftlicher Anspruch
+## 1. Mission
 
-Ziel ist die schrittweise Entwicklung einer modularen Forschungs-, Lern- und Simulationsplattform für Fahrzeugdynamik, Fahrzeugregelung und integrierte Fahrwerksysteme.
+Entwickle das bestehende Vehicle-Dynamics-Repository zu einer fortgeschrittenen, vollständig virtuellen Forschungsplattform für nichtlineare Fahrzeugdynamik, Grenzbereichsstabilität, robuste Fahrdynamikregelung und Mehrzieloptimierung.
 
-Die Plattform soll es ermöglichen, ein vollständig konfigurierbares virtuelles Fahrzeug unter reproduzierbaren Bedingungen zu simulieren, seine dynamischen Eigenschaften zu analysieren, verschiedene Regelungsverfahren zu untersuchen und deren Auswirkungen objektiv zu vergleichen.
+Das Projekt soll nicht mehr primär durch die Anzahl verfügbarer Modelle, Regler und Simulationsfunktionen wachsen.
 
-Folgende Fachgebiete gehören zum Gesamtumfang:
+Die neue Entwicklungsstufe verfolgt stattdessen sechs Hauptziele:
 
-1. Längs-, Quer- und Vertikaldynamik.
-2. Lineare und nichtlineare Fahrzeugmodelle.
-3. Reifenmodellierung einschließlich Combined Slip.
-4. Fahrwerkskinematik und Elastokinematik.
-5. Vorderachs-, Hinterachs- und Allradlenkung.
-6. Torque Vectoring und Antriebsstrang.
-7. ABS, Antriebsschlupfregelung und ESC.
-8. Passive, semiaktive und aktive Fahrwerksysteme.
-9. Vehicle Motion Control und Control Allocation.
-10. Klassische und modellprädiktive Regelungsverfahren.
-11. Zustandsschätzung und Sensitivitätsanalyse.
-12. Virtuelle Fahrmanöver und variable Fahrbahnverhältnisse.
-13. Fahrzeughandling-, Stabilitäts- und Frequenzganganalysen.
-14. Numerische Verifikation, automatisierte Experimente und Ergebnisvisualisierung.
+1. **Scientific Integrity:** Mathematische, numerische und regelungstechnische Ergebnisse nachweisbar und reproduzierbar machen.
+2. **Nonlinear Stability:** Gleichgewichtszustände, Stabilitätsgrenzen und Rückführverhalten nichtlinearer Fahrzeugmodelle untersuchen.
+3. **Robust Motion Control:** Regelungsverfahren für Modellunsicherheit, wechselnde Fahrbahnreibung und eingeschränkte Stellmöglichkeiten weiterentwickeln.
+4. **Adversarial Virtual Testing:** Kritische Fahrmanöver und Reglergrenzen durch systematische Szenariosuche identifizieren.
+5. **Vehicle Design Optimization:** Fahrwerk, Lenkung, Antrieb und Regler anhand mehrerer Zielgrößen gemeinsam optimieren.
+6. **Engineering Workbench:** Die bestehenden Simulations- und Experimentfunktionen über eine einheitliche, wissenschaftlich nachvollziehbare Arbeitsumgebung zugänglich machen.
 
-**Das Projekt benötigt keine realen Messdaten.**
+Das Projekt bleibt vollständig simulationsbasiert.
 
-Alle Modelle werden mit physikalisch plausiblen, dokumentierten Parametern und geeigneten mathematischen Referenzlösungen entwickelt.
+Reale Messdaten, Prüfstände, Versuchsfahrzeuge, HiL-Hardware oder experimentelle Kalibrierung sind keine Entwicklungsanforderungen.
 
-Die Plattform muss zwischen folgenden Nachweisarten unterscheiden:
-
-- Mathematische Verifikation: Stimmen Formulierung und mathematische Eigenschaften?
-- Numerische Verifikation: Wird das mathematische Modell mit ausreichender Genauigkeit berechnet?
-- Physikalische Konsistenzprüfung: Werden Kräfte-, Momenten-, Energie- und Kontaktbedingungen eingehalten?
-- Modellvergleich: Stimmen unterschiedliche Modellimplementierungen innerhalb gemeinsamer Annahmen überein?
-- Virtuelle Robustheitsprüfung: Wie verändern sich die Ergebnisse bei Parameter- und Störgrößenvariationen?
-
-Experimentelle Fahrzeugvalidierung ist ausdrücklich kein Pflichtbestandteil.
-
-Das Projekt darf keine Fahrzeuggenauigkeit, OEM-Validierung oder Serienreife behaupten, die nicht nachgewiesen wurde.
+Alle Ergebnisse beziehen sich ausdrücklich auf die verwendeten mathematischen Modelle und synthetischen Fahrzeugparameter.
 
 ---
 
-## 2. Verbindliche Entwicklungsgrundsätze
-
-### 2.1 Engineering First
-
-Jedes neue physikalische Modell benötigt vor der Implementierung eine Beschreibung seiner Zustände, Eingänge, Ausgänge, Parameter, Koordinatensysteme, Differentialgleichungen, Randbedingungen und Gültigkeitsgrenzen.
-
-Komplexität ist nur dann gerechtfertigt, wenn sie einen erkennbaren physikalischen oder regelungstechnischen Erkenntnisgewinn bietet.
-
-### 2.2 Structure First
-
-Softwarearchitektur und mathematische Modellierung müssen voneinander getrennt bleiben.
-
-Verbindliche Prinzipien:
-
-- Ein Modul besitzt eine klar abgegrenzte Verantwortung.
-- Fahrzeugmodelle sind unabhängig von Reglerimplementierungen.
-- Regler sind unabhängig von konkreten Visualisierungssystemen.
-- Reifen-, Lenkungs-, Brems- und Antriebsmodelle bleiben austauschbar.
-- Konfigurationsdaten dürfen nicht in mehreren Modulen dupliziert werden.
-- Numerische Algorithmen dürfen keine versteckten globalen Zustände verwenden.
-- Ein simulationsfähiger Projektstand muss nach jedem Meilenstein erhalten bleiben.
-- Änderungen an bestehenden Schnittstellen erfordern Tests und gegebenenfalls einen Migrationsadapter.
-
-### 2.3 Reproducibility First
-
-Jedes Simulationsergebnis muss mit der ursprünglichen Konfiguration, der Softwareversion und den verwendeten numerischen Methoden reproduzierbar sein.
-
-Zufallsbasierte Experimente benötigen dokumentierte Seeds.
-
-### 2.4 Physics Before Control
-
-Die Entwicklung komplexer Controller darf nicht vor der hinreichenden Verifikation der zugrunde liegenden Fahrzeug- und Aktuatormodelle erfolgen.
-
-Vorhandene Controller bleiben erhalten, werden jedoch schrittweise auf gemeinsame Schnittstellen umgestellt.
-
----
-
-## 3. Repository-Audit und Bestandsintegration
-
-Die Entwicklung erfolgt im bestehenden Repository. Es wird kein paralleles Ersatzprojekt aufgebaut.
-
-Zuerst sind folgende Punkte zu prüfen:
-
-- Aktueller Git-Branch, Working Tree und uncommittete Änderungen.
-- Vorhandene Fahrzeugmodelle und deren mathematische Gleichungen.
-- Bestehende Reifenmodellimplementierungen.
-- YAML-Konfigurationen und Parameterherkunft.
-- Vorhandene NMPC- und Lenkungsimplementierungen.
-- MATLAB-Beispiele.
-- Testabdeckung und ausführbare Demonstratoren.
-- Bestehende Visualisierungen und CSV-Exporte.
-- Bereits lokal vorhandene Erweiterungen für 4WS und Torque Vectoring.
-
-Besonderes Augenmerk gilt dem bisherigen Verzeichnis `python/cgmres_nmpc` (jetzt `src/vehicle_model/controllers/nmpc.py`). Eine SLSQP-basierte NMPC-Implementierung darf nicht als mathematisch echtes C/GMRES bezeichnet werden.
-
-Die ursprüngliche Funktionalität muss erhalten bleiben. Vor einem größeren Refactoring sind geeignete Regressionstests anzulegen.
-
-Falls eine lokal entwickelte Chassis-Erweiterung vorhanden ist, muss sie zuerst auf ihren tatsächlichen Implementierungsstand und mögliche Überschneidungen mit anderen Fahrzeugmodellen geprüft werden.
-
-**Ergebnis:** Dokumentierter Ist-Zustand, Testbaseline, Architekturinventar und inkrementeller Integrationsplan.
-
----
-
-## 4. Virtuelles Referenzfahrzeug
-
-Ein vollständig synthetisches, physikalisch plausibles Referenzfahrzeug bildet die Grundlage für alle weiteren Untersuchungen.
-
-### 4.1 Grundparameter
-
-Das Fahrzeugmodell soll mindestens folgende Parameter enthalten:
-
-- Gesamtmasse und gegebenenfalls gefederte und ungefederte Massen.
-- Radstand und Spurweiten.
-- Schwerpunktposition in drei Raumrichtungen.
-- Trägheitsmomente um Längs-, Quer- und Hochachse.
-- Radhalbmesser und Radträgheitsmomente.
-- Vorder- und Hinterachsreifenparameter.
-- Statische Achslasten.
-- Aerodynamische Eigenschaften.
-- Rollwiderstand.
-- Lenk- und Aktuatorbegrenzungen.
-- Antriebs- und Bremsmomentgrenzen.
-- Wank- und Nicksteifigkeiten.
-- Feder- und Dämpferparameter.
-
-Als erste Konfiguration ist ein konventioneller Pkw mit Frontlenkung und symmetrischem linken/rechten Fahrwerk vorzusehen.
-
-Weitere Konfigurationen werden daraus abgeleitet:
-
-- Frontantrieb.
-- Heckantrieb.
-- Allradantrieb.
-- Vier unabhängig angetriebene Räder.
-- Frontlenkung.
-- Hinterachslenkung.
-- Allradlenkung.
-- Passives und aktives Fahrwerk.
-
-### 4.2 Parameterkennzeichnung
-
-Jeder Parametersatz erhält einen Identifikator, eine Versionsnummer und eine Kennzeichnung der Herkunft.
-
-Zulässige Kategorien sind:
-
-- Analytisch hergeleitet.
-- Synthetisch definiert.
-- Aus dokumentierten allgemeinen technischen Annahmen abgeleitet.
-- Durch numerische Optimierung für einen virtuellen Versuch angepasst.
-
-Parameter dürfen nicht ohne Kennzeichnung als reale Fahrzeugdaten ausgegeben werden.
-
-Abgeleitete Parameter wie Radstand, statische Achslasten oder geometrische Hebelarme sollen nach Möglichkeit automatisch berechnet und auf Konsistenz geprüft werden.
-
----
-
-## 5. Fahrzeugmodellhierarchie
-
-Die Plattform entwickelt mehrere unabhängig nutzbare Modellklassen.
-
-### Modellklasse V1 – Kinematisches Einspurmodell
-
-Zweck: Bahnbewegung, Kurvengeometrie, einfache Lenkungsstrategien und Rangiermanöver.
-
-Berücksichtigt werden Vorwärts- und Rückwärtsfahrt, Front- und Hinterachslenkung sowie die geometrisch korrekte Behandlung von 4WS.
-
-Prüfkriterien:
-
-- Geradeausfahrt bei Null-Lenkwinkel.
-- Analytischer Kurvenradius.
-- Konsistente Vorzeichen.
-- Grenzfall identischer Vorder- und Hinterachslenkwinkel.
-- Numerische Konvergenz.
-
-### Modellklasse V2 – Dynamisches Einspurmodell
-
-Zweck: Untersuchung der Querdynamik und des Fahrzeughandling.
-
-Zustände mindestens: Längsgeschwindigkeit, Quergeschwindigkeit und Giergeschwindigkeit sowie die für eine globale Trajektorie notwendigen kinematischen Zustände.
-
-Das Modell berücksichtigt Vorder- und Hinterachsquerkräfte, nichtlineare Reifenreaktionen und die Kopplung zwischen Längs- und Querbewegung.
-
-Zusätzlich wird eine linearisierte 2-DOF-Querdynamikversion als analytische Referenz entwickelt.
-
-### Modellklasse V3 – Nichtlineares Zweispurmodell mit Einzelraddynamik
-
-Zweck: Torque Vectoring, ABS, ESC und individuelle Radkraftregelung.
-
-Sieben dynamische Freiheitsgrade:
-
-- Längsbewegung.
-- Querbewegung.
-- Gierbewegung.
-- Vier Raddrehbewegungen.
-
-Zusätzliche globale Positions- und Orientierungszustände zählen nicht als weitere dynamische Freiheitsgrade.
-
-Das Modell enthält individuelle Radkoordinaten, Radkräfte, Radlasten, Lenkwinkel, Radschlupfwerte, Antriebs- und Bremsmomente.
-
-### Modellklasse V4 – Erweiterte Aufbaudynamik
-
-Ergänzungen:
-
-- Wanken.
-- Nicken.
-- Heben.
-- Aufbaumassen und ungefederte Massen.
-- Federwege und Dämpferkräfte.
-- Veränderliche Radlasten.
-
-### Modellklasse V5 – Erweitertes Mehrkörper-/Vertikaldynamikmodell
-
-Optionales Langfristziel mit zusätzlichen Freiheitsgraden, fahrwerkskinematischen Kopplungen und gegebenenfalls 14-DOF-Klasse.
-
-Die konkrete Zahl der Freiheitsgrade muss aus den tatsächlich gewählten unabhängigen Zuständen und Modellannahmen folgen.
-
-**Wichtig:** Höhere Modelltreue ersetzt nicht automatisch Modelle geringerer Ordnung. Alle Modellklassen bleiben für passende Untersuchungszwecke verfügbar.
-
----
-
-## 6. Eigenlenkverhalten und Fahrdynamikanalyse
-
-Ein eigenständiges Modul `handling_analysis` wird verpflichtender Bestandteil des Projekts.
-
-### 6.1 Stationäre Analysen
-
-Zu implementieren sind:
-
-- Stationäre Kreisfahrt.
-- Gierverstärkung.
-- Eigenlenk- und Untersteuergradient.
-- Charakteristische Geschwindigkeit, sofern für die Modellkonfiguration definiert.
-- Kritische Geschwindigkeit, sofern mathematisch relevant.
-- Lenkwinkelbedarf in Abhängigkeit von Geschwindigkeit und Querbeschleunigung.
-- Achsseitenkräfte und Schräglaufwinkel.
-- Einfluss von Vorder- und Hinterachslenkung.
-
-### 6.2 Transiente Analysen
-
-Zu implementieren sind:
-
-- Lenkwinkelsprung.
-- Lenkwinkelrampe.
-- Sinusanregung.
-- Frequenzsweep.
-- Giergeschwindigkeitsantwort.
-- Querbeschleunigungsantwort.
-- Schwimmwinkelantwort.
-- Überschwingen und Einschwingdauer.
-
-### 6.3 Systemanalyse
-
-Die linearisierte Querdynamik soll systematisch auf Eigenwerte, Eigenvektoren, Dämpfungsgrade, Eigenfrequenzen, Stabilitätsbereiche, Übertragungsfunktionen und Frequenzgänge untersucht werden.
-
-Die analytischen Ergebnisse bilden Referenzen für das nichtlineare Modell innerhalb des gemeinsamen gültigen Betriebsbereichs.
-
----
-
-## 7. Reifenmodellierung
-
-Eine einheitliche `TyreModel`-Schnittstelle kapselt die Kraft- und Momentenberechnung.
-
-Zu unterstützende Modelle:
-
-1. Lineares Reifenmodell.
-2. Fiala-Reifenmodell.
-3. Vereinfachte Magic Formula.
-4. Parametrisierte Magic Formula mit dokumentierter Formulierung.
-5. Combined-Slip-Modell.
-6. Transientes Reifenmodell mit Relaxationsdynamik.
-
-Erforderliche physikalische Größen:
-
-- Longitudinalschlupf.
-- Schräglaufwinkel.
-- Normalkraft.
-- Longitudinal- und Querkraft.
-- Reifenrückstellmoment, sofern vom Modell unterstützt.
-- Sturzempfindlichkeit, sofern unterstützt.
-- Reibwertabhängigkeit.
-- Lastempfindlichkeit.
-- Effektiver Abrollradius.
-- Relaxationslänge.
-
-Ein einzelnes Reifenmodell darf nur die Effekte behaupten, die seine Formulierung tatsächlich berücksichtigt.
-
-Keine frei erfundenen MF-5.2- oder MF-6.2-Datensätze als angeblich kalibrierte reale Reifen verwenden.
-
-Die Reifenmodule benötigen Tests für niedrigen Schlupf, Kraftsättigung, Combined Slip, Kontaktverlust, Vorzeichen und stetige Übergänge.
-
----
-
-## 8. Fahrwerkskinematik und Radlastdynamik
-
-Neue, getrennte Subsysteme:
-
-### Steering Geometry
-
-- Ackermann-Geometrie.
-- Front- und Hinterachslenkwinkel.
-- Einzelradlenkwinkel.
-- Geschwindigkeitabhängige Hinterachslenkung.
-- Phasengleiche und gegenphasige 4WS.
-- Lenkübersetzung, Verzögerung und Stellraten.
-
-### Suspension Kinematics & Compliance
-
-- Spur- und Sturzveränderung.
-- Nachlauf und Spreizung.
-- Lenkrollradius.
-- Bump Steer.
-- Roll Steer.
-- Compliance Steer.
-- Synthetische und austauschbare K&C-Kennfelder.
-
-### Load Transfer
-
-- Statische Radlastverteilung.
-- Longitudinale Radlastverlagerung.
-- Laterale Radlastverlagerung.
-- Einfluss der Schwerpunktshöhe.
-- Einfluss der Spurweite.
-- Wanksteifigkeitsverteilung.
-- Rollzentren und geeignete geometrische Radlastanteile.
-- Dynamische Radlastantwort bei entsprechend erweitertem Modell.
-
-Negative Radlasten dürfen nicht stillschweigend als gültige Kontaktkräfte verwendet werden. Ein Kontaktverlust erfordert eine ausdrücklich modellierte Behandlung.
-
----
-
-## 9. Antrieb, Bremsen und Aktuatoren
-
-Alle Fahrzeugaktuatoren müssen über gemeinsame, austauschbare Schnittstellen angebunden werden.
-
-### Antrieb
-
-- Front-, Heck- und Allradantrieb.
-- Einzelradantrieb.
-- Ideales und verzögertes Antriebsmoment.
-- Drehzahlabhängige Momentengrenzen.
-- Leistungsgrenzen.
-- Wirkungsgrad- und Verlustmodelle.
-- Regeneratives Bremsmoment.
-
-### Bremsen
-
-- Einzelradbremsmoment.
-- Stellverzögerung.
-- Bremsmomentsättigung.
-- ABS mit Radschlupfregelung.
-- Antriebsschlupfregelung.
-- Elektronische Stabilitätsregelung.
-- Bremskraftverteilung.
-- Regeneratives Brake Blending.
-
-### Lenkungsaktuatoren
-
-- Winkel- und Stellratenbegrenzung.
-- Verzögerungen.
-- Dynamische Aktuatormodelle.
-- Fehlermodi.
-- Stellsättigung.
-
-Die Modellkomplexität der Aktuatoren muss konfigurierbar sein. Eine ideale Aktuatorvariante bleibt für analytische Vergleiche verfügbar.
-
----
-
-## 10. Integrated Vehicle Motion Control
-
-Die Regelungsarchitektur trennt strikt zwischen:
-
-- Fahrer- beziehungsweise Trajektorienanforderung.
-- Sollbewegungsberechnung.
-- Vehicle Motion Controller.
-- Control Allocation.
-- Aktuatorregelung.
-- Fahrzeugphysik.
-- Zustandsschätzung und Rückführung.
-
-### 10.1 Controller-Bibliothek
-
-Unterstützt werden:
-
-- Open-Loop-Baseline.
-- PID.
-- Giergeschwindigkeits-PID.
+## 2. Ausgangszustand – Bestand V2.0
+
+Die im bestehenden Repository implementierten Funktionen bilden die Grundlage von V3.0.
+
+### 2.1 Vorhandene Fahrzeugphysik
+
+Bereits vorhanden:
+
+- Kinematisches Einspurmodell.
+- Dynamisches Einspurmodell.
+- Analytisches lineares Querdynamikmodell.
+- Nichtlineares 7-DOF-Zweispurmodell.
+- Transientes 7-DOF-Modell mit Reifenrelaxation.
+- Erweitertes 14-DOF-Modell.
+- Viertelfahrzeugmodell.
+- Normalkraft- und Kontaktmodellierung.
+- Reifenmodelle mit verschiedenen Formulierungen.
+- Quasistatische Fahrwerkskinematik und Elastokinematik.
+- Längs- und Querlastverlagerung.
+- Synthetische Fahrbahnunebenheiten.
+- Räumlich variable Reibwertmodelle.
+
+Diese Funktionen dürfen nicht erneut implementiert werden, sofern der bestehende Code die neue Aufgabe erfüllen kann.
+
+### 2.2 Vorhandene Regelungssysteme
+
+Bereits vorhanden:
+
+- Front- und Hinterachslenkung.
+- Geschwindigkeitabhängige 4WS.
+- ABS und Antriebsschlupfregelung.
+- ESC und Torque Vectoring.
+- Constrained Wheel-Force Allocation.
+- PI-Gierregelung.
 - LQR.
 - Gain-Scheduled LQR.
 - LTV-MPC.
-- NMPC.
-- C/GMRES ausschließlich bei tatsächlich implementierter Algorithmik.
+- Kinematisches NMPC.
+- Dynamisches Zweispur-NMPC.
+- Phase-Plane-Stabilitätsüberwachung.
+- Integrated Vehicle Motion Control.
+- Aktive Wankstabilisierung.
 
-Bestehende LTV-MPC- und NMPC-Implementierungen werden übernommen, sofern ihre mathematischen Eigenschaften, Schnittstellen und Solver korrekt dokumentiert sind.
+Die bestehende gemeinsame `MotionController`-Architektur aus M6 bleibt der bevorzugte Integrationspfad.
 
-PSO dient ausschließlich der Offline-Optimierung, etwa für Kostenfunktionsgewichte oder Reglerparameter.
+### 2.3 Vorhandene Infrastruktur
 
-### 10.2 Regler- und Streckenentkopplung
+Bereits vorhanden:
 
-Das interne Vorhersagemodell des Reglers und das Simulationsstreckenmodell müssen unabhängig konfigurierbar sein.
+- YAML-Konfigurationen.
+- Reproduzierbare Experiment-Spezifikationen.
+- Szenariobenchmarking.
+- Virtuelle Sensorik.
+- Zustandsbeobachter.
+- Monte-Carlo-Untersuchungen.
+- Solverdiagnostik.
+- Physikalische Konsistenztests.
+- CSV-, JSON-, PNG-, GIF- und Markdown-Ausgabe.
+- GitHub-Actions-CI.
 
-Ein Controller darf keine versteckten Ground-Truth-Zugriffe auf den Simulationskern haben.
+Neue Komponenten müssen diese Infrastruktur erweitern, nicht umgehen.
 
-Ein idealisierter Full-State-Feedback-Modus bleibt als ausdrücklich gekennzeichnete Referenz zulässig.
+---
 
-### 10.3 Control Allocation
+## 3. Bestätigte technische Verbesserungspunkte
 
-Der Allocator verteilt Soll-Längskraft, Soll-Giermoment und gegebenenfalls weitere Bewegungsanforderungen auf verfügbare Aktuatoren.
+Die folgenden Punkte ergeben sich aus dem geprüften Repository-Stand und den eigenen Audit-Dokumenten.
 
-Zu berücksichtigen:
+### G01 – NMPC-Zulässigkeit und Laufzeitverhalten
 
-- Individuelle Reifen- und Radlastgrenzen.
-- Brems- und Antriebsmomentgrenzen.
-- Aktuatordynamik.
+Die SLSQP-basierten NMPC-Controller verfügen bereits über die Statusklassen `nominal`, `suboptimal`, `fallback` und `degraded`.
+
+Es fehlen jedoch durchgängig nachgewiesene harte Zustands- und Stellratenbeschränkungen.
+
+Die dynamische NMPC verwendet außerdem weiche Reibgrenzenstrafen und eine eigene vereinfachte Radmomentenaufteilung.
+
+**Ziel:** Verbesserung der Lösungsgüte, Zustands- und Nebenbedingungsprüfung, Nutzung der gemeinsamen Control Allocation und nachvollziehbare Laufzeitdiagnostik.
+
+### G02 – Unvollständige Integration der virtuellen Sensorik
+
+Die Zustandsbeobachter nutzen eine definierte Sensorschnittstelle. Der Wrapper `EstimatedStateFeedback` leitet jedoch weiterhin interne Reifen-, Radlast- und Reibwerttelemetrie an die nachgelagerte Allokation und Schlupfregelung weiter.
+
+**Ziel:** Strikte Trennung zwischen idealer Zustandsinformation, sensornaher Simulation und geschätzten Zuständen.
+
+### G03 – Heuristische Stabilitätsgrenzen
+
+Das vorhandene Phase-Plane-System ist ein funktionsfähiger heuristischer Stabilitätsmonitor.
+
+Seine Schwimmwinkel- und Schwimmwinkelgeschwindigkeitsgrenzen sind jedoch nicht als mathematisch bestimmte Attraktionsbereiche des nichtlinearen Fahrzeugmodells nachgewiesen.
+
+**Ziel:** Ergänzung durch Gleichgewichtsanalyse, numerische Stabilitätskarten und die Untersuchung stabilisierbarer Zustände.
+
+### G04 – Unvollständiger Szenariozugriff
+
+Das neue YAML-Experiment-Framework unterstützt bisher insbesondere Gierstabilitätsmanöver und die Regler `passive`, `pi`, `lqr`, `gs_lqr` und `ltv_mpc`.
+
+Die vorhandenen NMPC-Pfadfolgeszenarien und mehrere ältere Szenariogruppen sind noch nicht vollständig eingebunden.
+
+**Ziel:** Gemeinsame Experimentinfrastruktur für alle geeigneten Fahrzeugmodelle, Regelungen und Szenarien.
+
+### G05 – Offener 4WS-Split-µ-Regressionsfall
+
+Das Repository dokumentiert einen bestehenden Split-µ-Bremsfall, in dem reine 4WS-Gierdämpfung das Eindrehen des Fahrzeugs nicht verhindert.
+
+Der betreffende Regressionstest ist als erwarteter Fehler (`xfail`) dokumentiert.
+
+**Ziel:** Den Unterschied zwischen einer physikalisch unzureichenden Aktuatorkonfiguration und einem Softwarefehler explizit modellieren und testen.
+
+### G06 – Große Szenariomodule
+
+Mehrere Szenariodateien enthalten sehr umfangreiche Implementierungen.
+
+**Ziel:** Verantwortlichkeiten für Manöverdefinition, Fahrbahn, Fahrermodell, Simulationsausführung, Ergebnisberechnung und Visualisierung in kleine, unabhängig testbare Einheiten trennen.
+
+### G07 – Fehlende umfassende Mehrziel- und Grenzbereichsoptimierung
+
+Vorhandene PSO- und Monte-Carlo-Funktionen bilden eine Grundlage.
+
+Es fehlt jedoch eine gemeinsame Infrastruktur für die Optimierung vollständiger Fahrzeugkonfigurationen anhand von Fahrdynamik, Sicherheit, Komfort, Aktuatorbedarf und Energieverbrauch.
+
+**Ziel:** Wiederverwendbare Design-Optimization- und Pareto-Analysis-Module.
+
+---
+
+# 4. Zielarchitektur V3.0
+
+Die bisherige modulare Architektur bleibt bestehen.
+
+Neue Module werden nur eingeführt, wenn sie eine eigene, klar abgrenzbare fachliche Verantwortung erfüllen.
+
+## 4.1 Geplante Module
+
+| Modul | Verantwortung |
+|---|---|
+| `controllers/constraints/` | Zustands-, Stellgrößen- und Stellratenbegrenzungen |
+| `controllers/robust/` | Robuste und adaptive Regler |
+| `controllers/supervision/` | Sicherheitsüberwachung und Rückfalllogik |
+| `handling_analysis/nonlinear_stability/` | Gleichgewichte, Stabilität und Attraktionsbereiche |
+| `simulation/adversarial/` | Suche nach kritischen virtuellen Szenarien |
+| `simulation/uncertainty/` | Unsicherheitsmodelle und Parametervariation |
+| `optimization/` | Mehrzieloptimierung von Fahrzeug und Regler |
+| `experiments/` | Erweiterung der vorhandenen Experimentverwaltung |
+| `verification/` | Nur bei nachgewiesenem Bedarf: gemeinsame Verifikationsabstraktionen |
+| `workbench/` | Spätere grafische Bedienoberfläche |
+
+Bestehende Module wie `simulation/robustness.py`, `experiments/verification.py` und `allocation/wheel_forces.py` werden erweitert beziehungsweise wiederverwendet.
+
+Es darf keine parallele zweite Simulationsengine entstehen.
+
+## 4.2 Architekturregeln
+
+Abhängigkeiten folgen diesen Regeln:
+
+- Fahrzeugphysik kennt keine Regler.
+- Regler kennen keine konkrete Visualisierung.
+- Regelungsgesetze liefern Sollgrößen, aber wenden keine individuellen Radmomente direkt an, wenn dafür der gemeinsame Allokationspfad vorgesehen ist.
+- Der Allocator kennt Aktuatorgrenzen und verfügbare Kräfte, aber nicht die grafische Anwendung.
+- Zustandsschätzer greifen ausschließlich auf deklarierte Beobachtungen zu.
+- Experimente konfigurieren und orchestrieren Modelle, enthalten aber keine eigenen Fahrzeugbewegungsgleichungen.
+- Die grafische Oberfläche ruft dieselben Anwendungsdienste auf wie die CLI.
+- Keine zirkulären Abhängigkeiten zwischen Physik, Regelung, Experimenten und Visualisierung.
+
+## 4.3 Verbindlicher Signalfluss
+
+```mermaid
+flowchart TD
+    A["Fahrer / Virtuelles Manöver"] --> B["Reference Generator"]
+    B --> C["Motion Controller"]
+    S["Sensoren / Observer"] --> C
+    C --> D["Supervisory Control"]
+    D --> E["Constrained Control Allocation"]
+    E --> F["Aktuatormodelle"]
+    F --> G["Vehicle Physics Plant"]
+    G --> H["Synthetic Sensors"]
+    H --> S
+    G --> V["Independent Verification & Telemetry"]
+    V --> R["Experiment Reports"]
+```
+
+Der vollständige Ground-Truth-Zustand bleibt ausschließlich im Simulations- und Verifikationsbereich zugänglich.
+
+Für idealisierte Untersuchungen ist eine ausdrücklich deklarierte Full-State-Feedback-Betriebsart zulässig.
+
+---
+
+# 5. M10 – Scientific Integrity & Control Architecture Consolidation
+
+**Priorität:** P0  
+**Abhängigkeit:** Abgeschlossene V2.0-Baseline  
+**Ziel:** Die vorhandene Regelungstechnik auf einer durchgängig nachvollziehbaren, physikalisch beschränkten und reproduzierbaren Architektur betreiben.
+
+## 5.1 NMPC-Constraint-Framework
+
+Ein gemeinsames Framework für mathematische Nebenbedingungen entwickeln.
+
+Unterstützte Beschränkungen:
+
+- Maximaler Vorder- und Hinterachslenkwinkel.
+- Lenkwinkelgeschwindigkeit.
+- Antriebs- und Bremsmomentgrenzen.
+- Drehzahl- und Leistungsgrenzen.
+- Reifenkräfte und Combined Slip.
+- Stabilitätsorientierte Schwimmwinkel- und Gierratengrenzen.
+- Straßen- und Korridorbegrenzungen bei Pfadfolge.
+- Aktuatorverfügbarkeit.
+
+Nicht jede Bedingung muss für jeden Regler hart sein. Die Semantik muss jedoch eindeutig sein.
+
+Erforderliche Unterscheidung:
+
+- Hard Constraint.
+- Soft Constraint.
+- Penalty.
+- Advisory Limit.
+- Physikalisch erzwungene Streckengrenze.
+
+Der Solverstatus allein darf nicht als Nachweis der physikalischen Zulässigkeit interpretiert werden.
+
+## 5.2 NMPC-Solverdiagnostik verbessern
+
+Die vorhandene Diagnostik erweitern um:
+
+- Nebenbedingungsverletzungen.
+- Größenordnung der Verletzung.
+- Optimierungs-KKT-Residuen, soweit auswertbar.
+- Solverkonvergenz.
+- Rechenzeit.
+- Kostenverbesserung.
+- Warm-Start-Güte.
+- Fallback-Häufigkeit.
+- Anteil suboptimaler Lösungen.
+- Anteil degradierten Betriebs.
+- Tatsächlich erzeugte Stellgrößen.
+
+Ein Zeitbudgetüberschreiten muss sichtbar bleiben.
+
+Bei nicht unterbrechbaren SciPy-Solvern ist eine harte Echtzeitgarantie nicht zu behaupten. Für verbindliche Laufzeitbudgets kann später ein geeigneter unterbrechbarer Solveradapter untersucht werden.
+
+## 5.3 Einheitliche Control Allocation
+
+Die dynamische NMPC und ältere Regelungspfade werden an den bestehenden `WheelForceAllocator` beziehungsweise die `ActuationLayer` angebunden.
+
+Dabei ist der Unterschied zwischen einer angeforderten Radkraft und einem realisierten Antriebs- oder Bremsmoment zu berücksichtigen.
+
+Der Bericht muss getrennt ausweisen:
+
+- Soll-Längskraft.
+- Soll-Giermoment.
+- Durch Allokation erreichbare Kräfte und Momente.
+- Ausgegebene Aktuatoranforderung.
+- Tatsächlich aus dem Fahrzeugmodell resultierende Radkräfte und Momente.
+
+Die Allokation muss Grenzverletzungen, unerfüllbare Anforderungen und Aktuatorausfälle ausdrücklich berichten.
+
+## 5.4 Sensor- und Estimator-Architektur
+
+Drei Betriebsarten definieren:
+
+**Mode A – Ideal Feedback**
+
+Vollständige Zustandsinformation und idealisierte Reibwertkenntnis.
+
+**Mode B – Estimated Motion State**
+
+Fahrzeugbewegung aus virtuellen Sensoren und Beobachtern. Die Allokation darf noch als idealisierte Referenz gekennzeichnete Informationen nutzen.
+
+**Mode C – Sensor-Constrained Closed Loop**
+
+Alle Regelungs- und Aktuatorfunktionen erhalten nur virtuelle Sensorinformationen, beobachtete Zustände und zulässige Schätzgrößen.
+
+Mode C benötigt gegebenenfalls zusätzliche Schätzer für Radlasten, Seitenkräfte und Reifen-Fahrbahn-Reibung.
+
+Unbeobachtbare Größen dürfen nicht durch versteckte Ground-Truth-Zugriffe ersetzt werden.
+
+## 5.5 Szenario- und Regressionstests
+
+Den dokumentierten 4WS-Split-µ-Fall fachlich aufarbeiten.
+
+Dazu:
+
+- Reine 4WS ohne ABS/ESC.
+- 4WS mit ABS.
+- 4WS mit ABS und ESC.
+- Torque Vectoring.
+- Vollständige Integrated Vehicle Motion Control.
+
+Für jede Konfiguration werden Stabilität, Bremsweg, Radschlupf, Querabweichung und verfügbare Stellautorität ausgewertet.
+
+Ein physikalisch nicht stabilisierbarer Fall darf ausdrücklich scheitern. Ein erwartetes physikalisches Versagen soll als bestandener Test der korrekten Grenzabbildung gelten, nicht durch Abschwächung des Tests verdeckt werden.
+
+## 5.6 Abnahmekriterien M10
+
+M10 gilt als abgeschlossen, wenn:
+
+1. Alle vorgesehenen Controller dieselbe definierte Stellgrößenkette verwenden oder begründete Ausnahmen dokumentiert sind.
+2. Solverstatus und Constraint-Zulässigkeit getrennt ausgewertet werden.
+3. Die virtuelle Sensorarchitektur keine undeklarierten Ground-Truth-Zugriffe zulässt.
+4. Der 4WS-Split-µ-Fall technisch erklärt und durch aussagekräftige Tests abgesichert ist.
+5. Bestehende V2.0-Regressionsfälle weiterhin bestehen.
+6. Der CI-Zustand überprüft und dokumentiert wurde.
+7. Die vorhandenen YAML-Experimente und Visualisierungen unverändert verfügbar bleiben.
+
+---
+
+# 6. M11 – Nonlinear Vehicle Stability & Limit Handling
+
+**Priorität:** P0  
+**Ziel:** Nichtlineare Fahrzeugstabilität systematisch untersuchen und numerisch begründete Stabilitätskarten aufbauen.
+
+## 6.1 Nichtlineare Gleichgewichtszustände
+
+Für feste Betriebsbedingungen Gleichgewichtszustände bestimmen.
+
+Konfigurierbare Größen:
+
+- Geschwindigkeit.
+- Fahrbahnreibwert.
+- Vorderachslenkwinkel.
+- Hinterachslenkwinkel.
+- Antriebs- und Bremsmomente.
+- Schwerpunktlage.
+- Reifenparameter.
+
+Für die Analyse sind geeignete fahrzeugfeste Zustände zu verwenden, nicht globale Positionen, die bei stationärer Kurvenfahrt zwangsläufig zeitabhängig bleiben.
+
+Gleichgewichtszustände müssen die Bewegungsgleichungen und Kontaktbedingungen innerhalb dokumentierter Toleranzen erfüllen.
+
+## 6.2 Lokale Stabilitätsanalyse
+
+Das nichtlineare Modell um identifizierte Gleichgewichtszustände linearisieren.
+
+Analysieren:
+
+- Jacobi-Matrizen.
+- Eigenwerte.
+- Lokale Stabilität.
+- Dämpfung.
+- Einfluss der Geschwindigkeit.
+- Einfluss der Reibung.
+- Einfluss der Reifensteifigkeit.
+- Einfluss von 4WS und Torque Vectoring.
+
+Die numerische Linearisierung benötigt eigene Schrittweiten- und Konvergenztests.
+
+## 6.3 Nichtlineare Phasenraumanalyse
+
+Phasenporträts entwickeln für:
+
+- Schwimmwinkel und Schwimmwinkelgeschwindigkeit.
+- Schwimmwinkel und Giergeschwindigkeit.
+- Giergeschwindigkeit und Gierbeschleunigung, wo fachlich sinnvoll.
+
+Für unterschiedliche Anfangszustände werden Trajektorien simuliert.
+
+Die Ergebnisse unterscheiden:
+
+- Rückkehr in einen definierten stabilen Zielbereich.
+- Anhaltend große Abweichungen.
+- Verlust der Fahrzeugbeherrschbarkeit nach einem expliziten Kriterium.
+- Numerisches Versagen.
+- Unzureichende Simulationsdauer für eine eindeutige Klassifikation.
+
+## 6.4 Numerische Stabilitätsregionen
+
+Aus einer Vielzahl von Anfangszuständen wird eine approximierte Rückführregion berechnet.
+
+Untersuche:
+
+- Passives Fahrzeug.
+- Frontlenkung mit ESC.
+- 4WS.
+- Torque Vectoring.
+- Integrated Vehicle Motion Control.
+- Robuste Regler aus M12.
+
+Eine numerisch ermittelte Rückführregion darf nicht ohne weiteren mathematischen Beweis als exakter Attraktionsbereich bezeichnet werden.
+
+Erforderliche Ausgaben:
+
+- 2D-Stabilitätskarten.
+- Vergleich von Stabilitätsregionen.
+- Verlauf der Zustandsgrößen.
+- Grenzfälle.
+- Klassifikationssicherheit.
+- Einfluss von Gitternetz, Integrationsschritt und Simulationsdauer.
+
+## 6.5 Abnahmekriterien M11
+
+- Gleichgewichtszustände besitzen überprüfbare Residuen.
+- Lokale Stabilitätsaussagen stimmen mit der linearisierten Dynamik überein.
+- Stabilitätsregionen können reproduzierbar berechnet werden.
+- Numerische Unsicherheit wird separat ausgewiesen.
+- Ein Wechsel des Reifen- oder Fahrzeugmodells ist über vorhandene Schnittstellen möglich.
+- Die bisherige heuristische Phase-Plane-Regelung bleibt erhalten und wird als Vergleichsbasis genutzt.
+
+---
+
+# 7. M12 – Robust & Adaptive Vehicle Motion Control
+
+**Priorität:** P0  
+**Ziel:** Regler entwickeln, die auch bei veränderten Modellparametern, unbekannten Reibwerten und begrenzten Aktuatoren zuverlässiger arbeiten.
+
+## 7.1 Modellunsicherheit
+
+Ein gemeinsames Unsicherheitsmodell definieren für:
+
+- Fahrzeugmasse.
+- Gierträgheitsmoment.
+- Schwerpunktlage.
+- Schräglaufsteifigkeit.
+- Reibwert.
+- Aktuatorverzögerung.
+- Sensorrauschen.
+- Sensorbias.
+- Steuer- und Sensorlatenz.
+
+Nominale Modellparameter und reale Simulationsparameter dürfen bewusst voneinander abweichen.
+
+Alle Abweichungen müssen als Teil der Experimentkonfiguration dokumentiert sein.
+
+## 7.2 Robuste Regler
+
+Folgende Ansätze schrittweise untersuchen:
+
+**A. Robust LQR / Gain Scheduling**
+
+Analyse der Stabilitätsbereiche bei Parameterstreuung und Unsicherheitsgrenzen.
+
+**B. Disturbance Observer**
+
+Schätzung aggregierter Modellstörungen und ihrer Auswirkungen auf die Fahrzeugbewegung.
+
+**C. Robust MPC**
+
+Bei geeigneter Problemformulierung beispielsweise constraint-tightening oder Tube-MPC untersuchen.
+
+**D. Adaptive Regelung**
+
+Langsame Anpassung ausgewählter Reglerparameter anhand geschätzter Betriebsbedingungen.
+
+**E. Constraint-Aware NMPC**
+
+Verbesserung der bestehenden NMPC durch zuverlässigere Nebenbedingungsbehandlung und zulässige Stellgrößen.
+
+Neue Verfahren sind jeweils mathematisch herzuleiten und dürfen nicht nur durch Umbenennung vorhandener Heuristiken entstehen.
+
+## 7.3 Sicherheitsüberwachung
+
+Eine klar abgegrenzte Supervisory-Control-Schicht entwickeln.
+
+Sie entscheidet anhand dokumentierter Kriterien über:
+
+- Nominalbetrieb.
+- Begrenzte Regelung.
+- Suboptimalen Solverbetrieb.
+- Fallback.
+- Degraded Mode.
+- Unterdrückung unzulässiger Stellgrößen.
+- Kontrollierte Rückkehr in den Normalbetrieb.
+
+Dabei darf keine funktionale Sicherheitszertifizierung oder garantierte Fahrzeugstabilisierung behauptet werden.
+
+## 7.4 Reglerbenchmarking
+
+Alle geeigneten Regler werden unter identischen Bedingungen verglichen.
+
+Pflichtgrößen:
+
+- Gierratenfehler.
+- Schwimmwinkel.
+- Querabweichung.
+- Stellsättigung.
 - Stellraten.
-- Schlupfgrenzen.
-- Prioritäten zwischen Fahrstabilität und Fahranforderungen.
-- Machbarkeit und Restfehler der Sollanforderung.
+- Reifenutilisierung.
+- Rechenzeit.
+- Infeasibility Rate.
+- Fallback Rate.
+- Degraded-Mode-Anteil.
+- Energie- beziehungsweise Aktuatoraufwand.
 
-Nicht erfüllbare Anforderungen müssen als solche sichtbar werden.
+Die Benchmarkmatrix muss zwischen idealer, geschätzter und sensorbeschränkter Zustandsrückführung unterscheiden.
 
-### 10.4 Robustheit
+## 7.5 Abnahmekriterien M12
 
-Controller werden nicht nur unter nominellen Parametern getestet.
-
-Erforderlich sind Untersuchungen für veränderte Masse, Schwerpunktlage, Reifensteifigkeit, Reibwerte, Verzögerungen, Störgrößen und Stellgrenzen.
-
-Solverversagen, Zeitüberschreitungen und unzulässige Optimierungsergebnisse müssen explizit behandelt werden.
-
----
-
-## 11. Zustandsschätzung und virtuelle Sensorik
-
-Das Projekt soll eine unabhängige Sensor- und Estimatorschicht erhalten.
-
-Virtuelle Sensoren:
-
-- Gierratensensor.
-- Längs- und Querbeschleunigungssensor.
-- Raddrehzahlsensoren.
-- Lenkwinkelsensoren.
-- Optional Positions- und Geschwindigkeitssensoren.
-
-Sensorfehler sind konfigurierbar:
-
-- Rauschen.
-- Bias.
-- Abtastrate.
-- Verzögerung.
-- Quantisierung.
-- Signalausfall.
-
-Estimatoren:
-
-- Deterministische Beobachter.
-- Lineare Kalman-Filter.
-- Extended Kalman Filter.
-- Optional Unscented Kalman Filter.
-
-Besondere Untersuchungsschwerpunkte sind Schwimmwinkelschätzung, Geschwindigkeitsrekonstruktion und die Grenzen der Reibwertidentifikation.
-
-Synthetische Messungen dürfen zur Funktionsprüfung von Estimatoren verwendet werden. Solche Selbsttests sind nicht als unabhängige experimentelle Validierung zu bezeichnen.
+- Jeder Regler besitzt eine dokumentierte mathematische Formulierung.
+- Der Regler bleibt austauschbar.
+- Eine unabhängige nichtlineare Strecke wird verwendet.
+- Unsicherheiten werden nicht vor jedem Versuch durch automatische Neuoptimierung kompensiert.
+- Verbesserungen werden gegenüber einer festen V2.0-Baseline nachgewiesen.
+- Solver- und Constraint-Fehler bleiben sichtbar.
+- Reproduzierbare Berichte enthalten auch Fälle, in denen ein fortgeschrittener Regler schlechter abschneidet.
 
 ---
 
-## 12. Straßen- und Umgebungsmodelle
+# 8. M13 – Adversarial Virtual Testing & Critical Scenario Discovery
 
-Die Fahrbahn wird als eigenständiges Modell implementiert.
+**Priorität:** P1  
+**Ziel:** Kritische Fahrzeugzustände automatisch finden, statt ausschließlich manuell entworfene Szenarien zu untersuchen.
 
-Das Modell muss Reibwerte an den jeweiligen Weltkoordinaten der einzelnen Radaufstandspunkte bereitstellen.
+## 8.1 Szenario-Parameterraum
 
-Zu unterstützen:
+Die vorhandenen Szenarien werden um variable Eingangsgrößen ergänzt.
 
-- Konstanter Reibwert.
-- Trockene Fahrbahn.
-- Nasse Fahrbahn.
-- Niedrigreibwertbereiche.
-- Split-µ.
-- Räumlich variable Reibwertkarten.
-- Übergänge zwischen Reibwertzonen.
-- Zeitabhängige Änderungen.
-- Optional Straßenquerneigung und Längsneigung.
-- Später vertikale Straßenanregung.
+Mögliche Variationsgrößen:
 
-Die bisherigen longitudinalen Reibwertabschnitte bleiben als einfacher Road-Adapter erhalten.
+- Anfangsgeschwindigkeit.
+- Lenkwinkelamplitude.
+- Lenkwinkelgradient.
+- Bremsbeginn.
+- Bremsmoment.
+- Reibwert.
+- Länge einer Niedrigreibwertzone.
+- Lage einer Reibwertgrenze.
+- Schwerpunktposition.
+- Reifensteifigkeit.
+- Aktuatorausfall.
+- Sensorverzögerung.
 
-Eine zweidimensionale Reibwertkarte muss unterschiedliche Reibwerte unter allen vier Rädern ermöglichen.
+Alle Variablen benötigen zulässige Grenzen und physikalisch begründete Kombinationen.
 
----
+## 8.2 Kritische Zustände automatisch suchen
 
-## 13. Simulation Engine
+Ein Offline-Szenariooptimierer sucht nach Zuständen oder Manövern, die die größten Regelungsprobleme verursachen.
 
-Der Simulationskern ist deterministisch, headless ausführbar und unabhängig von grafischen Benutzeroberflächen.
+Mögliche Zielfunktionen:
 
-### Numerische Integration
+- Maximaler Schwimmwinkel.
+- Maximale Gierratenabweichung.
+- Maximale Querabweichung.
+- Minimale Stabilitätsreserve.
+- Maximale Constraint-Verletzung.
+- Maximale Dauer des Degraded Mode.
+- Minimale Reifen- oder Aktuatorreserve.
 
-Erforderlich:
+Geeignete Suchmethoden:
 
-- Fixed-Step-Verfahren.
-- RK4.
-- Optionale adaptive Integration.
-- Definierte Anfangsbedingungen.
-- Saubere Behandlung von Modellereignissen.
-- Numerische Fehlermeldungen und Statusinformationen.
+- Parameter-Sweeps.
+- Latin Hypercube Sampling.
+- Differential Evolution.
+- Particle Swarm Optimization.
+- Bayesian Optimization, sofern technisch gerechtfertigt.
 
-### Multi-Rate-Simulation
+Diese Methoden arbeiten ausschließlich offline.
 
-Folgende Zeitskalen sind getrennt einstellbar:
+## 8.3 Counterexample Minimization
 
-- Physikalischer Integrationsschritt.
-- Sensorabtastung.
-- Estimator-Abtastung.
-- Controller-Abtastung.
-- Aktuatoraktualisierung.
-- Logging und Visualisierung.
-
-Abtastraten und Zero-Order-Hold-Verhalten müssen eindeutig definiert werden.
-
-### Modellgrenzen
-
-Jedes Modell muss seine Zustandsdimension, Eingänge, Parameter und unterstützten physikalischen Phänomene deklarieren.
-
-Nicht unterstützte Funktionen müssen zu einem klaren Fehler oder einer dokumentierten Modellbeschränkung führen – niemals zu einer stillen Näherung unbekannter Bedeutung.
-
----
-
-## 14. Simulationsexperimente und Szenariokatalog
-
-Ein zentrales Experiment-Framework ermöglicht den automatisierten Vergleich von Fahrzeugmodellen, Reglern und Parametervariationen.
-
-Pflichtszenarien:
-
-| ID | Szenario | Untersuchung |
-|---|---|---|
-| S01 | Geradeausfahrt | Kräftegleichgewicht, Roll- und Luftwiderstand |
-| S02 | Stationäre Kreisfahrt | Eigenlenkverhalten und Gierverstärkung |
-| S03 | Lenkwinkelsprung | Transientes Gierverhalten |
-| S04 | Sinusanregung | Frequenzgang und Dämpfung |
-| S05 | Doppelte Spurwechselaufgabe | Spurhaltung und Regelung |
-| S06 | Split-µ-Bremsung | ABS, ESC und Gierstabilität |
-| S07 | Nasse Kurvenpassage | Reibwertwechsel und Seitenkraftgrenzen |
-| S08 | Bremsen bei Kurvenfahrt | Combined Slip und Control Allocation |
-| S09 | Beschleunigung bei niedrigem Reibwert | Antriebsschlupfregelung |
-| S10 | 2WS gegen 4WS | Hinterachslenkung und Fahrzeugreaktion |
-| S11 | Torque Vectoring | Giermomentenregelung |
-| S12 | 4WS + Torque Vectoring | Integrierte Regelung |
-| S13 | Unterschiedliche Beladungen | Modell- und Reglerrobustheit |
-| S14 | Aktuatorausfall | Rückfallverhalten |
-| S15 | Unebene Fahrbahn | Vertikale Dynamik und Radlastvariation |
-
-Jedes Szenario erhält:
-
-- YAML-Konfiguration.
-- Anfangsbedingungen.
-- Fahrzeug- und Reifenkonfiguration.
-- Controllerkonfiguration.
-- Fahrbahnmodell.
-- Simulations- und Abtastzeiten.
-- Definierte Eingangsmanöver.
-- Erwartete physikalische Eigenschaften.
-- Auswertungsgrößen und Abnahmekriterien.
-- Konfigurierbare Ausgabeformate.
-
-Szenariovergleiche müssen bei gleichen Ausgangsbedingungen und passend definierten Randbedingungen erfolgen.
-
----
-
-## 15. Physics & Numerical Verification Framework
-
-Da keine realen Messdaten verwendet werden, ist dieser Teil besonders wichtig.
-
-### 15.1 Physikalische Invarianten
-
-Automatisierte Prüfungen für:
-
-- Kräfte- und Momentengleichgewichte.
-- Symmetrisches Fahrzeugverhalten.
-- Vorzeichen der Giermomente.
-- Wheel-Torque-Balance.
-- Reifen-Kraftgrenzen.
-- Normalkraftbilanz.
-- Kontaktverlust.
-- Konsistente Radkoordinatentransformationen.
-- Konsistente Leistungs- und Energiebilanzen.
-- Einhaltung physikalischer Stellgrenzen.
-
-### 15.2 Analytische Referenzfälle
-
-Mindestens:
-
-- Geradeausfahrt unter definierten Kräften.
-- Kinematische Kreisfahrt.
-- Stationäre lineare Einspurantwort.
-- Einfacher Beschleunigungs- und Bremsvorgang.
-- Lineares Feder-Masse-Dämpfer-System.
-- Radrotation unter vorgegebenem Drehmoment.
-- Lineare Systemantworten bei bekannten Eigenwerten.
-
-### 15.3 Numerische Konvergenz
-
-Ergebnisse werden bei mehreren Integrationsschrittweiten verglichen.
-
-Die erwartete Konvergenzordnung wird dort geprüft, wo Glattheit und Modellformulierung dies rechtfertigen. Bei Diskontinuitäten, Sättigungen und Kontaktwechseln müssen angepasste Kriterien verwendet werden.
-
-### 15.4 Modellübergreifende Konsistenz
+Wenn eine kritische Simulation gefunden wurde, soll das Framework den Fall systematisch vereinfachen.
 
 Beispiele:
 
-- Zweispurmodell gegen Einspurmodell bei symmetrischen Bedingungen.
-- Nichtlineares Reifenmodell gegen lineare Näherung bei kleinem Schlupf.
-- Ideales Aktuatormodell gegen dynamisches Modell mit verschwindender Verzögerung.
-- Erweiterte Vertikaldynamik gegen vereinfachtes Modell in geeigneten Grenzfällen.
+- Geringste notwendige Lenkwinkelamplitude.
+- Kleinste Reibwertänderung.
+- Kürzeste kritische Niedrigreibwertzone.
+- Kleinste Aktuatorverzögerung, bei der das Kriterium verletzt wird.
 
-### 15.5 Robustheitstests
+So entstehen nachvollziehbare, minimal kritische Referenzszenarien.
 
-Systematische Variationen von Parametern, Startzuständen und Störungen.
+## 8.4 Kritische Szenariosammlung
 
-Monte-Carlo-Experimente sind möglich, müssen aber auf fest definierten Verteilungen beziehungsweise Wertebereichen beruhen.
+Jeder gefundene Grenzfall erhält:
 
-Ergebnisse werden mit Verteilungen, Worst-Case-Werten und Verletzungsraten berichtet, nicht nur mit Mittelwerten.
+- YAML-Konfiguration.
+- Seed.
+- Modell- und Softwareversion.
+- Auslösebedingung.
+- Verletztes Kriterium.
+- Numerische Diagnose.
+- Vergleich mit nominaler Regelung.
+- CSV-Zeitverläufe.
+- PNG/GIF.
+- Engineering-Report.
+
+Geeignete reproduzierbare Fälle werden in die Regressionstests übernommen.
+
+## 8.5 Abnahmekriterien M13
+
+- Kritische Szenarien lassen sich mit gleichem Seed reproduzieren.
+- Die Zielfunktion ist messbar und dokumentiert.
+- Fehler durch Solver oder Numerik werden nicht fälschlich als physikalisches Versagen interpretiert.
+- Kritische Ergebnisse bestehen eine zusätzliche Schrittweiten- oder Solverprüfung.
+- Bestehende Szenarien bleiben ausführbar.
+- Mindestens ein nachweislich kritischer Fall wird automatisiert gefunden und als Regressionstest gesichert.
 
 ---
 
-## 16. KPI-System und Engineering-Auswertung
+# 9. M14 – Vehicle Design & Multi-Objective Optimization
 
-Jede Simulation soll standardisierte Kennzahlen erzeugen.
+**Priorität:** P1  
+**Ziel:** Das virtuelle Referenzfahrzeug nicht nur regeln, sondern seine fahrdynamischen Eigenschaften systematisch auslegen.
 
-### Handling
+## 9.1 Designparameter
 
-- Gierverstärkung.
-- Untersteuergradient.
-- Schwimmwinkel.
-- Querbeschleunigung.
-- Dämpfungsgrad.
-- Einschwingzeit.
-- Überschwingen.
+Optimierbare Größen:
+
+### Fahrwerk
+
+- Wanksteifigkeitsverteilung.
+- Federsteifigkeiten.
+- Dämpferparameter.
+- Stabilisatorsteifigkeiten.
+- Spur- und Sturzparameter innerhalb der unterstützten Modelltreue.
+- K&C-Kennfeldparameter.
+
+### Lenkung
+
+- Vorderachslenkübersetzung.
+- Hinterachslenkverhältnis.
+- Übergangsgeschwindigkeit zwischen gegenphasiger und gleichphasiger 4WS.
+- Maximale Hinterachslenkwinkel.
+- Stellraten und Aktuatorverzögerungen.
+
+### Torque Vectoring
+
+- Giermomentverstärkungen.
+- Kraftverteilung.
+- Aktuatorprioritäten.
+- Reibungsreserve.
+- Begrenzungsstrategien.
 
 ### Regelung
 
-- Tracking-RMSE.
-- Maximale Regelabweichung.
-- Stellgrößenbedarf.
-- Stellratengrenzverletzungen.
-- Solverlaufzeit.
-- Solverfehler.
-- Häufigkeit von Sättigungen.
-- Nicht erfüllte Sollmomente und Sollkräfte.
+- LQR-Kostenmatrizen.
+- MPC-Gewichtungen.
+- Horizontlänge.
+- Regelungsabtastraten.
+- Observer-Parameter.
 
-### Bremsen und Reifen
+## 9.2 Mehrzieloptimierung
 
-- Bremsweg.
-- Verzögerung.
-- Radschlupf.
-- Reifenutilisierung.
-- Einzelradkräfte.
-- ABS- und ESC-Eingriffe.
+Mindestens folgende Ziele getrennt abbilden:
 
-### Vertikaldynamik
+1. Handling und Spurtreue.
+2. Fahrstabilität und Rückführbarkeit.
+3. Fahrkomfort.
+4. Energie- und Aktuatoraufwand.
+5. Regelungsrobustheit.
+6. Rechenaufwand.
 
-- Aufbaubeschleunigungen.
-- Wank- und Nickwinkel.
-- Radlastvariation.
-- Federwege.
-- Dämpferkräfte.
-- Radkontaktverlust.
+Nicht alle Ziele werden gleichzeitig optimiert, wenn das gewählte Fahrzeugmodell sie nicht sinnvoll abbildet.
 
-Jede Kennzahl erhält eine dokumentierte mathematische Definition, Einheit und Interpretationsgrenze.
+Beispielsweise ist eine Komfortoptimierung nur mit einem geeigneten Vertikaldynamikmodell sinnvoll.
+
+## 9.3 Pareto-Analyse
+
+Es wird ein Pareto-Optimierungsframework eingeführt.
+
+Untersucht werden unter anderem:
+
+- Handling gegen Komfort.
+- Stabilität gegen Agilität.
+- Spurtreue gegen Energiebedarf.
+- Reglerleistung gegen Rechenzeit.
+- Stabilitätsreserve gegen Aktuatorbeanspruchung.
+
+Erforderliche Ausgaben:
+
+- Pareto-Fronten.
+- Designparameter der Pareto-Lösungen.
+- Verteilung der Zielfunktionswerte.
+- Vergleich mit dem ursprünglichen Referenzfahrzeug.
+- Sensitivitätsdiagramme.
+- Konfigurationsdateien der ausgewählten Entwürfe.
+
+## 9.4 Robuste Auslegung
+
+Eine optimierte Fahrzeugkonfiguration darf nicht ausschließlich am nominalen Arbeitspunkt bewertet werden.
+
+Es müssen unabhängige virtuelle Prüfszenarien und Parameterabweichungen verwendet werden.
+
+Optimierungs- und Evaluationsszenarien sind zu trennen, um Überanpassung zu reduzieren.
+
+## 9.5 Abnahmekriterien M14
+
+- Optimierung verwendet die bestehenden Fahrzeugmodelle.
+- Parameter bleiben durch YAML nachvollziehbar.
+- Ungültige Fahrzeugkonfigurationen werden ausgeschlossen.
+- Optimierungsergebnisse sind reproduzierbar.
+- Pareto-Dominanz wird korrekt berechnet.
+- Ausgewählte Designs bestehen unabhängige Nachprüfungen.
+- Verbesserungen und Zielkonflikte werden quantitativ dokumentiert.
 
 ---
 
-## 17. Visualisierung und Reporting
+# 10. M15 – Interactive Engineering Workbench
 
-**Bestehende Live-Matplotlib-Plots müssen erhalten bleiben.**
+**Priorität:** P2  
+**Ziel:** Die vorhandene CLI- und Experimentinfrastruktur durch eine benutzbare grafische Forschungsumgebung ergänzen.
 
-Zusätzlich wird ein unabhängiges Offline-Visualisierungssystem entwickelt.
+M15 beginnt erst nach Stabilisierung der wesentlichen Schnittstellen aus M10–M14.
 
-### Visualisierungen
+Die grafische Oberfläche ist ein Adapter über der vorhandenen Anwendungsschicht.
 
-- 2D-Fahrzeuganimationen.
-- Referenz- und Ist-Trajektorien.
-- Animierte Lenkwinkel.
-- Einzelradkräfte.
-- Reifen-Kraftpfeile.
-- Reibwertzonen.
-- Giergeschwindigkeit und Schwimmwinkel.
+## 10.1 Experiment Configuration
+
+Ein Experiment soll grafisch konfigurierbar sein:
+
+- Fahrzeug auswählen.
+- Reifenmodell auswählen.
+- Fahrwerk auswählen.
+- Regler auswählen.
+- Fahrbahn auswählen.
+- Fahrmanöver auswählen.
+- Anfangsbedingungen einstellen.
+- Parameter-Sweeps konfigurieren.
+
+Alle Einstellungen werden als YAML gespeichert.
+
+Es darf keine zweite, GUI-spezifische Konfigurationslogik entstehen.
+
+## 10.2 Simulation Execution
+
+Die Oberfläche ermöglicht:
+
+- Starten.
+- Fortschritt anzeigen.
+- Abbrechen.
+- Ergebnisse öffnen.
+- Versuche vergleichen.
+- Konfigurationen wiederverwenden.
+
+Langlaufende Simulationen dürfen die Oberfläche nicht blockieren.
+
+Simulation und grafischer Event Loop sind strikt zu trennen.
+
+## 10.3 Engineering Dashboard
+
+Vorgesehene Ansichten:
+
+**Vehicle Dynamics**
+
+- Fahrzeugtrajektorie.
+- Gierrate.
+- Schwimmwinkel.
+- Beschleunigungen.
+- Lenkwinkel.
+- Reifenkräfte.
 - Radlasten.
-- Schlupfwerte.
-- Torque-Vectoring-Momente.
-- Controllervergleiche.
-- Eigenwert- und Frequenzgangplots.
-- Parameter-Sensitivitätsdiagramme.
-- Robustheitsdiagramme.
 
-### Ausgabeformate
+**Motion Control**
 
-Pflicht:
-
-- CSV.
-- PNG.
-- GIF.
-- YAML-Konfigurationssnapshot.
-- Maschinenlesbare KPI-Datei.
-- Markdown- oder HTML-Engineering-Report.
-
-Optional:
-
-- Parquet für größere Datenmengen.
-- MP4-Export.
-- Interaktives Dashboard.
-
-Die Simulation muss unabhängig von der Generierung der Grafiken ausführbar bleiben.
-
----
-
-## 18. Zielarchitektur und Repository-Struktur
-
-Die Paketstruktur unter `src/vehicle_model/` ist mit Commit `041f48c` festgelegt und bleibt erhalten. Weitere Umzüge ganzer Verzeichnisse finden nicht statt; neue Subsysteme werden als zusätzliche Pakete innerhalb dieser Struktur angelegt.
-
-Struktur (Bestand und geplante Ergänzungen):
-
-| Pfad | Verantwortung | Status |
-|---|---|---|
-| `configs/vehicles/` | Virtuelle Referenzfahrzeuge | vorhanden |
-| `configs/tyres/` | Reifenparametersätze | vorhanden |
-| `configs/roads/` | Straßenmodelle | vorhanden |
-| `configs/controllers/` | Reglerkonfigurationen | vorhanden |
-| `configs/scenarios/` | Virtuelle Fahrmanöver | vorhanden |
-| `configs/{braking,powertrains,steering,suspension,estimators,validation}/` | Subsystem- und Validierungskonfigurationen | vorhanden |
-| `configs/experiments/` | Versuchs- und Vergleichsmatrizen | vorhanden (M9) |
-| `src/vehicle_model/core/` | Gemeinsame Datentypen und Modellverträge | vorhanden |
-| `src/vehicle_model/config/` | Konfigurationsladen und -validierung | vorhanden |
-| `src/vehicle_model/vehicle_models/` | Fahrzeugphysik | vorhanden |
-| `src/vehicle_model/tire_model/` | Reifenphysik | vorhanden |
-| `src/vehicle_model/steering/` | Lenkung | vorhanden |
-| `src/vehicle_model/suspension/` | Fahrwerk und K&C | vorhanden |
-| `src/vehicle_model/actuators/` | Lenk-, Brems- und Antriebsaktuatoren (Antrieb und Bremsen) | vorhanden |
-| `src/vehicle_model/controllers/` | Regler | vorhanden |
-| `src/vehicle_model/allocation/` | Stellgrößenverteilung | vorhanden (M5) |
-| `src/vehicle_model/estimation/` | Zustandsbeobachter und virtuelle Sensoren | vorhanden |
-| `src/vehicle_model/roads/` | Fahrbahn | vorhanden |
-| `src/vehicle_model/simulation/` | Simulation Engine und Szenarien | vorhanden |
-| `src/vehicle_model/handling_analysis/` | Eigenlenk- und Stabilitätsanalyse | vorhanden (M1) |
-| `src/vehicle_model/verification/` | Physik- und Numerikprüfung | umgesetzt als `experiments/verification.py` und in den Tests (M9) |
-| `src/vehicle_model/experiments/` | Experimentautomatisierung | vorhanden (M9) |
-| `src/vehicle_model/visualization/` | Live- und Offline-Visualisierung | vorhanden |
-| `examples/` | Demonstratoren | vorhanden |
-| `tests/` | Automatisierte Tests | vorhanden |
-| `docs/` | Technische Dokumentation | vorhanden |
-| `output/` | Reproduzierbare Simulationsergebnisse (nicht versioniert) | vorhanden |
-
-Die früheren Verzeichnisse `python/cgmres_nmpc/`, `python/vehicle_model/` und `python/vehicle_visualization/` sind nach `src/vehicle_model/` migriert. Der MATLAB-Code wurde bewusst entfernt und ist über die Git-Historie (Commit `4190954`) weiterhin erreichbar.
-
-Nachgewiesene Duplikate werden schrittweise konsolidiert. Bestehende öffentliche APIs sind durch Kompatibilitätsadapter zu erhalten, bis eine dokumentierte Migration abgeschlossen ist.
-
-### Schnittstellenregeln
-
-- Physikmodelle dürfen keine Plotting- oder CLI-Abhängigkeiten haben.
-- Controller erhalten Zustandsinformationen nur über definierte Schnittstellen.
-- Simulation Engine und Modelle kommunizieren über typisierte Datenverträge.
-- Die Konfigurationsschicht validiert Eingaben vor Simulationsbeginn.
-- Visualisierung verwendet persistierte oder übergebene Simulationsresultate.
-- Modell- und Reglerimplementierungen dürfen nicht von einer konkreten GUI abhängen.
-
----
-
-# 19. Verbindliche Implementierungsroadmap
-
-Die Meilensteine bauen aufeinander auf. Ein Meilenstein gilt erst nach ausgeführter Verifikation und dokumentiertem Abnahmeergebnis als abgeschlossen.
-
-## M0 – Repository Audit & Stabilization
-
-**Aufgaben**
-
-- Bestehende Implementierungen prüfen.
-- Tests und Demos ausführen.
-- Architektur und Abhängigkeiten dokumentieren.
-- Lokale Chassis-Erweiterungen inventarisieren.
-- Modellkonventionen vereinheitlichen.
-- Fehlerhafte Algorithmusbezeichnungen identifizieren.
-- Bestehende Funktionen durch Regressionstests absichern.
-
-**Ergebnisse**
-
-- Baseline-Audit.
-- Testreport.
-- Architekturübersicht.
-- Liste technischer Schulden.
-- Priorisierter Migrationsplan.
-
-**Abnahme:** Der tatsächliche Zustand des Repositories ist nachvollziehbar; funktionierende Bestandteile können reproduzierbar ausgeführt werden.
-
-## M1 – Virtual Reference Vehicle & Handling Fundamentals
-
-**Aufgaben**
-
-- Virtuelles Referenzfahrzeug anlegen.
-- Parameter und deren Herkunft dokumentieren.
-- Analytisches lineares Einspurmodell bereitstellen.
-- Kinematisches und dynamisches Einspurmodell vereinheitlichen.
-- Eigenlenk- und Untersteueranalyse entwickeln.
-- Stationäre Kreisfahrt implementieren.
-- Eigenwert- und Frequenzganganalyse ergänzen.
-- Vorhandene Chassis-Funktionen kontrolliert integrieren, soweit verfügbar.
-
-**Abnahme:** Fahrzeugparameter sind konsistent und die definierten analytischen Referenzfälle werden innerhalb festgelegter numerischer Toleranzen erfüllt.
-
-## M2 – Nonlinear Four-Wheel Vehicle Dynamics
-
-**Aufgaben**
-
-- Nichtlineares Zweispurmodell entwickeln.
-- Einzelraddrehdynamik integrieren.
-- Individualisierte Antriebs- und Bremsmomente.
-- Longitudinal- und Lateralschlupf.
-- Individuelle Reifenkräfte.
-- Radaufstandspunkt-Koordinaten.
-- Quasistatische Radlastverlagerung.
-- Erste variable Reibwertzonen.
-
-**Abnahme:** Kräfte-, Momenten- und Drehmomentbilanzen sind konsistent; symmetrische Grenzfälle und definierte Konvergenztests bestehen.
-
-## M3 – Advanced Tyre Physics
-
-**Aufgaben**
-
-- Austauschbare Reifenmodell-Bibliothek.
-- Fiala und Magic Formula.
-- Combined-Slip-Mechanismen.
-- Last- und Reibwertempfindlichkeit.
-- Transiente Reifenrelaxation.
-- Reifenrückstellmoment bei unterstützter Modellformulierung.
-- Reifenkennlinien und Kraftgrenzendarstellungen.
-
-**Abnahme:** Grenzfälle, Sättigung, Kraftrichtungen und transientes Verhalten sind nachweisbar konsistent; Modelle lassen sich ohne Änderung des Fahrzeugkerns austauschen.
-
-## M4 – Steering, Suspension Kinematics & Load Transfer
-
-**Aufgaben**
-
-- Ackermann-Geometrie.
-- Einzelradlenkwinkel.
-- 4WS-Strategien.
-- Synthetische K&C-Kennfelder.
-- Bump Steer und Compliance Steer.
-- Rollzentrum und Wanksteifigkeitsverteilung.
-- Erweiterte Radlastverlagerung.
-- Analyse des Einflusses der Fahrwerksparameter auf das Eigenlenkverhalten.
-
-**Abnahme:** Lenkgeometrie und Lastverteilung erfüllen definierte geometrische und physikalische Prüfungen; deaktivierte Zusatzeffekte reproduzieren das Basismodell.
-
-## M5 – Actuators, ABS, TCS, ESC & Torque Vectoring
-
-**Aufgaben**
-
-- Dynamische Lenkungs-, Antriebs- und Bremsaktuatoren.
-- Einzelradmomentregelung.
-- ABS.
-- Antriebsschlupfregelung.
-- ESC.
-- Torque-Vectoring-Controller.
-- Beschränkte Control Allocation.
-- Priorisierung von Fahrstabilität und Stellanforderungen.
-- Fehler- und Sättigungsverhalten.
-
-**Abnahme:** Split-µ-Bremsung, Schlupfregelung, Torque Vectoring und Aktuatorfehler sind reproduzierbar simulierbar; unzulässige Stellanforderungen werden erkannt.
-
-## M6 – Advanced Vehicle Motion Control
-
-**Aufgaben**
-
-- Einheitliches Controller-Interface.
-- PID- und LQR-Referenzen.
-- Gain Scheduling.
-- LTV-MPC.
-- NMPC.
-- Unabhängige Regler- und Streckenmodelle.
-- Constraint Handling.
-- Warm Start.
+- Soll- und Istgrößen.
+- Stellgrößen.
 - Solverdiagnostik.
-- Degraded-Mode-Verhalten.
-- Integrierte 4WS-/Torque-Vectoring-Regelung.
+- Constraint-Verletzungen.
+- Reglerstatus.
+- Control Allocation.
 
-**Abnahme:** Unterschiedliche Regler können mit derselben virtuellen Strecke, identischen Szenarien und definierten Kennzahlen verglichen werden.
+**Nonlinear Stability**
 
-## M7 – Virtual Sensors, Estimation & Robustness
+- Phasenporträts.
+- Stabilitätskarten.
+- Gleichgewichtszustände.
+- Eigenwerte.
+- Rückführtrajektorien.
 
-**Aufgaben**
+**Optimization**
 
-- Virtuelle Sensorschnittstellen.
-- Rauschen, Bias und Verzögerungen.
-- Zustandsbeobachter.
-- Schwimmwinkelschätzung.
-- Optional Reibwertschätzung.
-- Systematische Parametervariation.
-- Monte-Carlo-Studien.
-- Offline-PSO-Optimierung.
-- Robustheits- und Fehlerszenarien.
+- Pareto-Front.
+- Sensitivitätsanalyse.
+- Parameterkorrelationen.
+- Designvarianten.
 
-**Abnahme:** Beobachter besitzen keinen unerlaubten Ground-Truth-Zugriff; Robustheitsversuche sind wiederholbar und dokumentieren ihre Streuungen sowie Grenzverletzungen.
+**Experiment Comparison**
 
-## M8 – Vertical Vehicle Dynamics & Advanced Chassis Systems
+- Überlagerte Zeitverläufe.
+- KPI-Vergleiche.
+- Differenzdiagramme.
+- Animierte Fahrzeugbewegung.
 
-**Aufgaben**
+## 10.4 Visualisierung
 
-- Quarter-Car.
-- Half-Car nach Bedarf.
-- Heben, Wanken und Nicken.
-- Gefederte und ungefederte Massen.
-- Passive Dämpfung.
-- Skyhook und Groundhook.
-- Semiaktive Dämpfung.
-- Aktive Wankstabilisierung.
-- Optional aktive Federung.
-- Kopplung mit der planaren Fahrdynamik.
+Die bestehenden Live-Matplotlib-Plots, PNG-, GIF- und CSV-Exporte bleiben erhalten.
 
-**Abnahme:** Freie Schwingungen, Energieverhalten, Frequenzgänge und definierte Straßenanregungen werden korrekt berechnet.
+Die Workbench darf deren Funktionen wiederverwenden, aber nicht durch inkompatible Implementierungen ersetzen.
 
-## M9 – Virtual Engineering & Research Laboratory
+## 10.5 Technologieentscheidung
 
-**Aufgaben**
+Die GUI-Technologie wird erst nach Analyse der konkreten Anforderungen festgelegt.
 
-- Einheitlicher CLI-Szenariorunner.
-- Batch- und Parameter-Sweep-Ausführung.
-- Automatisierte Modell- und Reglervergleiche.
-- Automatisierte KPI-Berechnung.
-- Physik- und Numerikverifikation.
-- Regressionsprüfung.
-- CSV-/PNG-/GIF-Ausgabe.
-- Automatische Engineering-Reports.
-- GitHub-Actions-CI.
-- Vollständige technische Dokumentation.
+Mögliche Ansätze:
 
-**Abnahme:** Ein Anwender kann über YAML ein Fahrzeug, Reifenmodell, Fahrmanöver, Regler und Fahrbahnmodell auswählen, die Simulation reproduzierbar ausführen und anschließend ein vollständiges Vergleichs- und Verifikationsergebnis erhalten.
+- PySide6 für eine Desktop-Anwendung.
+- Webbasierte Oberfläche mit Python-Backend.
+- Bestehende Plotting- und Reporting-Komponenten als eingebettete Ansichten.
 
----
+Entscheidungsmaßstäbe:
 
-## 20. Qualitätssicherung
+- Wartbarkeit.
+- Plattformunabhängigkeit.
+- Unterstützung längerer Rechenprozesse.
+- Wiederverwendbarkeit vorhandener Software.
+- Aufwand der Distribution.
+- Abhängigkeiten.
 
-Für jeden Meilenstein müssen folgende Dimensionen geprüft werden:
+## 10.6 Abnahmekriterien M15
 
-- Physikalische Korrektheit.
-- Mathematische Konsistenz.
-- Numerische Stabilität.
-- Architektur und Modularität.
-- Testabdeckung.
-- Robustheit.
-- Reproduzierbarkeit.
-- Performance.
-- Dokumentation.
-- Nutzbarkeit.
-- Visualisierung.
+Ein Nutzer kann einen vollständigen Versuch grafisch konfigurieren, über die vorhandene Experiment-Engine ausführen, Ergebnisse vergleichen und einen technischen Bericht exportieren.
 
-Jede Dimension wird anhand definierter, nachprüfbarer Kriterien bewertet.
-
-Ein Qualitätsscore von 10/10 darf nur vergeben werden, wenn sämtliche vorab vereinbarten Kriterien nachweislich erfüllt wurden.
-
-Fehlende experimentelle Messdaten führen nicht automatisch zum Scheitern eines Meilensteins, da experimentelle Validierung nicht zum definierten Projektumfang gehört.
-
-Ebenso darf ein rein virtuelles Ergebnis nicht als experimentell validiert bezeichnet werden.
+Derselbe Versuch muss über die CLI reproduzierbar bleiben.
 
 ---
 
-## 21. Technische Entwicklungsvorgaben
+# 11. Wissenschaftliche Verifikation V3.0
 
-### Python und Numerik
+Für die neue Entwicklungsstufe gelten verbindliche Nachweisregeln.
 
-Bevorzugte Werkzeuge:
+## 11.1 Modellverifikation
 
-- Python.
-- NumPy.
-- SciPy.
-- PyYAML.
-- Pytest.
-- Matplotlib.
-- Ruff.
-- Typisierte Python-Schnittstellen.
+Neue physikalische Modelle benötigen:
 
-Neue größere Abhängigkeiten sind nur mit dokumentierter technischer Begründung aufzunehmen.
-
-### Konfiguration
-
-- YAML ist die primäre Konfigurationsquelle.
-- Physikalische Konstanten und Modellparameter werden zentral verwaltet.
-- Jede Konfiguration wird vor der Ausführung validiert.
-- Vollständig aufgelöste Konfigurationen werden mit dem Versuch gespeichert.
-- Keine versteckten physikalischen Standardwerte.
-- Rückwärtskompatibilität wird dokumentiert.
-
-### Git-Workflow
-
-- Bestehende Änderungen erhalten.
-- Kleine, fachlich zusammenhängende Änderungen.
-- Tests nach jeder relevanten Änderung.
-- Keine destruktiven Git-Kommandos zur Bereinigung.
-- Keine automatischen Pushes ohne ausdrückliche Freigabe.
-
-### Dokumentation
-
-Jedes relevante Subsystem erhält:
-
-- Physikalische Beschreibung.
-- Gleichungen.
-- Parameterdefinitionen.
-- Konfigurationsbeispiel.
+- Mathematische Herleitung.
+- Eindeutige Zustandsdefinition.
+- Dokumentierte Parameter.
+- Analytische Referenzen, sofern möglich.
+- Physikalische Grenzfalltests.
+- Numerische Konvergenztests.
 - Gültigkeitsgrenzen.
-- Verifikationsstrategie.
-- Ausführbares Demonstrationsbeispiel.
-- Bekannte Einschränkungen.
+
+## 11.2 Reglerverifikation
+
+Neue Regler benötigen:
+
+- Mathematische Problemformulierung.
+- Zustands- und Stellgrößendefinitionen.
+- Dokumentierte Kostenfunktionen.
+- Nebenbedingungen.
+- Zulässigkeitsprüfung.
+- Solverdiagnostik.
+- Fallback-Verhalten.
+- Vergleich mit einem einfacheren Referenzregler.
+
+## 11.3 Robustheitsprüfung
+
+Reglervergleiche müssen nachvollziehbare Modellabweichungen und Störungen berücksichtigen.
+
+Erforderlich sind:
+
+- Nominale Ergebnisse.
+- Ergebnisse bei Parameterabweichungen.
+- Schlechteste beobachtete Fälle.
+- Verletzungsraten.
+- Solverfehler.
+- Rechenzeitverteilung.
+
+## 11.4 Numerische Stabilität
+
+Tests sollen insbesondere abdecken:
+
+- Stillstand und niedrige Geschwindigkeiten.
+- Große Schräglaufwinkel.
+- Hohen longitudinalen Schlupf.
+- Kombinierten Schlupf.
+- Reibwertsprünge.
+- Kontaktverlust.
+- Stellsättigung.
+- Sensorfehler.
+- Solvernichtkonvergenz.
+- Ungültige Konfigurationen.
+
+Numerisch nicht aussagekräftige Ergebnisse müssen als ungültig gekennzeichnet werden.
 
 ---
 
-## 22. Unmittelbarer Arbeitsauftrag an Gemini, Codex oder Claude
+# 12. Erweiterung des Experiment-Frameworks
 
-Rolle: Principal Vehicle Dynamics Engineer, Control Systems Researcher, Numerical Simulation Engineer und Senior Python Software Architect.
+Die vorhandenen Pakete `experiments/spec.py`, `experiments/runner.py` und `experiments/verification.py` bleiben der zentrale Anwendungseinstieg.
 
-Ziel: Den vorliegenden Masterplan schrittweise im bestehenden Vehicle-Dynamics-Repository umsetzen.
+Sie werden schrittweise ergänzt.
 
-Verbindliches Vorgehen:
+Neue Experimentarten:
 
-1. Repository und Git-Zustand vollständig untersuchen.
-2. Vorhandene Tests und Simulationen ausführen.
-3. Den tatsächlichen Implementierungsstand gegen diesen Masterplan abgleichen.
-4. Bereits vorhandene Funktionalität nicht neu und parallel implementieren.
-5. Architekturprobleme und physikalische Inkonsistenzen priorisieren.
-6. M0 abschließen und die Ergebnisse dokumentieren.
-7. Anschließend M1 mit dem virtuellen Referenzfahrzeug und den fahrdynamischen Grundanalysen umsetzen.
-8. Neue physikalische Modelle immer zusammen mit mathematischen Referenztests und numerischen Konsistenzprüfungen entwickeln.
-9. Bestehende Live-Visualisierungen unverändert verfügbar halten.
-10. Schrittweise durch die nachfolgenden Meilensteine fortfahren, sofern ihre Voraussetzungen erfüllt sind.
+| Typ | Beschreibung |
+|---|---|
+| `stability_map` | Numerische Stabilitätsregionen |
+| `equilibrium_analysis` | Nichtlineare Gleichgewichtszustände |
+| `robust_control` | Regelungsvergleich bei Unsicherheit |
+| `monte_carlo` | Reproduzierbare Zufallsstudien |
+| `adversarial_search` | Automatische Grenzfallsuche |
+| `design_optimization` | Parametrische Fahrzeugoptimierung |
+| `pareto_analysis` | Mehrzieloptimierung |
+| `solver_benchmark` | Rechenaufwand und Lösungsqualität |
+| `controller_comparison` | Bestehende Reglervergleichsfunktion |
 
-Nach jedem Meilenstein sind bereitzustellen:
+Bestehende Experiment-Spezifikationen müssen kompatibel bleiben.
 
-- Implementierungsbericht.
-- Architekturänderungen.
-- Mathematische Modellbeschreibung.
-- Verifikationsbericht.
-- Ausgeführte Testkommandos und Ergebnisse.
-- Simulationsbeispiele.
-- Generierte Visualisierungen.
-- Bekannte Grenzen.
-- Nächste technisch begründete Arbeitsschritte.
+Jeder Experimenttyp definiert sein eigenes validiertes Schema, verwendet aber gemeinsame Mechanismen für Ausführung, Provenienz und Reporting.
 
-**Abschlussbedingung:** Nicht die bloße Existenz von Dateien oder Klassen, sondern funktionierende Integration, ausgeführte Tests, physikalische Konsistenz und reproduzierbare Simulationsergebnisse.
+Die Runner-Architektur sollte die verschiedenen Experimenttypen über eine kleine gemeinsame Schnittstelle anbinden, statt immer mehr typabhängige Verzweigungen in einer einzigen Datei anzusammeln.
 
-Der zentrale Entwicklungsgrundsatz lautet:
+---
 
-**Build a physically consistent, modular and reproducible virtual vehicle dynamics laboratory. Prioritize mathematical correctness, engineering traceability, controller robustness and numerical verification over feature count or visual complexity.**
+# 13. Qualitäts- und Abnahmekriterien
+
+Ein Meilenstein gilt nicht als abgeschlossen, nur weil Klassen, Dateien und Beispiele vorhanden sind.
+
+Für jede Umsetzung sind folgende Nachweise erforderlich:
+
+| Bereich | Mindestanforderung |
+|---|---|
+| Architektur | Eindeutige Modulverantwortung und geprüfte Abhängigkeitsrichtung |
+| Mathematik | Dokumentierte Gleichungen und Annahmen |
+| Physik | Konsistente Kräfte, Momente und zulässige Zustände |
+| Numerik | Dokumentierte Solver- und Konvergenzeigenschaften |
+| Tests | Relevante Unit-, Integrations-, Physik- und Regressionstests |
+| Regler | Verhalten bei Sättigung, Unzulässigkeit und Solverfehlern |
+| Experimente | Reproduzierbare Konfigurationen und Ergebnisse |
+| Reporting | Nachvollziehbare Kennzahlen, Status und Grenzen |
+| Dokumentation | Übereinstimmung mit dem tatsächlichen Code |
+| Bestandsschutz | Keine unbeabsichtigten Änderungen vorhandener Ergebnisse oder APIs |
+
+Für jeden Meilenstein werden diese Dimensionen mit nachvollziehbaren Kriterien bewertet.
+
+Es dürfen keine unbelegten 10/10-Bewertungen vergeben werden.
+
+---
+
+# 14. Priorisierte Ausführungsreihenfolge
+
+Die verbindliche Reihenfolge lautet:
+
+**M10 → M11 → M12 → M13 → M14 → M15**
+
+M13 wird bewusst vor M14 entwickelt.
+
+Die automatisierte Grenzfallsuche kann dadurch anschließend als zusätzliche Bewertungsinstanz für optimierte Fahrwerke und Regler verwendet werden.
+
+M15 folgt zuletzt, weil eine grafische Oberfläche erst auf einer stabilisierten Anwendungs- und Datenarchitektur aufgebaut werden sollte.
+
+Einzelne dokumentarische und infrastrukturelle Verbesserungen können parallel stattfinden, sofern sie die technische Abnahme der jeweiligen Meilensteine nicht umgehen.
+
+---
+
+# 15. Sofortiger Implementierungsauftrag für einen Code-Agenten
+
+## Rolle
+
+Du arbeitest als:
+
+- Principal Vehicle Dynamics Engineer.
+- Nonlinear Vehicle Dynamics Researcher.
+- Model Predictive Control Specialist.
+- Numerical Optimization Engineer.
+- Senior Python Software Architect.
+- Engineering Verification Specialist.
+
+## Auftrag
+
+Implementiere die Master Engineering Plan V3.0 schrittweise im bestehenden Repository.
+
+Dies ist ein Implementierungsauftrag, nicht nur eine Machbarkeitsstudie oder eine erneute Roadmap-Erstellung.
+
+### Schritt 1 – Neuen Stand prüfen
+
+- Aktuellen Git-Branch bestimmen.
+- Aktuellen Commit erfassen.
+- Uncommittete Änderungen schützen.
+- Gesamte Repository-Struktur inspizieren.
+- Bestehende Testbaseline ausführen.
+- Bestehende Demonstratoren ausführen.
+- Bereits umgesetzte V3-Funktionen identifizieren.
+- Offene Punkte aus den aktuellen Audit-Dokumenten mit dem Code abgleichen.
+
+Niemals annehmen, dass eine Funktion fehlt, nur weil sie in diesem Plan als Entwicklungsaufgabe aufgeführt ist.
+
+### Schritt 2 – V3-Baseline dokumentieren
+
+Erzeuge einen Bericht über:
+
+- Vorhandene Fahrzeugmodelle.
+- Vorhandene Controller.
+- Aktuelle gemeinsame Schnittstellen.
+- Solverdiagnostik.
+- Zustandsschätzung.
+- Control Allocation.
+- Experiment-Framework.
+- Regressionsabdeckung.
+- Noch bestehende Architekturprobleme.
+
+### Schritt 3 – M10 umsetzen
+
+Beginne mit dem Scientific-Integrity- und Control-Architecture-Paket.
+
+Relevante vorhandene Module:
+
+- `src/vehicle_model/controllers/dynamic_two_track_nmpc.py`
+- `src/vehicle_model/controllers/nmpc.py`
+- `src/vehicle_model/controllers/solver_diagnostics.py`
+- `src/vehicle_model/controllers/motion_control.py`
+- `src/vehicle_model/controllers/estimated_feedback.py`
+- `src/vehicle_model/allocation/wheel_forces.py`
+- `src/vehicle_model/simulation/scenario_runner.py`
+- `src/vehicle_model/experiments/`
+
+Neue Module nur dann ergänzen, wenn bestehende Verantwortlichkeiten nicht sinnvoll erweitert werden können.
+
+### Schritt 4 – Technische Verifikation
+
+Für jede relevante Änderung:
+
+1. Tests ergänzen.
+2. Implementierung durchführen.
+3. Schnelle Tests ausführen.
+4. Relevante physikalische Grenzfälle ausführen.
+5. Simulationen und Ergebnisse prüfen.
+6. Regressionsvergleiche durchführen.
+7. Dokumentation aktualisieren.
+8. Erst bei erfüllter Abnahme den nächsten Entwicklungsschritt beginnen.
+
+### Schritt 5 – Weitere Meilensteine
+
+Nach Abschluss von M10 sukzessive M11 bis M15 umsetzen.
+
+Jeder Meilenstein muss unabhängig überprüfbar und sinnvoll ausführbar sein.
+
+Kein massenhaftes Erstellen leerer Module oder Platzhalterimplementierungen.
+
+---
+
+# 16. Verbindliche Entwicklungsregeln
+
+**Rule 1 – Preserve Existing Functionality**
+
+Bestehende Fahrzeugmodelle, Controller, CLI-Funktionen, Live-Plots und Exportformate erhalten.
+
+**Rule 2 – Physics Before Features**
+
+Keine neuen komplexen Regelungsverfahren auf mathematisch ungeprüften Fahrzeugmodellen entwickeln.
+
+**Rule 3 – No Fake Validation**
+
+Keine synthetischen Daten als reale Fahrzeugmessungen darstellen.
+
+**Rule 4 – No Silent Constraint Violations**
+
+Unzulässige Zustände und unerfüllbare Anforderungen müssen nachvollziehbar gemeldet werden.
+
+**Rule 5 – Controller/Plant Separation**
+
+Reglerentwurfsmodell und Simulationsstrecke bleiben unabhängig konfigurierbar.
+
+**Rule 6 – No Hidden Ground Truth**
+
+Der Informationszugriff jedes Reglers und Estimators muss eindeutig deklariert sein.
+
+**Rule 7 – YAML First**
+
+Parameter und Experimentdefinitionen bleiben extern konfigurierbar.
+
+**Rule 8 – Reproducibility**
+
+Jeder relevante Versuch erhält einen reproduzierbaren Ergebnisnachweis.
+
+**Rule 9 – Small, Cohesive Modules**
+
+Keine neuen monolithischen Simulations- oder Controllerklassen.
+
+**Rule 10 – No Automatic Push**
+
+Keine Änderungen auf GitHub pushen, sofern keine ausdrückliche Freigabe vorliegt.
+
+---
+
+# 17. Erforderliche Deliverables
+
+Nach jedem Meilenstein:
+
+**A. Implementierungsbericht**  
+Tatsächlich entwickelte Funktionen.
+
+**B. Architekturbericht**  
+Neue und geänderte Module, Schnittstellen und Abhängigkeiten.
+
+**C. Mathematische Beschreibung**  
+Gleichungen, Annahmen, Modellbereiche und Einschränkungen.
+
+**D. Verifikationsbericht**  
+Testfälle, exakte Kommandos und Ergebnisse.
+
+**E. Simulationsbericht**  
+Szenarien, KPIs, numerische Ergebnisse und Auffälligkeiten.
+
+**F. Visualisierung**  
+PNG, GIF und vorhandene Live-Plots, soweit zum jeweiligen Modul passend.
+
+**G. Konfiguration**  
+Neue YAML-Schemata und Parameter.
+
+**H. Qualitätseinschätzung**  
+Evidenzbasierte Bewertung der technischen Kriterien.
+
+**I. Bekannte Probleme**  
+Offene Defekte, Grenzen und technische Risiken.
+
+**J. Nächster Entwicklungsschritt**  
+Konkreter, fachlich begründeter nächster Meilenstein.
+
+---
+
+## 18. Langfristiges Forschungsziel
+
+Die V3.0-Plattform soll folgende Fragen reproduzierbar beantworten können:
+
+- Welche Fahrzeugzustände sind unter gegebenen Betriebsbedingungen stabil oder stabilisierbar?
+- Wie verändern 4WS und Torque Vectoring die fahrdynamischen Grenzen?
+- Unter welchen Bedingungen versagen bestimmte Regelungsstrategien?
+- Welche Modellunsicherheiten beeinflussen das Regelergebnis am stärksten?
+- Wie lassen sich Aktuatoren unter begrenztem Reifen-Fahrbahn-Kraftschluss optimal koordinieren?
+- Welche Fahrzeugparameter beeinflussen Stabilität, Agilität, Komfort und Energiebedarf?
+- Wie lassen sich virtuelle Worst-Case-Manöver automatisch identifizieren?
+- Welche Fahrzeug- und Reglerkonfigurationen bieten unter definierten Zielkonflikten die besten Ergebnisse?
+
+**Final Objective**
+
+Build a modular, scientifically traceable, physically consistent and reproducible virtual vehicle dynamics research platform capable of nonlinear stability analysis, robust chassis motion control, critical-scenario discovery and multi-objective vehicle optimization.
+
+**Do not optimize for feature count. Optimize for mathematical credibility, architectural integrity, physical consistency, robustness and meaningful engineering evidence.**
