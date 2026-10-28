@@ -1,7 +1,7 @@
 # Repository-Audit – Ist-Zustand (Master Engineering Plan V2.0, Abschnitt 3)
 
 **Datum:** 2026-10-27  
-**Basis-Commit:** `4190954` (Branch `main`) plus uncommittete Änderungen im Working Tree  
+**Basis-Commit:** `4190954` (Branch `main`) plus uncommittete Änderungen; seit `041f48c` vollständig versioniert  
 **Zweck:** Ist-Zustand, Testbaseline, Architekturinventar und inkrementeller Integrationsplan.
 
 ---

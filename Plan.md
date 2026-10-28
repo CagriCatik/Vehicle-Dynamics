@@ -4,7 +4,7 @@
 **Entwicklungsansatz:** Simulation-First / Virtual Engineering  
 **Zielplattform:** Generisches, realistisch skaliertes Pkw-Modell  
 **Repository:** https://github.com/CagriCatik/Vehicle-Dynamics  
-**Projektstatus:** Entwicklungsplan; Implementierungsstand muss zu Beginn überprüft werden
+**Projektstatus:** M0 (Repository Audit & Stabilization) in Arbeit; Ist-Zustand siehe `docs/AUDIT.md`
 
 ---
 
