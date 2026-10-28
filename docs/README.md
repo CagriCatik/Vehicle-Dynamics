@@ -15,7 +15,7 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | :---: | :--- | :--- |
 | **01** | Systemarchitektur & ISO 8855 Koordinaten | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | **02** | Mehrkörper-Fahrzeugmodelle (7-DOF & 14-DOF) | [VEHICLE_MODELS.md](VEHICLE_MODELS.md) |
-| **03** | Reifenkraftschluss (Fiala, MF 6.2, Kamm) | [TYRE_MODELS.md](TYRE_MODELS.md) |
+| **03** | Reifenmodelle (Fiala, MF 5.2-Teilmenge, Combined Slip, Relaxation) | [TYRE_MODELS.md](TYRE_MODELS.md) |
 | **04** | Aktorik, EPS & Brake-by-Wire | [ACTUATORS.md](ACTUATORS.md) |
 | **05** | Integrierte Regelung (IVMC, TV, Phasenraum) | [CHASSIS_CONTROL.md](CHASSIS_CONTROL.md) |
 | **06** | **Allradlenkung & Hinterachslenkung (4WS)** | [REAR_WHEEL_STEERING.md](REAR_WHEEL_STEERING.md) |

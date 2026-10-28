@@ -19,3 +19,7 @@ provenance:
   limitations:
     - Pure lateral MF with friction circle combined slip coupling
     - Synthetic parameter values for research and simulation illustration
+    - "Fy is clipped hard at mu*Fz, reached at ~2-3 deg (C_alpha/Fz ~ 33/rad at Fz0): no peak and no sliding range (Audit 4.6)"
+    - "Fx = min(c_kappa*Fz*kappa, mu*Fz): linear up to a hard limit, no peak"
+    - "Road friction mu multiplies the whole lateral curve, so the cornering stiffness scales with mu (unphysical)"
+    - "Prefer magic_formula_passenger_synthetic for new work"

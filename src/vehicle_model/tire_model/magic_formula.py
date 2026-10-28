@@ -47,10 +47,16 @@ exceed the friction ellipse by up to ~35 % at ``mu = 0.3``. Normalising by
 ``mu`` makes the combined-slip map self-similar in ``mu``, consistent with brush
 theory, where the coupling depends on ``C s/(mu Fz)``.
 
-Deviation 2: the empirical weighting still overshoots the friction ellipse by
-up to ~12 % where both slips are near their peaks. The limiter scales the force
-vector radially back onto the ellipse. It is continuous, leaves pure slip
-untouched (``G = 1`` there) and is only active in that combined-slip region.
+Deviation 2: the weighting reduces one force only to second order in the other
+slip (``G = 1 - O(s^2)``) while the other force grows linearly. Once one slip is
+near its peak, any additional slip therefore pushes the resultant beyond the
+ellipse (by up to ~10 % at the default parameters). The limiter scales the force
+vector radially back onto the ellipse, i.e. at the peak the force rotates
+instead of growing, as in brush theory. It leaves pure slip untouched
+(``G = 1``, ``e <= 1`` there) and is continuous, but its derivative jumps where it
+engages. At Fz0 it is active on ~40 % of the range |alpha| <= 6 deg,
+|kappa| <= 0.1, mostly with an overshoot of a few percent; linearisations and
+gradient-based controllers see a kink there.
 ``RCX1, RCY1 <= 1`` keeps ``G >= 0``, so forces never reverse direction.
 """
 

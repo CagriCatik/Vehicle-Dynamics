@@ -15,7 +15,7 @@ graph TD
     subgraph Grundlagen & Physik
         ARCH[01. Systemarchitektur & ISO 8855<br/>docs/ARCHITECTURE.md]
         PLANT[02. Mehrkörper-Fahrzeugmodelle 7-DOF / 14-DOF<br/>docs/VEHICLE_MODELS.md]
-        TYRE[03. Reifenkraftschluss & Modelle Fiala, MF6.2<br/>docs/TYRE_MODELS.md]
+        TYRE[03. Reifenmodelle Fiala, MF 5.2, Relaxation<br/>docs/TYRE_MODELS.md]
         ACT[04. Aktorik, EPS & Bremsdynamik<br/>docs/ACTUATORS.md]
     end
 
@@ -74,7 +74,8 @@ graph TD
 - **`LinearTyre`:** Lineare Schräglaufsteifigkeit für kleine Schlupfwerte mit degressiver Radlastabhängigkeit.
 - **`FialaTyre`:** Analytisches Bürstenmodell mit parabolischer Druckverteilung, Haft-/Gleitgrenzen und kombiniertem Schlupf.
 - **`SimplifiedCombinedSlipTyre`:** Reibkreisskalierter Schlupfvektor strictly bounded by Kamm's Circle.
-- **`PacejkaTyre`:** Magic Formula (MF 6.2) Quer- und Längsdynamikkopplung.
+- **`MagicFormulaTyre`:** MF 5.2-Teilmenge mit Combined Slip und Rückstellmoment.
+- **`PacejkaTyre`:** Legacy-Adapter (laterale MF, hart begrenzt; Audit 4.6).
 - Automatisierte Reifendiagnose-Plot-Suite (`python -m vehicle_model.tire_model.plots --all`).
 
 ### [Kapitel 4: Actuator Dynamics & Brake Systems](ACTUATORS.md)
@@ -159,9 +160,10 @@ graph TD
 - [7-DOF Nichtlineares Zweispurmodell](VEHICLE_MODELS.md#1-the-7-dof-two-track-vehicle-model)
 - [Dynamischer Radlasttransfer ($F_{z,i}$)](VEHICLE_MODELS.md#12-dynamic-vertical-load-transfer)
 - [14-DOF Gesamtfahrzeugmodell](VEHICLE_MODELS.md#2-the-14-dof-full-vehicle-model)
-- [Fiala Reifenkraftmodell](TYRE_MODELS.md#2-fialatyre-analytical-brush-model)
-- [Pacejka Magic Formula MF 6.2](TYRE_MODELS.md#4-pacejkatyre-magic-formula-62)
-- [Kamm'scher Reibkreis & Combined Slip](TYRE_MODELS.md#3-simplifiedcombinedsliptyre-normalized-kamm-circle)
+- [Fiala Reifenkraftmodell](TYRE_MODELS.md#3-models) (Abschnitt 3.2)
+- [Magic Formula 5.2-Teilmenge und Legacy-Pacejka-Adapter](TYRE_MODELS.md#3-models) (Abschnitte 3.4, 3.5)
+- [Reifenrelaxation](TYRE_MODELS.md#4-transient-behaviour-relaxation-length)
+- [Combined Slip](TYRE_MODELS.md#3-models) (Abschnitte 3.2–3.4)
 
 ### II. Regelungstechnik, Aktorik & aktive Fahrwerke
 - [Integrated Vehicle Motion Control (IVMC)](CHASSIS_CONTROL.md#1-integrated-vehicle-motion-controller-ivmc)
@@ -212,7 +214,7 @@ graph TD
 | **Dynamic Load Transfer ($F_{z,i}$)** | [Kap. 2](VEHICLE_MODELS.md#12-dynamic-vertical-load-transfer) | $\Delta F_{z,\text{long}} = m a_x h / L$, $\Delta F_{z,\text{lat}} = m a_y h / w$ |
 | **Eigenlenkgradient $K_{\text{us}}$** | [Kap. 12](HANDLING_LIMITS.md#3-the-understeer-gradient-k_textus) | $K_{\text{us}} = d\delta_f / da_y - L g / v_x^2$ |
 | **Extended Kalman Filter (EKF)** | [Kap. 10](STATE_ESTIMATION.md#2-extended-kalman-filter-ekf-for-sideslip-estimation) | Nichtlineare Schwimmwinkelschätzung $\hat{\beta}$ |
-| **Fiala Reifenmodell** | [Kap. 3](TYRE_MODELS.md#2-fialatyre-analytical-brush-model) | Bürstentheorie, Haftung und Gleitung |
+| **Fiala Reifenmodell** | [Kap. 3](TYRE_MODELS.md#3-models) | Bürstentheorie, Haftung und Gleitung |
 | **Fishhook Manöver (NHTSA)** | [Kap. 11](VALIDATION_PLATFORM.md) & [Kap. 13](SPLIT_MU_DYNAMICS.md) | Dynamische Lenkumkehr, Wankstabilitätsprüfung |
 | **Gegenphasenlenkung** | [Kap. 6](REAR_WHEEL_STEERING.md#21-gegenphasenlenkung-bei-niedrigen-geschwindigkeiten-v_x--v_textswitch) | Hinterräder entgegengesetzt zu Vorderrädern ($\delta_r < 0$) |
 | **Giermomenten-Aufbauverzögerung (GMR)**| [Kap. 13](SPLIT_MU_DYNAMICS.md) | Druckanstiegsbegrenzung bei $\mu$-Split-Bremsung |
@@ -227,7 +229,7 @@ graph TD
 | **Multi-Mu Matrix Framework** | [Kap. 13](SPLIT_MU_DYNAMICS.md) & [Report](../output/benchmark/multi_mu_scenarios_report.md) | 6 Manöver $\times$ 4 Reibwerte ($\mu \in [0.20, 1.00]$) |
 | **Neuromuskuläre Verzögerung** | [Kap. 8](DRIVER_MODEL.md) | Menschliche Muskelzeitkonstante $\tau_n \approx 100\,\text{ms}$ |
 | **NMPC (Nichtlineares MPC)** | [Kap. 7](NMPC_CONTROL.md) & [docs/NMPC_PATH_TRACKING.md](NMPC_PATH_TRACKING.md) | Prädiktive Trajektorienoptimierung |
-| **Pacejka Magic Formula (MF 6.2)** | [Kap. 3](TYRE_MODELS.md#4-pacejkatyre-magic-formula-62) | $y(x) = D \sin(C \arctan(B x - E (B x - \arctan(B x))))$ |
+| **Magic Formula (MF 5.2-Teilmenge)** | [Kap. 3](TYRE_MODELS.md#3-models) | $y(x) = D \sin(C \arctan(B x - E (B x - \arctan(B x))))$ |
 | **Particle Swarm Optimization (PSO)**| [Kap. 10](STATE_ESTIMATION.md#4-offline-particle-swarm-optimization-pso) | Globale stochastische Parameteridentifikation |
 | **Phasenraum-Hüllkurve $(\beta, \dot{\beta})$**| [Kap. 5](CHASSIS_CONTROL.md#4-beta-dot-beta-phase-plane-envelope-control) | Schwimmwinkel-Phasenebene Stabilitätsgrenzen |
 | **Recursive Least Squares (RLS)** | [Kap. 10](STATE_ESTIMATION.md#3-recursive-least-squares-rls-friction-estimation) | Online-Schätzung des Reibwerts $\hat{\mu}$ |

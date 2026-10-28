@@ -1,170 +1,176 @@
-# Interchangeable Tyre Models & Provenance Framework
+# Tyre Models, Relaxation and Provenance
 
-Tyre forces represent the primary control forces governing ground vehicle stability, acceleration, and cornering. This document details the mathematical formulations, combined-slip coupling mechanisms, load sensitivity, and strict **Tyre Provenance Standard** implemented in the platform.
+Package: [`src/vehicle_model/tire_model/`](../src/vehicle_model/tire_model/)
 
----
-
-## 1. Tyre Slip Kinematics & Conventions
-
-Tyre forces are calculated in the wheel heading coordinate frame adhering to **ISO 8855**:
-- Longitudinal wheel axis $x_w$: Points forward along the wheel plane.
-- Lateral wheel axis $y_w$: Points to the left of the wheel plane.
-- Vertical wheel axis $z_w$: Points upwards from the contact patch.
-
-### 1.1 Longitudinal Slip Ratio ($\kappa$)
-$$\kappa = \frac{\omega R_{\text{eff}} - v_{w,x}}{\max\left(|v_{w,x}|, v_{\epsilon}\right)}$$
-- Pure rolling: $\kappa = 0$
-- Full acceleration slip: $\kappa > 0$
-- Full braking lockup: $\kappa = -1.0$ (when $\omega = 0$ and $v_{w,x} > 0$)
-
-### 1.2 Lateral Slip Angle ($\alpha$)
-$$\alpha = -\arctan\left(\frac{v_{w,y}}{\max\left(|v_{w,x}|, v_{\epsilon}\right)}\right)$$
-- Rightward steer / leftward cornering produces negative lateral velocity $v_{w,y} < 0 \implies \alpha > 0$, generating positive restoring lateral force $F_y > 0$.
+All tyre models implement one interface, `TyreModel`. That interface lets you swap the tyre without changing the vehicle models (Plan.md, section 7). This document states what each model computes and what it does **not** compute. A model claims only the effects its formulation contains. All parameter sets are synthetic and do not represent any real tyre.
 
 ---
 
-## 2. Mandatory Tyre Provenance Standard
+## 1. Conventions
 
-To prevent unphysical extrapolation or mixing incompatible parameters, every tyre instance implements the `TyreModel` protocol and must expose a valid `TyreProvenance` metadata object:
+Forces are computed in the wheel frame (ISO 8855: $x_w$ forward in the wheel plane, $y_w$ to the left, $z_w$ up).
+
+| Quantity | Definition (vehicle models, `seven_dof.py`) | Sign |
+|---|---|---|
+| Longitudinal slip | $\kappa = \dfrac{\omega R_{\text{eff}} - v_{w,x}}{\max(\lvert v_{w,x}\rvert, \lvert\omega R_{\text{eff}}\rvert, v_\epsilon)}$ | $\kappa > 0$ (driving) gives $F_x > 0$; $\kappa = -1$ means a locked wheel |
+| Slip angle | $\alpha = -\arctan\dfrac{v_{w,y}}{\max(\lvert v_{w,x}\rvert, v_\epsilon)}$ | $\alpha > 0$ gives $F_y > 0$ |
+| Aligning moment | about $+z_w$ | $M_z < 0$ for $\alpha > 0$ at small slip (turns the wheel towards its velocity) |
+
+$v_\epsilon = 0.2$ m/s. Every model returns zero force for $F_z \le 0$ (contact loss) or $\mu \le 0$. The road friction $\mu$ is a scaling factor relative to a dry road ($\mu = 1$). The tyre's own peak friction may additionally depend on load.
+
+## 2. Interface and provenance
 
 ```python
-@dataclass(frozen=True)
-class TyreProvenance:
-    model_name: str           # e.g., "Pacejka Magic Formula 6.2 Passenger"
-    formulation: str          # "linear", "fiala", "simplified_combined", "pacejka"
-    data_classification: str  # "synthetic", "fitted", or "measured"
-    source_reference: str     # Origin paper, dataset, or laboratory test rig ID
-    nominal_load_N: float     # Reference vertical load F_z0 [N]
-    valid_slip_range: tuple[float, float]    # [kappa_min, kappa_max] (e.g., [-1.0, 1.0])
-    valid_alpha_range_deg: tuple[float, float] # [alpha_min, alpha_max] (e.g., [-25.0, 25.0])
-    valid_fz_range_N: tuple[float, float]    # [Fz_min, Fz_max] (e.g., [200.0, 10000.0])
+class TyreModel(Protocol):
+    provenance: TyreProvenance
+    def forces(self, kappa, alpha, Fz, mu) -> tuple[Fx, Fy]: ...   # vectorised, wheel frame [N]
+    def slip_stiffness(self, Fz, mu) -> dFx/dkappa at kappa = 0: ...  # used for integrator step control
 ```
 
----
+`TyreProvenance` (all parameter sets in [`configs/tyres/`](../configs/tyres/) must carry it; the loader rejects sets without the first five fields):
 
-## 3. Mathematical Formulations of Supported Tyre Models
+| Field | Meaning |
+|---|---|
+| `formulation`, `version` | model and its revision |
+| `source` | where the values come from |
+| `data_class` | `measured` · `fitted` · `synthetic` (all bundled sets are `synthetic`) |
+| `reference_load` | $F_{z0}$ [N] |
+| `valid_kappa`, `valid_alpha` | validity range |
+| `limitations` | effects the model does **not** represent |
 
-The platform provides four interchangeable tyre models:
-
-```mermaid
-graph TD
-    TF[TyreFactory] --> LT[LinearTyre<br/>Small slip & degressivity]
-    TF --> FT[FialaTyre<br/>Analytical brush model]
-    TF --> SC[SimplifiedCombinedSlipTyre<br/>Kamm circle slip vector]
-    TF --> PT[PacejkaTyre<br/>Magic Formula MF 6.2]
-```
-
----
-
-### 3.1 Linear Tyre Model (`LinearTyre`)
-
-Applicable for small slip angles ($|\alpha| \le 3^\circ$) and modest longitudinal slip ($|\kappa| \le 0.05$):
-
-$$\begin{aligned}
-F_{x0} &= C_\kappa \kappa \\
-F_{y0} &= C_\alpha \alpha
-\end{aligned}$$
-
-#### 3.1.1 Normal Load Degressivity
-In real pneumatic tyres, cornering stiffness exhibits load degressivity ($\partial^2 C_\alpha / \partial F_z^2 < 0$):
-$$C_\alpha(F_z) = C_{\alpha 0} \left(\frac{F_z}{F_{z0}}\right) \left[1 - c_{\text{deg}} \left(\frac{F_z}{F_{z0}} - 1\right)\right]$$
-Where $c_{\text{deg}} \in [0.10, 0.25]$ is the load degressivity coefficient.
-
-#### 3.1.2 Friction Circle Bounding
-Forces are hard-bounded by Kamm's friction circle:
-$$\sqrt{F_x^2 + F_y^2} \le \mu F_z$$
+Optional capabilities beyond the interface: only `MagicFormulaTyre` provides `forces_and_moment` / `aligning_moment` ($M_z$), `cornering_stiffness` and `peak_friction`.
 
 ---
 
-### 3.2 Fiala Analytical Brush Tyre Model (`FialaTyre`)
+## 3. Models
 
-The Fiala model is a physically rigorous analytical brush model with parabolic normal pressure distribution over a rectangular contact patch. It explicitly computes the boundary between the **elastic adhesion zone** and the **sliding zone**.
+### Overview
 
-#### 3.2.1 Critical Slip Angle ($\alpha_{\text{crit}}$)
-$$\alpha_{\text{crit}} = \arctan\left(\frac{3 \mu F_z}{C_\alpha}\right)$$
+| Model (YAML `model:`) | Class | Pure slip | Combined slip | Peak and friction drop | Load sensitivity | $M_z$ | Bundled sets |
+|---|---|---|---|---|---|---|---|
+| `linear` | `LinearTyre` | linear | none (optional circle clip) | no | $C_\alpha/F_z$ | no | `linear_passenger_synthetic` |
+| `fiala` | `FialaTyre` | brush, cubic | isotropic brush | peak = sliding, no drop | $C_\alpha/F_z$, $\mu$ | no | `fiala_passenger_synthetic` |
+| `simplified_combined` | `SimplifiedCombinedSlipTyre` | single envelope | normalised slip vector | yes | $\alpha_{\text{peak}}$, $\mu$ | no | `simplified_combined_synthetic`, `simplified_combined_staggered_{front,rear}` |
+| `magic_formula` | `MagicFormulaTyre` | MF 5.2 subset | MF 5.2 weighting (normalised) + ellipse limit | yes | $K$, $\mu$, $E$ | yes | `magic_formula_passenger_synthetic` |
+| `pacejka` | `PacejkaTyre` (legacy) | lateral MF, linear $F_x$ | friction circle | **hard clip, no peak** | via MF data | no | `pacejka_{front,rear}_synthetic` |
 
-#### 3.2.2 Pure Lateral Force ($F_y$)
-$$\begin{aligned}
-F_y &= -C_\alpha \tan \alpha + \frac{C_\alpha^2}{3 \mu F_z} |\tan \alpha| \tan \alpha - \frac{C_\alpha^3}{27 \mu^2 F_z^2} \tan^3 \alpha \quad & (|\alpha| < \alpha_{\text{crit}}) \\
-F_y &= -\mu F_z \operatorname{sgn}(\alpha) \quad & (|\alpha| \ge \alpha_{\text{crit}})
-\end{aligned}$$
+Which vehicle uses which tyre: `seven_dof_passenger` (the default vehicle) uses `pacejka_*_synthetic`. `reference_passenger_car` uses `fiala_passenger_synthetic`.
 
-#### 3.2.3 Self-Aligning Torque ($M_z$)
-$$M_z = \begin{cases}
-C_m \tan \alpha \left(1 - \frac{C_\alpha |\tan \alpha|}{3 \mu F_z}\right)^3 & (|\alpha| < \alpha_{\text{crit}}) \\
-0 & (|\alpha| \ge \alpha_{\text{crit}})
-\end{cases}$$
+### 3.1 Linear (`LinearTyre`, [brush_models.py](../src/vehicle_model/tire_model/brush_models.py))
+
+$$F_x = c_\kappa F_z\,\kappa, \qquad F_y = c_\alpha(F_z)\,F_z\,\alpha, \qquad c_\alpha(F_z) = \max\!\big(c_\alpha(1 - s\,df_z),\ 0.1\,c_\alpha\big),\ df_z = \tfrac{F_z - F_{z0}}{F_{z0}}$$
+
+Valid for small slips only (set: $|\kappa| \le 0.03$, $|\alpha| \le 0.04$ rad). With `saturate=True`, the force vector is clipped to $\mu F_z$. This is a crude limit, not a combined-slip model.
+
+### 3.2 Fiala brush (`FialaTyre`, [brush_models.py](../src/vehicle_model/tire_model/brush_models.py))
+
+Isotropic brush model with a parabolic pressure distribution (Pacejka 2012, ch. 3), using the theoretical slips $s_x = \kappa/(1+\kappa)$ and $s_y = \tan\alpha/(1+\kappa)$:
+
+$$\psi = \sqrt{(C_\kappa s_x)^2 + (C_\alpha s_y)^2}, \qquad F = \begin{cases}\psi - \dfrac{\psi^2}{3\mu_{\text{eff}} F_z} + \dfrac{\psi^3}{27\mu_{\text{eff}}^2 F_z^2} & \psi < 3\mu_{\text{eff}} F_z\\ \mu_{\text{eff}} F_z & \text{otherwise}\end{cases}, \qquad (F_x, F_y) = F\,\frac{(C_\kappa s_x,\ C_\alpha s_y)}{\psi}$$
+
+The model uses $C_\alpha = c_\alpha(F_z) F_z$ (load-sensitive as in 3.1), $C_\kappa = c_\kappa F_z$ and $\mu_{\text{eff}} = \mu\,(1 - s_\mu df_z)$. The resultant never exceeds $\mu_{\text{eff}} F_z$. Not modelled: friction drop after the peak, aligning moment, camber.
+
+### 3.3 Simplified combined slip (`SimplifiedCombinedSlipTyre`, [combined_slip.py](../src/vehicle_model/tire_model/combined_slip.py))
+
+This is **not** a Pacejka model. It normalises the slip vector and applies one envelope to both directions:
+
+$$\sigma = \sqrt{(\kappa/\kappa_p)^2 + (\tan\alpha/\tan\alpha_p)^2}, \qquad F = \mu_{\text{eff}} F_z\, g(\sigma), \qquad (F_x, F_y) = F\,\frac{(\kappa/\kappa_p,\ \tan\alpha/\tan\alpha_p)}{\sigma}$$
+
+$g(\sigma) = \sin(1.5\arctan(1.1\sigma))$ up to $\sigma = 1.2$. After that, $g$ falls linearly to the sliding ratio over $\Delta\sigma = 4$. $\tan\alpha_p$ grows with load ($s_p\,df_z$), and $\mu_{\text{eff}}$ falls with load. The resultant stays inside $\mu_{\text{eff}} F_z$. Not modelled: separate $F_x$ and $F_y$ shapes, aligning moment, camber.
+
+### 3.4 Magic Formula 5.2 subset (`MagicFormulaTyre`, [magic_formula.py](../src/vehicle_model/tire_model/magic_formula.py))
+
+Parametrised MF following Pacejka 2012, sec. 4.3.2. The coefficient names follow the book; the ISO sign convention is adapted. All shifts $S_H$ and $S_V$ are zero, so the tyre is symmetric. With $x^* = \tan\alpha$:
+
+$$y(x) = D\sin\!\big(C\arctan(Bx - E(Bx - \arctan Bx))\big)$$
+
+| | $D$ | $C$ | $K = BCD$ | $E$ |
+|---|---|---|---|---|
+| $F_{x0}(\kappa)$ | $(p_{Dx1} + p_{Dx2} df_z)\,\mu F_z$ | $p_{Cx1}$ | $F_z(p_{Kx1} + p_{Kx2} df_z)\,e^{p_{Kx3} df_z}$ | $\min(p_{Ex1} + p_{Ex2} df_z + p_{Ex3} df_z^2,\ 1)$ |
+| $F_{y0}(x^*)$ | $(p_{Dy1} + p_{Dy2} df_z)\,\mu F_z$ | $p_{Cy1}$ | $p_{Ky1} F_{z0}\sin(2\arctan\frac{F_z}{p_{Ky2}F_{z0}})$ | $\min(p_{Ey1} + p_{Ey2} df_z,\ 1)$ |
+
+The road friction $\mu$ acts **on the peak only**. The slip stiffnesses $K$ do not depend on $\mu$, and the peak slips scale with $\mu$.
+
+**Combined slip.** The model applies the MF 5.2 cosine weighting functions to **friction-normalised** slips $\kappa_n = \kappa/\mu$ and $x_n = x^*/\mu$:
+
+$$G_{x\alpha} = \cos\!\big(r_{Cx1}\arctan(r_{Bx1}\cos(\arctan(r_{Bx2}\kappa_n))\,x_n)\big), \qquad G_{y\kappa} = \cos\!\big(r_{Cy1}\arctan(r_{By1}\cos(\arctan(r_{By2}x_n))\,\kappa_n)\big)$$
+
+$$(F_x', F_y') = (G_{x\alpha}F_{x0},\ G_{y\kappa}F_{y0}), \qquad e = \sqrt{(F_x'/D_x)^2 + (F_y'/D_y)^2}, \qquad (F_x, F_y) = \frac{(F_x', F_y')}{\max(1, e)}$$
+
+This differs from MF 5.2 in two documented ways:
+
+1. **Normalised slips.** In MF 5.2 the coupling would act at a different fraction of the peak on each road, and the resultant would exceed the ellipse by up to about 35 % at $\mu = 0.3$. With the normalisation, the combined-slip map is self-similar in $\mu$: $F(\mu\kappa, \arctan(\mu\tan\alpha); \mu) = \mu F(\kappa, \alpha; 1)$. The same holds in brush theory.
+2. **Ellipse limiter.** $G = 1 - O(s^2)$ while the other force grows linearly. Once one slip is near its peak, any additional slip pushes the resultant beyond the ellipse (by up to about 10 %). The limiter scales the force vector radially back onto the ellipse, so the force rotates instead of growing. Pure slip is unaffected. The limiter is continuous, but its **derivative jumps** where it engages. At $F_{z0}$ it is active on about 40 % of the range $|\alpha| \le 6°$, $|\kappa| \le 0.1$, mostly with an overshoot of a few percent. Linearisations and gradient-based controllers see a kink there.
+
+$r_{Cx1}, r_{Cy1} \le 1$ is enforced, so $G \ge 0$ and forces never reverse direction.
+
+**Aligning moment** (pure side slip; under combined slip with the equivalent slip angle):
+
+$$\alpha_{eq} = \operatorname{sgn}(x^*)\sqrt{x^{*2} + (K_x/K_y)^2\kappa^2}, \qquad t = D_t\cos\!\big(C_t\arctan(B_t\alpha_{eq} - E_t(B_t\alpha_{eq} - \arctan B_t\alpha_{eq}))\big)\cos\alpha, \qquad M_z = -t\,F_y$$
+
+with $D_t = F_z\frac{R_0}{F_{z0}}(q_{Dz1} + q_{Dz2} df_z)$, $B_t = q_{Bz1} + q_{Bz2} df_z$, $C_t = q_{Cz1}$ and $E_t = \min(q_{Ez1} + q_{Ez2} df_z, 1)$. Not modelled: the lever-arm term $s\,F_x$, the residual moment $M_{zr}$, camber, turn slip, inflation pressure, rolling-resistance and overturning moments.
+
+**Parameter set `magic_formula_passenger_synthetic`** (synthetic; the values give textbook magnitudes):
+
+| $F_z$ | $C_\alpha/F_z$ | $C_\kappa/F_z$ | peak $\mu_y$ at $\alpha$ | peak $\mu_x$ at $\kappa$ | trail at $\alpha \to 0$ | peak $\lvert M_z\rvert$ |
+|---|---|---|---|---|---|---|
+| 2 kN | 21.9 /rad | 22.1 | 1.05 at 6.3° | 1.04 at 0.10 | 1.6 cm | 25 N m |
+| 4 kN ($F_{z0}$) | 18.0 /rad | 20.0 | 1.00 at 7.3° | 1.00 at 0.11 | 3.1 cm | 86 N m |
+| 7 kN | 12.1 /rad | 17.2 | 0.93 at 10.0° | 0.94 at 0.12 | 5.0 cm | 202 N m |
+
+### 3.5 Legacy Pacejka adapter (`PacejkaTyre`, [pacejka.py](../src/vehicle_model/tire_model/pacejka.py))
+
+The adapter evaluates the lateral MF from the YAML coefficient sets in `tire_model/tire_data/yamls/` (via `magic_formula_lateral.py`). It removes the force at zero slip, so the tyre is symmetric. Known limitations (audit 4.6; also listed in the parameter sets):
+
+- $F_y$ is clipped hard at $\mu F_z$. It reaches that limit at about 2–3° ($C_\alpha/F_z \approx 33$ /rad at $F_{z0}$). There is no peak and no sliding range.
+- $F_x = \operatorname{sgn}(\kappa)\min(c_\kappa F_z|\kappa|, \mu F_z)$: linear up to a hard limit.
+- $\mu$ multiplies the whole lateral curve, so the cornering stiffness scales with $\mu$. This is physically wrong.
+- The combined slip uses a friction circle; a scalar loop runs over the wheels (slow).
+
+The adapter remains the default tyre of the existing scenarios. For new work, use `magic_formula_passenger_synthetic`.
 
 ---
 
-### 3.3 Simplified Combined Slip Tyre (`SimplifiedCombinedSlipTyre`)
+## 4. Transient behaviour: relaxation length
 
-This model normalizes longitudinal slip ratio $\kappa$ and lateral slip angle $\alpha$ into a unified 2D slip vector $\mathbf{s}$:
+[`relaxation.py`](../src/vehicle_model/tire_model/relaxation.py) (`TyreRelaxation`) uses first-order relaxation in **deflection form** (Pacejka 2012, sec. 7.2):
 
-$$s = \sqrt{\left(\frac{\kappa}{\kappa_{\text{peak}}}\right)^2 + \left(\frac{\alpha}{\alpha_{\text{peak}}}\right)^2}$$
+$$\sigma_\kappa\,\dot\kappa' = (\omega R - v_{w,x}) - V_{\text{ref}}\,\kappa', \qquad \sigma_\alpha\,\dot s' = -v_{w,y} - V_x\,s' \quad (s' = \tan\alpha')$$
 
-The total normalized force magnitude $F_{\text{total}}$ is evaluated via a modified hyperbolic saturation curve:
-$$F_{\text{total}} = \mu F_z \frac{2}{\pi} \arctan\left(\frac{\pi}{2} s\right)$$
+with $V_{\text{ref}} = \max(|v_{w,x}|, |\omega R|, v_\epsilon)$ and $V_x = \max(|v_{w,x}|, v_\epsilon)$.
 
-Decomposing along the longitudinal and lateral slip directions:
-$$\begin{aligned}
-F_x &= F_{\text{total}} \frac{\kappa / \kappa_{\text{peak}}}{s} \\
-F_y &= F_{\text{total}} \frac{\alpha / \alpha_{\text{peak}}}{s}
-\end{aligned}$$
+- The steady states are **exactly** the quasi-static slips of section 1.
+- At constant speed, a slip step responds as $1 - e^{-x/\sigma}$ over the rolled distance $x$, independent of speed. This is a low-pass with time constant $\sigma/V$.
+- Unlike the form $\dot\alpha = \tfrac{V}{\sigma}(\alpha_{ss} - \alpha)$, the deflection form stays well posed at standstill.
+- Defaults (synthetic): $\sigma_\kappa = 0.10$ m, $\sigma_\alpha = 0.40$ m.
+- Limits: constant relaxation lengths (no load or slip dependence), no carcass mass, valid only up to about 10 Hz and for wavelengths above about $2\pi\sigma$.
 
-By construction, this formulation **strictly satisfies Kamm's friction circle** $\sqrt{F_x^2 + F_y^2} \le \mu F_z$ everywhere in the operating envelope.
+**Vehicle integration.** [`seven_dof_transient.py`](../src/vehicle_model/vehicle_models/seven_dof_transient.py) adds `TransientSevenDOFModel` (opt-in). The slips become states: 10 base states, plus $\kappa'$ (4), plus $\tan\alpha'$ (4), giving 18. Two hooks in `SevenDOFModel` (`_slips`, `_extra_derivatives`) supply them. Tyre models, loads, and body and wheel equations stay unchanged. The sub-stepping bound covers the coupled wheel/relaxation eigenvalue $|\lambda| \le V/\sigma_\kappa + \sqrt{C_\kappa R^2/(I_w\sigma_\kappa)}$. Use `steady_slip_state(state, u)` to set consistent initial values.
 
----
+Step steer at 20 m/s with MF tyres (`examples/tyre_models_m3_demo.py`):
 
-### 3.4 Pacejka Magic Formula 6.2 Tyre (`PacejkaTyre`)
+| $\sigma_\alpha$ | yaw rate at 20 ms (relative to quasi-static) | peak (relative) | value at 0.6 s (relative) |
+|---|---|---|---|
+| 0.2 m | 0.63 | 1.002 | 0.999 |
+| 0.4 m | 0.42 | 1.006 | 0.998 |
+| 0.8 m | 0.25 | 1.040 | 0.992 |
 
-The flagship high-fidelity model implements the industry-standard Pacejka Magic Formula trigonometric function:
-
-$$y(x) = D \sin\left(C \arctan\left(B x - E(B x - \arctan(Bx))\right)\right)$$
-
-Where:
-- $B$: Stiffness factor
-- $C$: Shape factor ($C \approx 1.30-1.65$)
-- $D = \mu F_z$: Peak force factor
-- $E$: Curvature factor ($E \le 1.0$)
-
-#### 3.4.1 Load-Dependent Lateral Parameters
-$$\begin{aligned}
-D_y &= \mu_y F_z \\
-C_y &= p_{Cy1} \\
-B_y &= \frac{K_{y0}}{C_y D_y} = \frac{p_{Ky1} F_{z0} \sin\left(2 \arctan(F_z / (p_{Ky2} F_{z0}))\right)}{C_y D_y} \\
-E_y &= \left(p_{Ey1} + p_{Ey2} df_z\right) \left[1 - p_{Ey3} \operatorname{sgn}(\alpha)\right]
-\end{aligned}$$
-Where $df_z = (F_z - F_{z0}) / F_{z0}$ is normalized load deflection.
-
-#### 3.4.2 Combined Slip Longitudinal Reduction
-When braking or driving while cornering, available lateral grip degrades according to the friction ellipse:
-$$F_y = F_{y0} \sqrt{\max\left(0.0, 1.0 - \left(\frac{F_x}{\mu F_z}\right)^2\right)}$$
+The slip builds up with a delay, so the early yaw rate is lower. The lag also reduces yaw damping, which shows as a larger overshoot. The steady state is the same; the run lasts only 0.6 s, so the last column has not fully settled yet.
 
 ---
 
-## 4. Automated Diagnostic Plotting Suite
+## 5. Verification
 
-Generate the full 8-panel diagnostic characterization suite across variable vertical loads ($F_z \in [2\text{ kN}, 8\text{ kN}]$) and friction surfaces ($\mu \in [0.2, 1.0]$):
+| Test | Checks |
+|---|---|
+| [test_tire_framework.py](../tests/vehicle_model/test_tire_framework.py) | all models: provenance, $\lvert F\rvert \le \mu F_z$ at $F_z$ = 4 kN, zero force without slip, load or friction, combined-slip reduction, $C_\kappa > 0$ |
+| [test_magic_formula.py](../tests/vehicle_model/test_magic_formula.py) | stiffnesses = analytical values and independent of $\mu$; peak = $D$ with friction drop; peak slip $\propto \mu$; ellipse on the grid ($F_z$ 1.5–7 kN, $\mu$ 0.2–1); self-similarity in $\mu$; limiter does not touch pure slip and is continuous; odd symmetry and signs; trail at $\alpha \to 0$ and $M_z$ sign change; contact loss; swappable in the 7-DOF model |
+| [test_tyre_relaxation.py](../tests/vehicle_model/test_tyre_relaxation.py) | analytical step response over distance (5 and 30 m/s); steady state = quasi-static slips (rel. 1e-14); standstill; base derivative reproduced; delayed build-up; first-order convergence to the base model as $\sigma \to 0$; low-speed launch |
+| [test_regression_baseline.py](../tests/vehicle_model/test_regression_baseline.py) | force grids of all bundled tyre sets |
+
+## 6. Plots
 
 ```bash
-python -m vehicle_model.tire_model.plots --all
+python -m vehicle_model.tire_model.plots --all          # 8-panel figure per tyre set: output/tyres/<name>_curves.png
+python examples/tyre_models_m3_demo.py                  # MF Mz, combined slip, mu self-similarity, relaxation: output/tyres/tyre_models_m3.png
 ```
-
-Outputs high-definition publication-quality curves to `output/tyres/`:
-1. `fy_vs_alpha.png`: Lateral force saturation curves
-2. `fx_vs_kappa.png`: Longitudinal traction/braking curves
-3. `kamm_friction_circle.png`: Combined slip coupling envelopes
-4. `self_aligning_torque.png`: Pneumatic trail and aligning torque curves
-5. `load_sensitivity.png`: Vertical load degressivity demonstration
-
----
-
-## 5. Source Code Cross-Reference
-
-| Model | Class Name | Source File | Configuration YAML |
-| :--- | :--- | :--- | :--- |
-| **Linear Tyre** | `LinearTyre` | [linear_tire.py](../src/vehicle_model/tire_model/linear_tire.py) | [linear_passenger_synthetic.yaml](../configs/tyres/linear_passenger_synthetic.yaml) |
-| **Fiala Brush Tyre** | `FialaTyre` | [fiala_tire.py](../src/vehicle_model/tire_model/fiala_tire.py) | [fiala_passenger_synthetic.yaml](../configs/tyres/fiala_passenger_synthetic.yaml) |
-| **Simplified Combined** | `SimplifiedCombinedSlipTyre` | [simplified_combined.py](../src/vehicle_model/tire_model/simplified_combined.py) | [simplified_combined_synthetic.yaml](../configs/tyres/simplified_combined_synthetic.yaml) |
-| **Pacejka MF 6.2** | `PacejkaTyre` | [pacejka_tire.py](../src/vehicle_model/tire_model/pacejka_tire.py) | [pacejka_front_synthetic.yaml](../configs/tyres/pacejka_front_synthetic.yaml) |

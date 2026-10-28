@@ -101,7 +101,7 @@ All detailed theoretical formulations, mathematical derivations, component guide
 | **Index** | [Documentation Hub](docs/index.md) | Complete documentation index, architectural sitemap, thematic index, and A–Z master index |
 | **01** | [System Architecture & ISO 8855](docs/ARCHITECTURE.md) | Intermediate vehicle axis system, coordinate frames, sign conventions, and config schemas |
 | **02** | [Multi-Body Vehicle Models](docs/VEHICLE_MODELS.md) | 7-DOF two-track non-linear plant, 14-DOF full chassis, dynamic load transfer, and bicycle models |
-| **03** | [Interchangeable Tyre Models](docs/TYRE_MODELS.md) | Mandatory `TyreProvenance`, Linear, Fiala brush, Kamm circle, and Pacejka MF 6.2 models |
+| **03** | [Interchangeable Tyre Models](docs/TYRE_MODELS.md) | Mandatory `TyreProvenance`; linear, Fiala brush, simplified combined slip, Magic Formula 5.2 subset (with aligning moment) and first-order relaxation |
 | **04** | [Actuator Physics & Braking Systems](docs/ACTUATORS.md) | EPS steering lag/rate limits, 4-motor EV inverter envelope, and BBW regen blending |
 | **05** | [Integrated Chassis Control](docs/CHASSIS_CONTROL.md) | IVMC architecture, active torque vectoring, phase-plane envelope control, and ARSDC |
 | **06** | [Allradlenkung & Hinterachslenkung (4WS)](docs/REAR_WHEEL_STEERING.md) | Counter-phase, in-phase, analytical zero-sideslip condition ($\beta \to 0$), 2D LUT map |
@@ -120,7 +120,7 @@ All detailed theoretical formulations, mathematical derivations, component guide
 ## Platform Highlights
 
 - **Multi-Body Dynamics Plants:** Non-linear 7-DOF two-track chassis with exact vertical load conservation ($\sum F_{z,i} \equiv mg$ to $< 10^{-11}\text{ N}$) and coupled 14-DOF full vehicle ride, pitch, and roll dynamics.
-- **Interchangeable Tyre Framework:** Full provenance tracking (`TyreProvenance`) across `LinearTyre`, `FialaTyre`, `SimplifiedCombinedSlipTyre`, and `PacejkaTyre` (Magic Formula 6.2).
+- **Interchangeable Tyre Framework:** Full provenance tracking (`TyreProvenance`) across `LinearTyre`, `FialaTyre`, `SimplifiedCombinedSlipTyre`, `MagicFormulaTyre` (MF 5.2 subset with aligning moment) and the legacy `PacejkaTyre` adapter; optional first-order tyre relaxation (`TransientSevenDOFModel`).
 - **Physical Actuator Dynamics:** Models EPS first-order lag ($\tau = 45\text{ ms}$), slew rate limits ($60^\circ/\text{s}$), pure transport delay ($\tau_d = 25\text{ ms}$), 4-motor EV field-weakening envelope, and brake-by-wire asymmetric ABS pressure rates.
 - **Active Chassis Control:** Integrated Vehicle Motion Control (IVMC) combining feedforward steady-state steering, feedback PID/LQR yaw damping, 4WS speed scheduling, and constrained torque vectoring.
 - **Handling Limits & Understeer Evaluation (ISO 4138):** Full circular steady-state driving test measuring understeer gradient $K_{\text{us}}(a_y)$, Ackermann reference line, characteristic speed $v_{\text{char}}$, critical speed $v_{\text{crit}}$, and combined G-G acceleration envelopes.
@@ -157,7 +157,7 @@ Vehicle-Dynamics/
 │   ├── index.md                       # Master documentation index and sitemap
 │   ├── ARCHITECTURE.md                # System architecture, ISO 8855, and coordinate conventions
 │   ├── VEHICLE_MODELS.md              # 7-DOF two-track, 14-DOF full vehicle, and bicycle equations
-│   ├── TYRE_MODELS.md                 # Interchangeable tyre framework, Kamm circle & Pacejka MF
+│   ├── TYRE_MODELS.md                 # Tyre models, combined slip, MF 5.2 subset, relaxation
 │   ├── ACTUATORS.md                   # EPS steering, 4-motor EV powertrain, and brake-by-wire
 │   ├── CHASSIS_CONTROL.md             # IVMC, 4WS speed scheduling, phase-plane envelope & ARSDC
 │   ├── REAR_WHEEL_STEERING.md         # Coordinated 4WS, virtual wheelbase, counter/in-phase
