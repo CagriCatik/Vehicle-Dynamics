@@ -108,3 +108,26 @@ def test_monte_carlo_is_repeatable_and_counts_violations():
     st = a.statistics["max_sideslip_deg"]
     assert st["min"] <= st["p5"] <= st["p50"] <= st["p95"] <= st["max"]
     assert len(a.table()) == 4 and "mu" in a.table()[0]
+
+
+# ----------------------------------------------------------------------------- closed loop with an observer
+def test_estimated_feedback_rejects_observers_with_ground_truth():
+    from vehicle_model.controllers.estimated_feedback import EstimatedStateFeedback
+    from vehicle_model.controllers.motion_control import MotionController
+    from vehicle_model.controllers.yaw_laws import YawRatePI
+    p = _model().params
+    with pytest.raises(ValueError):
+        EstimatedStateFeedback(MotionController(p, YawRatePI()), RoadFrictionEstimator(p))
+
+
+@pytest.mark.slow
+def test_yaw_control_with_sensors_and_observer_still_meets_the_limits():
+    from vehicle_model.controllers.estimated_feedback import EstimatedStateFeedback
+    from vehicle_model.controllers.motion_control import MotionController
+    from vehicle_model.controllers.yaw_laws import YawRatePI
+    from vehicle_model.simulation.controller_benchmark import run_scenario, sine_with_dwell_scenario
+    plant = lambda road: SevenDOFModel.from_yaml(VEHICLE, tyre_name=MF, tyre_rear_name=MF,
+                                                 kc_config="configs/suspension/kc_reference_passenger_car.yaml", road=road)
+    ctrl = lambda p: EstimatedStateFeedback(MotionController(p, YawRatePI()), BlendedSideslipObserver(p), seed=5)
+    k = run_scenario(plant, ctrl, sine_with_dwell_scenario()).kpis
+    assert k["yaw_rate_ratio_1s"] <= 0.35 and k["yaw_rate_ratio_1_75s"] <= 0.20 and k["lateral_displacement"] >= 1.83
