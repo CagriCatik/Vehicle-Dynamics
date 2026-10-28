@@ -124,7 +124,9 @@ Abweichungen zwischen 7-DOF- und Linearmodell, je Geschwindigkeit:
 
 Das 7-DOF-Modell antwortet etwa 4 ms langsamer, passend zu der zusätzlichen Rad- und Lastverlagerungsdynamik.
 
-**Stationäre Kreisfahrt (ISO 4138, R = 40 m, 7-DOF):** Bei $a_y$ = 0,5…1,0 m/s² trifft der simulierte Lenkwinkel die lineare Vorhersage $L/R + EG\,a_y$ auf 2 % (Test `test_steady_state_circle_matches_linear_reference_at_small_ay`, Marker `slow`). Der Eigenlenkgradient des 7-DOF-Modells wächst mit $a_y$: etwa 0,42 °/g bei 0,05–0,15 g und etwa 0,82 °/g bei 0,15–0,3 g (auf den tatsächlichen Radius korrigiert). Ursache sind Radlastverlagerung und lastabhängige Reifen bei 60 % Wanksteifigkeit vorn. Das lineare $EG$ = 0,51 °/g ist der Grenzwert für $a_y \to 0$.
+**Stationäre Kreisfahrt (ISO 4138, R = 40 m, 7-DOF):** Bei $a_y$ = 0,5…1,0 m/s² trifft der simulierte Lenkwinkel die lineare Vorhersage $L/R + EG\,a_y$ auf 2 % (Test `test_steady_state_circle_matches_linear_reference_at_small_ay`, Marker `slow`). Der Eigenlenkgradient des 7-DOF-Modells wächst mit $a_y$. Das lineare $EG$ = 0,51 °/g ist der Grenzwert für $a_y \to 0$. Eine quasistationäre Lenkrampe bei konstanter Geschwindigkeit (90 km/h, 0,25 °/s, M4) ergibt 0,58 °/g bei 0,05–0,15 g, 0,75 °/g bei 0,15–0,3 g und 1,28 °/g bei 0,3–0,5 g. Ursache sind Radlastverlagerung und lastabhängige Reifen bei 60 % Wanksteifigkeit vorn.
+
+*Korrektur (M4):* Hier stand zuvor „etwa 0,42 °/g bei 0,05–0,15 g“ aus der Kreisfahrt. Dieser Wert liegt unter dem Grenzwert für $a_y \to 0$ und widerspricht damit dem Anstieg. Er war ein Artefakt der Radiusdrift der Kreisfahrt-Regelung bei kleinem $a_y$ (siehe Hinweis unten). Siehe `docs/CHASSIS_KINEMATICS.md`.
 
 > [!NOTE]
 > `evaluate_understeer_gradient` fittet standardmäßig über 0,05…0,4 g und mischt damit diesen nichtlinearen Anstieg in einen Einzelwert (für das Referenzfahrzeug 0,66 °/g statt 0,51 °/g). Zusätzlich hält die Kreisfahrt-Regelung den Radius bei kleinen $a_y$ nur auf etwa 1,3 m genau. Für Vergleiche mit der linearen Referenz deshalb einen kleinen Fitbereich wählen und den tatsächlichen Radius verwenden.

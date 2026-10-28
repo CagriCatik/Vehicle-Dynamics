@@ -28,3 +28,4 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **13** | Split-Mu Dynamik & Multi-Mu Benchmark-Matrix | [SPLIT_MU_DYNAMICS.md](SPLIT_MU_DYNAMICS.md) |
 | **14** | Visualisierung, Telemetrie & GIF-Engine | [VISUALIZATION_GUIDE.md](VISUALIZATION_GUIDE.md) |
 | **15** | Literatur- und Quellenverzeichnis | [REFERENCES.md](REFERENCES.md) |
+| **16** | Lenkgeometrie, Fahrwerks-K&C, Rollzentren, Eigenlenkbudget (M4) | [CHASSIS_KINEMATICS.md](CHASSIS_KINEMATICS.md) |

@@ -4,7 +4,7 @@
 **Entwicklungsansatz:** Simulation-First / Virtual Engineering  
 **Zielplattform:** Generisches, realistisch skaliertes Pkw-Modell  
 **Repository:** https://github.com/CagriCatik/Vehicle-Dynamics  
-**Projektstatus:** M0 bis M3 abgeschlossen; nächster Meilenstein M4. Ist-Zustand siehe `docs/AUDIT.md`, M1-Bericht siehe `docs/HANDLING_ANALYSIS.md`, M2 (Kontakt und Bilanzen) siehe `docs/VEHICLE_MODELS.md`, Abschnitt 2.3, M3 (Reifen) siehe `docs/TYRE_MODELS.md`
+**Projektstatus:** M0 bis M4 abgeschlossen; nächster Meilenstein M5. Ist-Zustand siehe `docs/AUDIT.md`, M1-Bericht siehe `docs/HANDLING_ANALYSIS.md`, M2 (Kontakt und Bilanzen) siehe `docs/VEHICLE_MODELS.md`, Abschnitt 2.3, M3 (Reifen) siehe `docs/TYRE_MODELS.md`, M4 (Kinematik) siehe `docs/CHASSIS_KINEMATICS.md`
 
 ---
 
