@@ -28,7 +28,9 @@ Known limitations (fixed constants, not configurable yet):
   * front steer clamp +-30 deg inside the prediction model, speed clamp 0..15 m/s,
     LUT speed clamp 0..20 m/s
   * obstacle barrier weight 80, minimum horizon step 0.05 s
-  * SLSQP non-convergence is not reported as a failure status
+
+Solver outcome: every solve is classified by :mod:`.solver_diagnostics`
+(nominal / suboptimal / fallback / degraded) and reported as the output status.
 """
 
 from __future__ import annotations
@@ -49,6 +51,7 @@ from vehicle_model.controllers.framework import (
     ControlTarget,
     VehicleController,
 )
+from vehicle_model.controllers.solver_diagnostics import SolverMonitor
 from vehicle_model.core.types import SevenDOFParams, SevenDOFState, WheelTelemetry
 from vehicle_model.steering.lut import LookupTable, load_lookup_table
 
@@ -337,6 +340,8 @@ class SLSQPPathTrackingNMPC:
         self.u1 = np.zeros(self.N, dtype=float)  # Accel sequence
         self.u2 = np.zeros(self.N, dtype=float)  # Front steer sequence
         self.history_f: list[float] = []
+        self.monitor = SolverMonitor()
+        self.last_report = None
 
     def set_target_v(self, v: float) -> None:
         """Update desired vehicle longitudinal speed."""
@@ -347,6 +352,8 @@ class SLSQPPathTrackingNMPC:
         self.u1 = np.zeros(self.N, dtype=float)
         self.u2 = np.zeros(self.N, dtype=float)
         self.history_f.clear()
+        self.monitor.reset()
+        self.last_report = None
 
     def calc_input(
         self,
@@ -365,16 +372,24 @@ class SLSQPPathTrackingNMPC:
         bounds = [(-u_a_max, u_a_max)] * self.N + [(-u_steer_max, u_steer_max)] * self.N
         u_guess = np.concatenate([self.u1, self.u2])
 
+        args = (x, y, yaw, v, dt, self.init_x, self.config, self.steering_lut)
+        t_solve = time.perf_counter()
         res = minimize(
             _mpc_cost,
             u_guess,
-            args=(x, y, yaw, v, dt, self.init_x, self.config, self.steering_lut),
+            args=args,
             method="SLSQP",
             bounds=bounds,
             options={"maxiter": 100, "ftol": 1e-5},
         )
+        solve_ms = (time.perf_counter() - t_solve) * 1e3
 
-        if res.success or (self.history_f and res.fun < self.history_f[-1] * 1.2) or not self.history_f:
+        # Use the solution if it converged or improves on the warm start (see solver_diagnostics)
+        self.last_report = self.monitor.classify(
+            bool(res.success), res.x, float(res.fun), float(_mpc_cost(u_guess, *args)),
+            str(res.message), int(getattr(res, "nit", 0)), solve_ms,
+        )
+        if self.last_report.accepted:
             u_opt = res.x
             self.u1 = np.clip(u_opt[: self.N], -u_a_max, u_a_max)
             self.u2 = np.clip(u_opt[self.N :], -u_steer_max, u_steer_max)
@@ -486,11 +501,12 @@ class NMPCPathTrackingController:
             T_brake=t_brake,
             desired_yaw_moment=0.0,
             allocated_yaw_moment=0.0,
-            status="nominal",
+            status=self.controller.last_report.status,
             computation_time_ms=t_elapsed,
             diagnostics={
                 "cmd_ax": cmd_ax,
                 "history_f": self.controller.history_f[-1] if self.controller.history_f else 0.0,
+                "solver": self.controller.last_report.as_dict(),
             },
         )
 

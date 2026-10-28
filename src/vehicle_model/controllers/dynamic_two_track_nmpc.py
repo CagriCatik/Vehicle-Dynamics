@@ -20,6 +20,9 @@ Features:
    rolled out with RK4) with a shifted warm start.
 4. Active four-wheel steering (4WS) and direct yaw moment coordination.
 5. Hard box bounds on input amplitudes; input rates are only penalised in the cost.
+6. Solver outcome classified by :mod:`.solver_diagnostics` (nominal / suboptimal /
+   fallback / degraded) and reported as the output status; ``allocated_yaw_moment``
+   is the moment produced by the (clipped) wheel-torque split, not the demand.
 
 Conforms to Plan.md §4.3, §5, §10.2, §19.
 """
@@ -41,7 +44,9 @@ from vehicle_model.controllers.framework import (
     ControlTarget,
     VehicleController,
 )
+from vehicle_model.controllers.solver_diagnostics import SolverMonitor
 from vehicle_model.core.types import FL, FR, RL, RR, SevenDOFParams, SevenDOFState, WheelTelemetry
+from vehicle_model.vehicle_models.normal_loads import wheel_contact_positions
 
 
 @dataclass
@@ -79,6 +84,8 @@ class DynamicNMPCConfig:
     # Solver parameters
     max_iter: int = 25                   # Max optimizer iterations
     tolerance: float = 1e-3              # Solver tolerance
+    max_consecutive_failures: int = 5    # non-nominal solves in a row before status "degraded"
+    time_budget_ms: Optional[float] = None  # reported if exceeded (SLSQP cannot be interrupted)
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "DynamicNMPCConfig":
@@ -110,6 +117,8 @@ class DynamicNMPCConfig:
             w_kamm_circle=float(cfg.get("w_kamm_circle", 50.0)),
             max_iter=int(cfg.get("max_iter", 25)),
             tolerance=float(cfg.get("tolerance", 1e-3)),
+            max_consecutive_failures=int(cfg.get("max_consecutive_failures", 5)),
+            time_budget_ms=None if cfg.get("time_budget_ms") is None else float(cfg["time_budget_ms"]),
         )
 
 
@@ -131,15 +140,17 @@ class DynamicTwoTrackNMPC(VehicleController):
         # Warm start solution cache
         self.u_prev = np.zeros(self.n_dec, dtype=np.float64)
         self.last_u = np.zeros(self.n_inputs, dtype=np.float64)
+        self.monitor = SolverMonitor(self.config.max_consecutive_failures, self.config.time_budget_ms)
 
     @property
     def name(self) -> str:
         return "Dynamic Two-Track NMPC (Combined-Slip & 4WS)"
 
     def reset(self) -> None:
-        """Reset warm-start state."""
+        """Reset warm-start state and solver statistics."""
         self.u_prev.fill(0.0)
         self.last_u.fill(0.0)
+        self.monitor.reset()
 
     def continuous_dynamics(
         self,
@@ -369,6 +380,7 @@ class DynamicTwoTrackNMPC(VehicleController):
             return float(cost)
 
         # Solve nonlinear OCP
+        t_solve = time.perf_counter()
         res = minimize(
             fun=cost_function,
             x0=u_init,
@@ -376,15 +388,15 @@ class DynamicTwoTrackNMPC(VehicleController):
             bounds=bounds,
             options={"maxiter": cfg.max_iter, "ftol": cfg.tolerance, "disp": False},
         )
+        solve_ms = (time.perf_counter() - t_solve) * 1e3
 
-        # In real-time NMPC / RTI, accept candidate solution if it improved or maintained cost
+        # Use the solution if it converged or at least improves on the warm start (see solver_diagnostics)
         cost_init = cost_function(u_init)
-        if hasattr(res, "x") and not np.isnan(res.x).any() and cost_function(res.x) <= cost_init + 1e-3:
-            u_opt = res.x
-        elif res.success:
-            u_opt = res.x
-        else:
-            u_opt = u_init
+        x_res = getattr(res, "x", None)
+        cost_res = cost_function(x_res) if x_res is not None and np.all(np.isfinite(x_res)) else float("nan")
+        report = self.monitor.classify(bool(res.success), x_res, cost_res, cost_init, str(res.message),
+                                       int(getattr(res, "nit", 0)), solve_ms)
+        u_opt = x_res if report.accepted else u_init
         self.u_prev = u_opt.copy()
 
         # First control action: [delta_f, delta_r, Mz_tv, ax_req]
@@ -416,6 +428,12 @@ class DynamicTwoTrackNMPC(VehicleController):
             T_brake[RL] = max(0.0, base_brake + diff_brake)
             T_brake[RR] = max(0.0, base_brake - diff_brake)
 
+        # Yaw moment actually produced by the clipped torque split (not the demand)
+        pos = wheel_contact_positions(self.params)
+        steer = np.array([delta_f_cmd, delta_f_cmd, delta_r_cmd, delta_r_cmd])
+        F = (T_drive - T_brake) / self.params.Reff
+        Mz_achieved = float(np.sum((pos[:, 0] * np.sin(steer) - pos[:, 1] * np.cos(steer)) * F))
+
         t_elapsed = (time.perf_counter() - t0) * 1000.0
         _, kamm_0 = self.rk4_step(x0, u_0, dt_p, mu_cur)
         return ControlOutput(
@@ -424,12 +442,14 @@ class DynamicTwoTrackNMPC(VehicleController):
             T_drive=T_drive,
             T_brake=T_brake,
             desired_yaw_moment=Mz_tv_cmd,
-            allocated_yaw_moment=Mz_tv_cmd,
-            status="nominal",
+            allocated_yaw_moment=Mz_achieved,
+            status=report.status,
             computation_time_ms=t_elapsed,
             diagnostics={
                 "kamm_utilization": kamm_0,
                 "peak_kamm": float(np.max(kamm_0)),
-                "solver_iterations": int(getattr(res, "nit", 0)),
+                "solver_iterations": report.iterations,
+                "solver": report.as_dict(),
+                "solver_counts": dict(self.monitor.counts),
             },
         )
