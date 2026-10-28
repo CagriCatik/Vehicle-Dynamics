@@ -107,3 +107,16 @@ def test_tyre_slip_stiffness_positive(tyre_instance):
     """Initial slip stiffness dFx/dkappa must be positive for positive load."""
     stiffness = tyre_instance.slip_stiffness(3000.0, 1.0)
     assert float(stiffness) > 0.0
+
+
+def test_tyre_lateral_force_is_odd_in_slip_angle_at_any_longitudinal_slip(tyre_instance):
+    """Symmetric tyres: Fy(kappa, -alpha) = -Fy(kappa, alpha), so Fy(kappa, 0) = 0 (no pull when braking).
+
+    The legacy Pacejka adapter only removed the offset at kappa = 0 and produced up to
+    ~320 N lateral force per tyre at alpha = 0 under braking (Audit 4.6).
+    """
+    kappas = np.array([-0.3, -0.1, -0.03, 0.0, 0.03, 0.1, 0.3])
+    for a in np.radians([0.0, 0.5, 2.0, 6.0]):
+        _, fy_pos = tyre_instance.forces(kappas, np.full(7, a), np.full(7, 3500.0), np.ones(7))
+        _, fy_neg = tyre_instance.forces(kappas, np.full(7, -a), np.full(7, 3500.0), np.ones(7))
+        assert np.allclose(fy_pos, -fy_neg, atol=1e-6), f"alpha={np.degrees(a):.1f} deg"

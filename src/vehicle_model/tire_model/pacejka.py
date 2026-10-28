@@ -96,20 +96,23 @@ class PacejkaTyre:
             fy_mf, _ = self._mf.calculateFy()
 
             if self.params.symmetric and abs(self.params.camber) < 1e-6:
-                # Subtract zero-slip conicity / ply-steer offset (SVy / SHy)
+                # Symmetric tyre: keep the odd part in alpha, (Fy(a) - Fy(-a))/2. This removes the
+                # conicity / ply-steer shifts (SHy, SVy) at every longitudinal slip, so Fy(kappa, 0) = 0.
+                # (Subtracting only Fy(kappa=0, alpha=0) left a lateral pull of up to ~320 N per
+                # tyre under braking or traction; Audit 4.6.)
                 self._mf.online_params(
                     Fz=fz,
                     p=self.params.pressure,
                     gamma=0.0,
-                    kappa=0.0,
-                    alpha=0.0,
+                    kappa=k,
+                    alpha=-a,
                     Vcx=self.params.nominal_vx,
                     tire_select=self.params.yaml_name,
                 )
-                fy_zero, _ = self._mf.calculateFy()
+                fy_mirror, _ = self._mf.calculateFy()
                 # Pacejka MF6.2 formulation uses SAE coordinates (alpha > 0 -> Fy < 0).
                 # Convert to ISO 8855 coordinates (alpha > 0 -> Fy > 0) matching vehicle models.
-                fy_raw = -(float(fy_mf) - float(fy_zero)) * m
+                fy_raw = -0.5 * (float(fy_mf) - float(fy_mirror)) * m
             else:
                 fy_raw = -float(fy_mf) * m
 
