@@ -72,6 +72,7 @@ class SevenDOFModel:
 
     n_states = 10
     n_inputs = 10  # steer_f, steer_r, 4x T_drive, 4x T_brake
+    state_type = SevenDOFState
 
     def __init__(
         self,
@@ -133,6 +134,25 @@ class SevenDOFModel:
         return quasi_static_normal_loads(self.params, ax, ay)
 
     # ---------------------------------------------------------------- dynamics
+    def wheel_velocities(self, state: SevenDOFState, u: SevenDOFControlInput):
+        """``(steer, cos, sin, v_wx, v_wy)``: wheel-centre velocity in each wheel frame [m/s]."""
+        pos = self.wheel_positions
+        steer = np.array([u.steer_f, u.steer_f, u.steer_r, u.steer_r], dtype=float)
+        cos_d, sin_d = np.cos(steer), np.sin(steer)
+        vxb = state.vx - state.r * pos[:, 1]
+        vyb = state.vy + state.r * pos[:, 0]
+        return steer, cos_d, sin_d, vxb * cos_d + vyb * sin_d, -vxb * sin_d + vyb * cos_d
+
+    def _slips(self, state, v_wx, v_wy, v_wheel) -> tuple[np.ndarray, np.ndarray]:
+        """Quasi-static regularised slips ``(kappa, alpha)``; overridden by transient-tyre variants."""
+        kappa = (v_wheel - v_wx) / np.maximum(np.maximum(np.abs(v_wx), np.abs(v_wheel)), _V_EPS)
+        alpha = -np.arctan2(v_wy, np.maximum(np.abs(v_wx), _V_EPS))
+        return kappa, alpha
+
+    def _extra_derivatives(self, state, v_wx, v_wy, v_wheel) -> np.ndarray:
+        """Derivatives of states appended to the 10 base states (none here)."""
+        return np.empty(0)
+
     def _tyre_forces(self, kappa, alpha, Fz, mu):
         Fx_f, Fy_f = self.tyre_front.forces(kappa[:2], alpha[:2], Fz[:2], mu[:2])
         Fx_r, Fy_r = self.tyre_rear.forces(kappa[2:], alpha[2:], Fz[2:], mu[2:])
@@ -149,20 +169,12 @@ class SevenDOFModel:
         road = road or self.road
         vx, vy, r, omega, psi = state.vx, state.vy, state.r, state.omega, state.psi
 
-        steer = np.array([u.steer_f, u.steer_f, u.steer_r, u.steer_r], dtype=float)
         pos = self.wheel_positions
-        cos_d, sin_d = np.cos(steer), np.sin(steer)
-
-        # Wheel-centre velocity in body frame, then in the wheel frame
-        vxb = vx - r * pos[:, 1]
-        vyb = vy + r * pos[:, 0]
-        v_wx = vxb * cos_d + vyb * sin_d
-        v_wy = -vxb * sin_d + vyb * cos_d
+        steer, cos_d, sin_d, v_wx, v_wy = self.wheel_velocities(state, u)
 
         # Regularised slips
         v_wheel = omega * p.Reff
-        kappa = (v_wheel - v_wx) / np.maximum(np.maximum(np.abs(v_wx), np.abs(v_wheel)), _V_EPS)
-        alpha = -np.arctan2(v_wy, np.maximum(np.abs(v_wx), _V_EPS))
+        kappa, alpha = self._slips(state, v_wx, v_wy, v_wheel)
 
         # Friction at contact patches
         c_psi, s_psi = math.cos(psi), math.sin(psi)
@@ -204,7 +216,8 @@ class SevenDOFModel:
         dX = vx * c_psi - vy * s_psi
         dY = vx * s_psi + vy * c_psi
 
-        deriv = np.array([dvx, dvy, dr, *domega, dX, dY, r], dtype=float)
+        deriv = np.concatenate([[dvx, dvy, dr, *domega, dX, dY, r],
+                                self._extra_derivatives(state, v_wx, v_wy, v_wheel)])
         telemetry = WheelTelemetry(
             omega=omega.copy(), v_wx=v_wx, v_wy=v_wy, kappa=kappa, alpha=alpha, Fz=Fz, mu=mu,
             Fx_wheel=Fx_w, Fy_wheel=Fy_w, Fx_body=Fx_b, Fy_body=Fy_b, steer_angles=steer,
@@ -226,7 +239,7 @@ class SevenDOFModel:
 
     def _rk4(self, y0: np.ndarray, u: SevenDOFControlInput, h: float, road: RoadSurface) -> np.ndarray:
         def f(y):
-            return self.evaluate_dynamics(SevenDOFState.from_array(y), u, road)[0]
+            return self.evaluate_dynamics(self.state_type.from_array(y), u, road)[0]
         k1 = f(y0)
         k2 = f(y0 + 0.5 * h * k1)
         k3 = f(y0 + 0.5 * h * k2)
@@ -255,6 +268,6 @@ class SevenDOFModel:
         y = state.to_array()
         for _ in range(n_sub):
             y = self._rk4(y, u_c, h, road)
-        next_state = SevenDOFState.from_array(y)
+        next_state = self.state_type.from_array(y)
         _, tel, _, _ = self.evaluate_dynamics(next_state, u_c, road)
         return next_state, tel

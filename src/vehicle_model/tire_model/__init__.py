@@ -7,6 +7,7 @@ from .combined_slip import (
 )
 from .factory import available_tyres, load_tyre, tyre_from_dict
 from .framework import TyreModel, TyreProvenance
+from .relaxation import TyreRelaxation
 from .magic_formula import MagicFormulaParams, MagicFormulaTyre
 from .magic_formula_lateral import MagicFormulaLateral
 from .pacejka import PacejkaTyre, PacejkaTyreParams
@@ -14,6 +15,7 @@ from .pacejka import PacejkaTyre, PacejkaTyreParams
 __all__ = (
     "TyreModel",
     "TyreProvenance",
+    "TyreRelaxation",
     "LinearTyre",
     "FialaTyre",
     "SimplifiedCombinedSlipTyre",
