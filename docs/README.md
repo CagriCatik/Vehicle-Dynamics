@@ -29,3 +29,4 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **14** | Visualisierung, Telemetrie & GIF-Engine | [VISUALIZATION_GUIDE.md](VISUALIZATION_GUIDE.md) |
 | **15** | Literatur- und Quellenverzeichnis | [REFERENCES.md](REFERENCES.md) |
 | **16** | Lenkgeometrie, Fahrwerks-K&C, Rollzentren, Eigenlenkbudget (M4) | [CHASSIS_KINEMATICS.md](CHASSIS_KINEMATICS.md) |
+| **17** | Schlupfregelung, Control Allocation, ESC/TV (M5) | [CONTROL_ALLOCATION.md](CONTROL_ALLOCATION.md) |

@@ -4,7 +4,7 @@
 **Entwicklungsansatz:** Simulation-First / Virtual Engineering  
 **Zielplattform:** Generisches, realistisch skaliertes Pkw-Modell  
 **Repository:** https://github.com/CagriCatik/Vehicle-Dynamics  
-**Projektstatus:** M0 bis M4 abgeschlossen; nächster Meilenstein M5. Ist-Zustand siehe `docs/AUDIT.md`, M1-Bericht siehe `docs/HANDLING_ANALYSIS.md`, M2 (Kontakt und Bilanzen) siehe `docs/VEHICLE_MODELS.md`, Abschnitt 2.3, M3 (Reifen) siehe `docs/TYRE_MODELS.md`, M4 (Kinematik) siehe `docs/CHASSIS_KINEMATICS.md`
+**Projektstatus:** M0 bis M5 abgeschlossen; nächster Meilenstein M6. Ist-Zustand siehe `docs/AUDIT.md`, M1-Bericht siehe `docs/HANDLING_ANALYSIS.md`, M2 (Kontakt und Bilanzen) siehe `docs/VEHICLE_MODELS.md`, Abschnitt 2.3, M3 (Reifen) siehe `docs/TYRE_MODELS.md`, M4 (Kinematik) siehe `docs/CHASSIS_KINEMATICS.md`, M5 (Allokation, Schlupfregelung) siehe `docs/CONTROL_ALLOCATION.md`
 
 ---
 
@@ -744,11 +744,11 @@ Struktur (Bestand und geplante Ergänzungen):
 | `src/vehicle_model/suspension/` | Fahrwerk und K&C | vorhanden |
 | `src/vehicle_model/actuators/` | Lenk-, Brems- und Antriebsaktuatoren (Antrieb und Bremsen) | vorhanden |
 | `src/vehicle_model/controllers/` | Regler | vorhanden |
-| `src/vehicle_model/allocation/` | Stellgrößenverteilung | geplant |
+| `src/vehicle_model/allocation/` | Stellgrößenverteilung | vorhanden (M5) |
 | `src/vehicle_model/estimation/` | Zustandsbeobachter und virtuelle Sensoren | vorhanden |
 | `src/vehicle_model/roads/` | Fahrbahn | vorhanden |
 | `src/vehicle_model/simulation/` | Simulation Engine und Szenarien | vorhanden |
-| `src/vehicle_model/handling_analysis/` | Eigenlenk- und Stabilitätsanalyse | geplant |
+| `src/vehicle_model/handling_analysis/` | Eigenlenk- und Stabilitätsanalyse | vorhanden (M1) |
 | `src/vehicle_model/verification/` | Physik- und Numerikprüfung | geplant |
 | `src/vehicle_model/experiments/` | Experimentautomatisierung | geplant |
 | `src/vehicle_model/visualization/` | Live- und Offline-Visualisierung | vorhanden |
