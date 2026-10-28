@@ -4,7 +4,7 @@
 **Entwicklungsansatz:** Simulation-First / Virtual Engineering  
 **Zielplattform:** Generisches, realistisch skaliertes Pkw-Modell  
 **Repository:** https://github.com/CagriCatik/Vehicle-Dynamics  
-**Projektstatus:** M0 bis M8 abgeschlossen; nächster Meilenstein M9. Ist-Zustand siehe `docs/AUDIT.md`, M1-Bericht siehe `docs/HANDLING_ANALYSIS.md`, M2 (Kontakt und Bilanzen) siehe `docs/VEHICLE_MODELS.md`, Abschnitt 2.3, M3 (Reifen) siehe `docs/TYRE_MODELS.md`, M4 (Kinematik) siehe `docs/CHASSIS_KINEMATICS.md`, M5 (Allokation, Schlupfregelung) siehe `docs/CONTROL_ALLOCATION.md`, M6 (Regler, Benchmark) siehe `docs/MOTION_CONTROL.md`, M7 (Sensorik, Schätzung, Robustheit) siehe `docs/ESTIMATION_ROBUSTNESS.md`, M8 (Vertikaldynamik) siehe `docs/VERTICAL_DYNAMICS.md`
+**Projektstatus:** M0 bis M9 umgesetzt; offene Punkte siehe `docs/AUDIT.md`, Abschnitt 5. Ist-Zustand siehe `docs/AUDIT.md`, M1-Bericht siehe `docs/HANDLING_ANALYSIS.md`, M2 (Kontakt und Bilanzen) siehe `docs/VEHICLE_MODELS.md`, Abschnitt 2.3, M3 (Reifen) siehe `docs/TYRE_MODELS.md`, M4 (Kinematik) siehe `docs/CHASSIS_KINEMATICS.md`, M5 (Allokation, Schlupfregelung) siehe `docs/CONTROL_ALLOCATION.md`, M6 (Regler, Benchmark) siehe `docs/MOTION_CONTROL.md`, M7 (Sensorik, Schätzung, Robustheit) siehe `docs/ESTIMATION_ROBUSTNESS.md`, M8 (Vertikaldynamik) siehe `docs/VERTICAL_DYNAMICS.md`, M9 (Versuchslabor) siehe `docs/EXPERIMENTS.md`
 
 ---
 
@@ -735,7 +735,7 @@ Struktur (Bestand und geplante Ergänzungen):
 | `configs/controllers/` | Reglerkonfigurationen | vorhanden |
 | `configs/scenarios/` | Virtuelle Fahrmanöver | vorhanden |
 | `configs/{braking,powertrains,steering,suspension,estimators,validation}/` | Subsystem- und Validierungskonfigurationen | vorhanden |
-| `configs/experiments/` | Versuchs- und Vergleichsmatrizen | geplant |
+| `configs/experiments/` | Versuchs- und Vergleichsmatrizen | vorhanden (M9) |
 | `src/vehicle_model/core/` | Gemeinsame Datentypen und Modellverträge | vorhanden |
 | `src/vehicle_model/config/` | Konfigurationsladen und -validierung | vorhanden |
 | `src/vehicle_model/vehicle_models/` | Fahrzeugphysik | vorhanden |
@@ -749,8 +749,8 @@ Struktur (Bestand und geplante Ergänzungen):
 | `src/vehicle_model/roads/` | Fahrbahn | vorhanden |
 | `src/vehicle_model/simulation/` | Simulation Engine und Szenarien | vorhanden |
 | `src/vehicle_model/handling_analysis/` | Eigenlenk- und Stabilitätsanalyse | vorhanden (M1) |
-| `src/vehicle_model/verification/` | Physik- und Numerikprüfung | geplant |
-| `src/vehicle_model/experiments/` | Experimentautomatisierung | geplant |
+| `src/vehicle_model/verification/` | Physik- und Numerikprüfung | umgesetzt als `experiments/verification.py` und in den Tests (M9) |
+| `src/vehicle_model/experiments/` | Experimentautomatisierung | vorhanden (M9) |
 | `src/vehicle_model/visualization/` | Live- und Offline-Visualisierung | vorhanden |
 | `examples/` | Demonstratoren | vorhanden |
 | `tests/` | Automatisierte Tests | vorhanden |

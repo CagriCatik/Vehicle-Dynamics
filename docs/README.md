@@ -33,3 +33,4 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **18** | Reglerbibliothek (PI, LQR, GS-LQR, LTV-MPC), Solverdiagnostik, Benchmark (M6) | [MOTION_CONTROL.md](MOTION_CONTROL.md) |
 | **19** | Virtuelle Sensoren, Schwimmwinkelbeobachter, Monte-Carlo-Robustheit (M7) | [ESTIMATION_ROBUSTNESS.md](ESTIMATION_ROBUSTNESS.md) |
 | **20** | Vertikaldynamik: Verifikation, Frequenzgänge, ISO-8608-Straßen (M8) | [VERTICAL_DYNAMICS.md](VERTICAL_DYNAMICS.md) |
+| **21** | Virtuelles Versuchslabor: YAML-Experimente, Verifikation, Berichte, CI (M9) | [EXPERIMENTS.md](EXPERIMENTS.md) |

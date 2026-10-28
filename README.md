@@ -212,11 +212,20 @@ cd Vehicle-Dynamics
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install dependencies and vehicle_model package
-pip install -e .
+# Install dependencies and vehicle_model package (with pytest for the test suite)
+pip install -e ".[test]"
 ```
 
-### 2. Running Flagship Demonstrations
+### 2. YAML Experiments (vehicle, tyres, road, manoeuvre, controllers)
+
+```bash
+python -m vehicle_model.experiments list
+python -m vehicle_model.experiments run configs/experiments/sine_with_dwell_comparison.yaml
+```
+
+Each run checks the configured model first (parameter consistency, static loads, tyre symmetry, linear reference, mirror symmetry, determinism) and writes `results.json`, `kpis.csv`, time histories, figures and an engineering report (`report.md`) to `output/experiments/<name>/`. See [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
+
+### 3. Running Flagship Demonstrations
 
 #### Automated Virtual Validation Platform (10 Standardized Scenarios)
 ```bash
@@ -270,27 +279,24 @@ python examples/driver_and_nmpc_dynamics_demo.py
 python examples/integrated_control_benchmark.py
 ```
 
-| Controller Configuration | Peak Yaw Rate | Max Sideslip | Heading Dev | Max Path Dev | Peak Lat Accel | Max Tyre Util | Handling Assessment |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **1. Passive Baseline** | 26.5°/s | 2.43° | 0.21° | 1.09 m | 0.57 g | 97.6 % | High body sideslip, rear-axle near saturation |
-| **2. Active 4WS Standalone** | 19.9°/s | 1.46° | 0.04° | 0.84 m | 0.52 g | 92.5 % | **40% sideslip reduction**, smooth crab tracking |
-| **3. Integrated IVMC (4WS + TV + ESC)** | 20.7°/s | 1.47° | 0.08° | 0.85 m | 0.56 g | 97.3 % | Damped transient yaw oscillation, zero drift |
+| Controller Configuration | Peak Yaw Rate | Max Sideslip | Heading Dev | Max Path Dev | Peak Lat Accel | Max Tyre Util |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **1. Passive Baseline** | 28.3°/s | 2.10° | 0.39° | 1.27 m | 0.65 g | 105.3 % |
+| **2. Active 4WS (speed scheduled)** | 21.2°/s | 1.26° (−40 %) | 0.05° | 0.87 m | 0.59 g | 100.7 % |
+| **3. Integrated IVMC (4WS + TV + ESC)** | 21.0°/s | 1.17° (−44 %) | 0.08° | 0.87 m | 0.63 g | 104.7 % |
+
+Generated with the default tyre `magic_formula_passenger_synthetic` (since M6; the table before M6 used the legacy Pacejka adapter). Tyre utilisation is relative to the road friction $\mu F_z$; values above 100 % are possible because the MF tyre's peak friction exceeds $\mu$ at light wheel loads (load sensitivity). Synthetic vehicle and tyre parameters: the numbers compare controllers on the virtual vehicle, they are not predictions for a real car.
 
 ---
 
 ## Automated Test Suite
 
-Run the full automated pytest suite across all 20 test modules:
-
 ```bash
-pytest tests/vehicle_model -v
+pytest -m "not slow"     # quick run (about one minute)
+pytest                   # full suite incl. long scenario tests (10-15 minutes)
 ```
 
-```text
-======================= 142 passed in 128.4s =======================
-```
-
-**Status:** 142 passed, 0 failed. All unit, integration, multi-body physics, phase-plane stability, and regression evaluations pass deterministically.
+The suite combines analytical reference tests (closed-form handling characteristics, Riccati equation, quarter-car frequency responses, energy balances, Ackermann geometry), invariant tests (force and moment balances, symmetry, convergence order), regression baselines and scenario tests. Continuous integration (`.github/workflows/ci.yml`) runs the quick suite on every push and the full suite weekly. Current status and the per-milestone verification are listed in [docs/AUDIT.md](docs/AUDIT.md).
 
 ---
 
