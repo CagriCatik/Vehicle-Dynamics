@@ -62,6 +62,39 @@ Sine with Dwell, 80 km/h, Referenzfahrzeug mit MF-Reifen, Standard-Sensorrausche
 
 Beide halten den Grenzwert 0,35 weiterhin deutlich ein.
 
+## 3a. Sensorbasierte Reibwertschätzung (V3.0, G02)
+
+[`estimation/sensor_friction.py`](../src/vehicle_model/estimation/sensor_friction.py), `information = "sensors_only"`. Eingänge: Sensormessungen, die vom Regler **kommandierten** Radmomente, eine Schwimmwinkelschätzung (optional) und nominelle Fahrzeugdaten. Keine Reifenkräfte, Schlüpfe, Radlasten oder Reibwerte aus der Simulation.
+
+1. **Fahrzeuggeschwindigkeit:** integriertes $a_x$, einseitig an die Raddrehzahlen gebunden.
+   - Ohne Antrieb ist das Fahrzeug mindestens so schnell wie das schnellste Rad.
+   - Mit Antrieb ist es höchstens so schnell wie das langsamste Rad.
+   - Initialisierung über frei rollende Räder (`reset(init_vx)`).
+2. **Radlängskraft** aus der Raddrehdynamik: $F_x = (T_\text{an} - T_\text{br} - I_w\dot\omega - d\,\omega)/R$, mit gefilterter Ableitung der gemessenen Raddrehzahl.
+3. **Radlasten** quasistatisch aus gemessenem $a_x$ und $a_y$; **Achsseitenkräfte** aus $m a_y$ und $I_z \dot r$.
+4. **µ** durch Inversion eines nominellen Bürstenmodells (Fiala, nicht der Streckenreifen). Gewichtet wird mit der normierten Empfindlichkeit $(\mu/F_z)\,\partial F/\partial\mu$. Verwendet werden Abtastwerte nur oberhalb von Schwellen für Empfindlichkeit, Ausnutzung und theoretischen Schlupf. Der Schätzwert fällt nie unter die beobachtete Ausnutzung.
+
+**Ergebnisse** (MF-Strecke, Standard-Sensorrauschen, ABS-Bremsung aus 90 km/h):
+
+| Straße | µ̂ vorn | µ̂ hinten | Konfidenz | Fehler $v_\text{ref}$ |
+|---|---|---|---|---|
+| µ 1,0 | 0,99 / 0,98 | 1,15 / 1,11 | 1,0 | 0,15 m/s |
+| µ 0,6 | 0,61 / 0,60 | 0,69 / 0,68 | 1,0 | 0,16 m/s |
+| µ 0,3 | 0,32 / 0,32 | 0,37 / 0,37 | 1,0 | 0,16 m/s |
+| µ 0,3, Konstantfahrt (keine Anregung) | Prior 1,0 | Prior 1,0 | **0,0** | – |
+
+Hinten liegt der Schätzwert höher. Das ist teilweise physikalisch: Die Spitzenreibung des MF-Reifens liegt bei der geringen Hinterachslast unter Bremsung über µ.
+
+Auf Split-µ (1,0/0,3 und 0,6/0,2, mit der Stabilitätsregelung aus M5) ergeben die konfidenzgewichteten Seitenwerte 0,87/0,33 bzw. 0,61/0,25; Split-µ wird erkannt.
+
+**Grenzen der Identifizierbarkeit:**
+- **Linearer Reifenbereich:** Die Kraft hängt nicht von µ ab, es gibt keine Aussage (Konfidenz 0).
+- **Kaum genutztes Rad:** Das Rad vorn auf der griffigen Seite bei Split-µ erhält nur wenige, durch Drehzahlrauschen verzerrte Abtastwerte. Sein Einzelwert ist falsch niedrig (0,14), aber mit niedriger Konfidenz (0,2–0,4). Abnehmer müssen die Konfidenz verwenden.
+- **Dauerhafte Bremsung aller Räder:** Kein Rad rollt frei, $v_\text{ref}$ beruht nur auf dem integrierten $a_x$ (physikalische Beobachtbarkeitsgrenze).
+- **Start mit schlupfenden Rädern:** Wird ohne Initialisierung schon im ersten Schritt gebremst, startet $v_\text{ref}$ nicht. Ein erster Ansatz begann sonst 3 m/s zu niedrig.
+
+Tests: [test_sensor_friction.py](../tests/vehicle_model/test_sensor_friction.py) mit 10 Fällen: Deklaration, Bürstenformel = `FialaTyre`, Inversion, keine Aussage ohne Anregung, ABS-Bremsung bei drei Reibwerten, Split-µ, kein Start aus schlupfenden Rädern.
+
 ## 4. Robustheitsstudien (Monte Carlo)
 
 `run_monte_carlo` zieht n Parameterstichproben mit einem geseedeten Generator, baut je Stichprobe eine frische Strecke, fährt ein Szenario und liefert:
