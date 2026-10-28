@@ -66,3 +66,31 @@ def test_yaw_rate_transient_matches_linear_step_response(models, vx):
     r_lin = lin.state_space(vx).step_response(t, np.array([delta, 0.0]))[:, 0]
     r_ss = lin.yaw_rate_gain(vx) * delta
     assert np.max(np.abs(r - r_lin)) < 0.03 * r_ss
+
+
+@pytest.mark.slow
+def test_steady_state_circle_matches_linear_reference_at_small_ay(models):
+    """ISO 4138 quasi-steady circle on the 7-DOF model vs the analytical steer demand.
+
+    The linear reference is the a_y -> 0 limit; load transfer with load-sensitive tyres
+    makes the 7-DOF understeer gradient grow with a_y (expected physical direction).
+    """
+    from vehicle_model.simulation.handling_limits import simulate_steady_state_circular_drive
+
+    nl, lin = models
+    R, g, L = 40.0, nl.params.g, nl.params.wheelbase
+    h = simulate_steady_state_circular_drive(
+        model=nl, radius_m=R, v_start_kph=20.0, v_end_kph=60.0, speed_ramp_rate_kph_per_s=1.5, dt=0.01
+    )
+    ay = h.vx * h.r
+    r_actual = h.vx / np.maximum(h.r, 1e-6)
+
+    small = (ay > 0.5) & (ay < 1.0)
+    delta_lin = L / r_actual[small] + lin.understeer_gradient * ay[small]
+    assert np.mean(h.steer_f[small] / delta_lin) == pytest.approx(1.0, abs=0.02)
+
+    def k_us(lo, hi):
+        s = (ay / g >= lo) & (ay / g <= hi)
+        return np.polyfit(ay[s], h.steer_f[s] - L / r_actual[s], 1)[0]
+
+    assert k_us(0.15, 0.3) > k_us(0.05, 0.15) > 0.0

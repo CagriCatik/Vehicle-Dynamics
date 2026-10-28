@@ -184,7 +184,7 @@ I_z \dot{r} &= F_{yf} l_f - F_{yr} l_r
 \end{aligned}$$
 Where lateral axle forces can be evaluated using linear cornering stiffness ($F_{yf} = -C_{\alpha,f} \alpha_f$) or non-linear tyre functions.
 
-### 4.2 Kinematic Single-Track Model (`KinematicSingleTrackModel`)
+### 4.2 Kinematic Single-Track Model (`KinematicSingleTrack`)
 Assumes zero tyre sideslip (pure rolling condition) for low-speed maneuvering ($a_y < 0.3g$):
 $$\begin{aligned}
 \dot{X} &= v \cos(\psi + \beta_{\text{kin}}) \\
@@ -192,7 +192,9 @@ $$\begin{aligned}
 \dot{\psi} &= \frac{v}{L} \cos \beta_{\text{kin}} (\tan \delta_f - \tan \delta_r) \\
 \beta_{\text{kin}} &= \arctan\left(\frac{l_r \tan \delta_f + l_f \tan \delta_r}{L}\right)
 \end{aligned}$$
-Used as the prediction model of the SLSQP NMPC path tracker.
+Rear steering is enabled with `KinematicSingleTrack(rear_steer=True)` (third input $\delta_r$); with $\delta_r = 0$ the model reduces to the front-steer case. Verification: [test_kinematic_4ws.py](../tests/vehicle_model/test_kinematic_4ws.py), details in [HANDLING_ANALYSIS.md](HANDLING_ANALYSIS.md#5-kinematisches-einspurmodell-mit-hinterachslenkung-modellklasse-v1).
+
+The SLSQP NMPC path tracker uses its own small-angle kinematic prediction model (`bicycle_kinematic_model` in `controllers/nmpc.py`), not this class.
 
 ---
 

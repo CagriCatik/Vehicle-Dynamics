@@ -24,7 +24,7 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **09** | Vertikal- & Wankdynamik (Skyhook / ARSDC) | [SUSPENSION_DYNAMICS.md](SUSPENSION_DYNAMICS.md) |
 | **10** | Zustandsschätzung (EKF, RLS, PSO) | [STATE_ESTIMATION.md](STATE_ESTIMATION.md) |
 | **11** | Virtuelle Validierungsplattform (ISO / ECE) | [VALIDATION_PLATFORM.md](VALIDATION_PLATFORM.md) |
-| **12** | Fahrzeughandling & Eigenlenkgradient (ISO 4138) | [HANDLING_LIMITS.md](HANDLING_LIMITS.md) |
+| **12** | Fahrzeughandling & Eigenlenkgradient (ISO 4138, lineare Referenz) | [HANDLING_LIMITS.md](HANDLING_LIMITS.md) & [HANDLING_ANALYSIS.md](HANDLING_ANALYSIS.md) |
 | **13** | Split-Mu Dynamik & Multi-Mu Benchmark-Matrix | [SPLIT_MU_DYNAMICS.md](SPLIT_MU_DYNAMICS.md) |
 | **14** | Visualisierung, Telemetrie & GIF-Engine | [VISUALIZATION_GUIDE.md](VISUALIZATION_GUIDE.md) |
 | **15** | Literatur- und Quellenverzeichnis | [REFERENCES.md](REFERENCES.md) |
