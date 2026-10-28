@@ -3,6 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from vehicle_model.vehicle_models.config import vehicle_params_from_config
 from vehicle_model.vehicle_models.data_loader import load_data
@@ -117,3 +118,16 @@ def test_validation_telemetry_contains_dynamic_force_channels():
     assert np.isfinite(telemetry.signals["force_front_lateral"]).all()
     assert np.isfinite(telemetry.signals["force_longitudinal_net"]).all()
     assert np.isfinite(telemetry.signals["front_tire_utilization"]).all()
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="Known defect (docs/AUDIT.md 4.5): MF6.2 offsets (PHY/PVY) give ~800/1600 N lateral "
+    "axle force at zero slip, so the vehicle drifts at zero steer. Fix planned in M1.",
+)
+def test_dynamic_model_drives_straight_at_zero_steer():
+    model = DynamicSingleTrack()
+    t = np.arange(0.0, 2.0 + 1e-9, 0.01)
+    x, _ = model.sim_continuous(np.array([0.0, 0.0, 15.0, 0.0, 0.0, 0.0, 0.0]), np.array([0.0, 0.0]), t)
+    assert abs(x[-1, 1]) < 1e-3  # lateral position Y
+    assert abs(x[-1, 4]) < 1e-4  # yaw angle
