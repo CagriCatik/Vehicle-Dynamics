@@ -18,7 +18,8 @@ Scenarios provided:
     split_mu_braking    full braking on split friction, steering held straight
 
 Determinism: the plant, the scenarios and all bundled controllers are
-deterministic; running the same benchmark twice gives identical KPIs.
+deterministic; running the same benchmark twice gives identical histories and
+KPIs, except the measured computation times (wall clock).
 """
 
 from __future__ import annotations

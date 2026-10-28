@@ -99,7 +99,14 @@ class EKFSideslipObserver:
 
     States x = [vx, vy, r, bias_ay, bias_r]^T (dim 5)
     Measurements z = [vx_ref, r_meas, ay_meas]^T (dim 3)
+
+    Uses sensor measurements only. The tyre model is linear with fixed axle
+    cornering stiffnesses (defaults 85/95 kN/rad, chosen by hand): valid in the
+    linear range, wrong at the limit (see blended_sideslip.py for the comparison;
+    lower secant stiffnesses track better than the small-slip linearisation).
     """
+
+    information = "sensors_only"
 
     def __init__(
         self,

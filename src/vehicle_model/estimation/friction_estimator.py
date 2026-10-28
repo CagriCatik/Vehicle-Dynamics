@@ -71,7 +71,15 @@ class FrictionEstimate:
 
 
 class RoadFrictionEstimator:
-    """Real-time Recursive Least Squares (RLS) road friction estimator."""
+    """Real-time Recursive Least Squares (RLS) road friction estimator.
+
+    Information access: reads tyre forces, slips and wheel loads from the
+    simulation telemetry, i.e. ground truth that no vehicle sensor provides.
+    It is therefore an ideal-information reference, not a realisable estimator
+    (declared in ``information``; Plan.md 10.2 / M7).
+    """
+
+    information = "ground_truth_tyre_forces"
 
     def __init__(
         self,
