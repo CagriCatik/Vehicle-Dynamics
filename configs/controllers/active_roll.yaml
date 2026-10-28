@@ -1,0 +1,16 @@
+# Active Roll Stiffness Distribution & 14-DOF Chassis Control Configuration
+
+active_roll:
+  nominal_front_roll_ratio: 0.58   # Baseline gentle understeer bias [-]
+  min_front_roll_ratio: 0.32       # Max rearward shift under understeer [-]
+  max_front_roll_ratio: 0.82       # Max forward shift under oversteer [-]
+
+  # Dynamic tuning gains
+  k_yaw_error_shift: 0.40          # Roll ratio shift per rad/s of yaw rate error [- / (rad/s)]
+  k_sideslip_shift: 0.55           # Roll ratio shift per rad of sideslip angle [- / rad]
+  k_roll_stiffness_gain: 45000.0   # Active anti-roll stiffness gain [N*m / rad]
+  c_roll_damping_gain: 4500.0      # Active roll rate damping gain [N*m / (rad/s)]
+
+  # Rollover & wheel lift mitigation (NHTSA Fishhook)
+  ltr_critical_threshold: 0.70     # Load Transfer Ratio threshold to engage anti-rollover boost [-]
+  max_active_corner_force_n: 3500.0# Maximum active corner suspension force [N]

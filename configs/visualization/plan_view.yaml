@@ -1,0 +1,31 @@
+# Vehicle Visualization Plan-View Configuration
+
+default_vehicle:
+  wheelbase: 2.80
+  width: 1.80
+  length: 4.60
+  tire_radius: 0.32
+  tire_width: 0.225
+  wheel_track: 1.60
+  rear_overhang: 0.90
+  front_overhang: 0.90
+
+rendering:
+  title: "Vehicle Plan-View (Chassis & 4WS Steered Wheels)"
+  line_width: 2.0
+  centerline_color: "0.4"
+  centerline_line_width: 1.2
+  draw_reference_star: true
+  arrow_head_angle_deg: 30.0
+  arrow_head_length_ratio: 0.4
+  arrow_length_wheelbase_ratio: 0.6
+  axis_padding_x: 0.6
+  axis_padding_y_lower: 1.0
+  axis_padding_y_upper: 1.4
+  grid_alpha: 0.4
+
+colors:
+  outline: "#38bdf8"
+  front: "#0ea5e9"
+  rear: "#f43f5e"
+  arrow: "#10b981"

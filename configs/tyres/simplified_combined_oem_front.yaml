@@ -1,0 +1,18 @@
+model: simplified_combined
+parameters:
+  kappa_peak: 0.12
+  alpha_peak: 0.101229   # 5.8 deg (front axle compliance for realistic OEM understeer)
+  sliding_ratio: 0.85
+  peak_load_sensitivity: 0.35
+  friction_load_sensitivity: 0.10
+  Fz0: 3000.0
+provenance:
+  formulation: Simplified normalised combined slip (Front Axle Staggered Setup)
+  version: "1.0"
+  source: Calibrated D-segment passenger car front axle tyre characteristics.
+  data_class: synthetic
+  reference_load: 3000.0
+  valid_kappa: [-1.0, 1.0]
+  valid_alpha: [-0.35, 0.35]
+  limitations:
+    - Calibrated synthetic parameter values for realistic passenger car understeer

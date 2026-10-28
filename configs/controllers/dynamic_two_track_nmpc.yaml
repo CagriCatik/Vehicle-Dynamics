@@ -1,0 +1,32 @@
+# Dynamic Two-Track Nonlinear Model Predictive Controller (Dynamic NMPC) Configuration
+
+dynamic_nmpc:
+  # Horizon and timing
+  N: 12                          # Prediction horizon steps
+  dt_pred: 0.05                  # Prediction sampling time [s] (0.6s total lookahead)
+
+  # Actuator limits
+  max_steer_front_deg: 30.0      # Maximum front steer angle [deg]
+  max_steer_rear_deg: 10.0       # Maximum rear steer angle [deg]
+  max_yaw_moment_nm: 4000.0      # Maximum direct yaw moment [N*m]
+  max_accel_mps2: 4.5            # Maximum acceleration [m/s^2]
+  max_decel_mps2: 8.0            # Maximum deceleration [m/s^2]
+  max_steer_rate_degps: 60.0     # Steer slew rate limit [deg/s]
+
+  # Objective weights
+  q_lat_err: 12.0                # Lateral path error weight (Y - Y_ref)^2
+  q_heading_err: 8.0             # Heading error weight (psi - psi_ref)^2
+  q_speed_err: 2.0               # Speed tracking weight (vx - vx_ref)^2
+  q_sideslip: 15.0               # Sideslip penalty (beta^2)
+  q_yaw_rate: 0.5                # Yaw rate damping (r^2)
+  r_steer_f: 0.8                 # Front steering control effort (delta_f^2)
+  r_steer_r: 1.2                 # Rear steering control effort (delta_r^2)
+  r_yaw_moment: 0.0001           # Direct yaw moment effort (Mz^2)
+  r_accel: 0.2                   # Longitudinal accel effort (ax^2)
+  r_dsteer_f: 4.0                # Front steering slew rate penalty
+  r_dsteer_r: 6.0                # Rear steering slew rate penalty
+  w_kamm_circle: 50.0            # Kamm friction circle barrier weight
+
+  # Solver options
+  max_iter: 25                   # Maximum optimizer iterations per step
+  tolerance: 0.001               # Optimization tolerance

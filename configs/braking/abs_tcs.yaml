@@ -1,0 +1,13 @@
+# Antilock Braking System (ABS) & Traction Control System (TCS) Configuration
+
+abs:
+  target_slip: -0.15            # Target longitudinal slip ratio kappa [-] (~peak friction)
+  slip_threshold: -0.20         # Slip threshold where pressure dump begins
+  release_slip: -0.10           # Slip threshold where pressure re-apply begins
+  kp: 8.0                       # Proportional gain for torque modulation
+  min_speed: 1.5                # Deactivation speed [m/s] to allow full standstill lock
+
+tcs:
+  target_slip: 0.12             # Target acceleration slip ratio kappa [-]
+  slip_threshold: 0.18          # Slip threshold where drive torque cut begins
+  kp: 6.0                       # Proportional drive torque reduction gain

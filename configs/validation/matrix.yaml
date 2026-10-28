@@ -1,0 +1,162 @@
+# Automated Virtual Validation Platform Matrix Configuration
+# Conforms to Milestone M8 (Plan.md §16, §19 M8)
+
+suite_name: "Automotive Vehicle Dynamics Standardized Validation Matrix"
+version: "1.0.0"
+vehicle_config: "configs/vehicles/seven_dof_passenger.yaml"
+tyre_model: "pacejka_front_synthetic"
+
+
+scenarios:
+  iso_3888_dlc:
+    name: "ISO 3888-2 Double Lane Change (Severe Obstacle Avoidance)"
+    initial_speed_kph: 80.0
+    road_mu: 1.0
+    duration_s: 4.5
+    controllers: ["passive", "four_wheel_steering", "ivmc_2ws", "full_ivmc_4ws"]
+    thresholds:
+      max_sideslip_deg: 6.0
+      peak_lat_accel_g: 0.95
+
+  mu_split_braking:
+    name: "Split-Mu Emergency Braking from 100 km/h (ECE-R13H)"
+    initial_speed_kph: 100.0
+    road_mu_left: 1.0
+    road_mu_right: 0.20
+    brake_torque_nm: 1450.0
+    duration_s: 3.5
+    controllers: ["passive", "four_wheel_steering", "ivmc_2ws", "full_ivmc_4ws"]
+    thresholds:
+      final_heading_dev_deg: 15.0
+      max_yaw_rate_deg_s: 30.0
+
+  mu_split_launch:
+    name: "Split-Mu Full-Throttle Launch (0-60 km/h TCS & TV)"
+    initial_speed_kph: 5.0
+    road_mu_left: 1.0
+    road_mu_right: 0.20
+    target_speed_kph: 60.0
+    duration_s: 4.5
+    controllers: ["passive", "four_wheel_steering", "ivmc_2ws", "full_ivmc_4ws"]
+    thresholds:
+      max_yaw_rate_deg_s: 15.0
+      final_heading_dev_deg: 10.0
+      max_lateral_dev_m: 1.5
+
+  mu_split_braking_in_turn:
+    name: "ISO 7975 Split-Mu Braking in a Turn (Outer Low-Mu Adhesion Limit)"
+    radius_m: 80.0
+    initial_speed_kph: 48.0
+    low_mu_on_outer: true
+    brake_torque_nm: 550.0
+    duration_s: 3.5
+    controllers: ["passive", "four_wheel_steering", "ivmc_2ws", "full_ivmc_4ws"]
+    thresholds:
+      max_lateral_dev_m: 4.0
+      max_sideslip_deg: 15.0
+
+  mu_split_diagonal_transition:
+    name: "Diagonal Split-Mu Bridge Expansion Joint (Staggered Wheel Entry)"
+    initial_speed_kph: 80.0
+    angle_deg: 35.0
+    duration_s: 3.5
+    controllers: ["passive", "four_wheel_steering", "ivmc_2ws", "full_ivmc_4ws"]
+    thresholds:
+      max_lateral_dev_m: 0.80
+      max_yaw_rate_deg_s: 5.0
+
+  mu_split_evasive_dlc:
+    name: "ISO 3888-2 Split-Mu Severe Double Lane Change (Obstacle Evasion onto Slick Lane)"
+    initial_speed_kph: 75.0
+    duration_s: 4.5
+    controllers: ["passive", "four_wheel_steering", "ivmc_2ws", "full_ivmc_4ws"]
+    thresholds:
+      max_sideslip_deg: 8.0
+      max_lateral_dev_m: 2.5
+
+  sine_with_dwell:
+    name: "FMVSS 126 / ECE-R13H Sine with Dwell (ESC Yaw Stability)"
+    initial_speed_kph: 80.0
+    road_mu: 1.0
+    steering_freq_hz: 0.7
+    dwell_duration_s: 0.5
+    peak_steer_deg: 5.0
+    duration_s: 3.5
+    controllers: ["passive", "four_wheel_steering", "ivmc_2ws", "full_ivmc_4ws"]
+    thresholds:
+      yaw_rate_ratio_1s_pct: 35.0  # Yaw rate at 1.0s after steer end must be < 35% of peak
+      max_sideslip_deg: 8.0
+
+  step_steer_iso_7401:
+    name: "ISO 7401 Transient Step Steer Response"
+    initial_speed_kph: 100.0
+    road_mu: 1.0
+    step_time_s: 0.5
+    step_steer_deg: 3.5
+    duration_s: 3.0
+    controllers: ["passive", "four_wheel_steering", "ivmc_2ws", "full_ivmc_4ws"]
+    thresholds:
+      max_sideslip_deg: 10.0
+
+  ride_comfort_bump:
+    name: "ISO 2631 Ride Comfort & Road Holding Bump Traversal"
+    bump_height_m: 0.07
+    bump_duration_s: 0.25
+    controllers: ["passive", "skyhook", "groundhook"]
+    thresholds:
+      skyhook_accel_rms_reduction_pct: 20.0
+
+  braking_in_a_turn:
+    name: "ISO 7975 Braking in a Turn (Combined-Slip Stability Limit)"
+    initial_speed_kph: 80.0
+    road_mu: 0.85
+    steer_deg: 2.8
+    brake_torque_nm: 900.0
+    duration_s: 3.5
+    controllers: ["passive", "four_wheel_steering", "ivmc_2ws", "full_ivmc_4ws"]
+    thresholds:
+      max_sideslip_deg: 8.5
+      peak_lat_accel_g: 0.95
+
+  fishhook_ncap:
+    name: "NHTSA / NCAP Dynamic Fishhook Steering Reversal"
+    initial_speed_kph: 80.0
+    road_mu: 0.90
+    duration_s: 3.5
+    controllers: ["passive", "four_wheel_steering", "ivmc_2ws", "full_ivmc_4ws"]
+    thresholds:
+      max_sideslip_deg: 8.0
+      peak_lat_accel_g: 0.95
+
+  low_speed_slalom_4ws:
+    name: "Low-Speed Tight Slalom (4WS Virtual Wheelbase Agility)"
+    initial_speed_kph: 30.0
+    road_mu: 0.90
+    duration_s: 4.8
+    controllers: ["passive", "four_wheel_steering", "ivmc_2ws", "full_ivmc_4ws"]
+    thresholds:
+      max_sideslip_deg: 6.0
+
+  high_speed_lane_change:
+    name: "High-Speed Highway Lane Change (120 km/h In-Phase 4WS Stability)"
+    initial_speed_kph: 120.0
+    road_mu: 0.90
+    duration_s: 3.5
+    controllers: ["passive", "four_wheel_steering", "ivmc_2ws", "full_ivmc_4ws"]
+    thresholds:
+      max_sideslip_deg: 3.0
+
+  iso_4138_circle:
+    name: "ISO 4138 Steady-State Circular Driving (Understeer Gradient & Handling Limits)"
+    radius_m: 40.0
+    initial_speed_kph: 18.0
+    final_speed_kph: 80.0
+    road_mu: 1.0
+    controllers: ["passive", "four_wheel_steering", "ivmc_2ws", "full_ivmc_4ws"]
+    thresholds:
+      understeer_gradient_min_deg_per_g: 0.10
+      max_steady_state_lat_accel_g: 0.85
+      max_sideslip_deg: 6.0
+
+
+

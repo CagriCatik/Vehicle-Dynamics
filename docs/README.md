@@ -1,0 +1,30 @@
+# Vehicle Dynamics Documentation Index
+
+Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokumentation der **Vehicle Dynamics & Integrated Chassis Control Development Platform**.
+
+> [!TIP]
+> **Zentraler Einstiegspunkt:**
+> Das vollständige Inhaltsverzeichnis mit Roadmap, thematischem Register und A–Z-Stichwortindex befindet sich in:
+> 👉 **[docs/index.md](index.md)**
+
+---
+
+## Schnelleinstieg nach Kapiteln
+
+| Nr. | Thema | Dokument |
+| :---: | :--- | :--- |
+| **01** | Systemarchitektur & ISO 8855 Koordinaten | [ARCHITECTURE.md](ARCHITECTURE.md) |
+| **02** | Mehrkörper-Fahrzeugmodelle (7-DOF & 14-DOF) | [VEHICLE_MODELS.md](VEHICLE_MODELS.md) |
+| **03** | Reifenkraftschluss (Fiala, MF 6.2, Kamm) | [TYRE_MODELS.md](TYRE_MODELS.md) |
+| **04** | Aktorik, EPS & Brake-by-Wire | [ACTUATORS.md](ACTUATORS.md) |
+| **05** | Integrierte Regelung (IVMC, TV, Phasenraum) | [CHASSIS_CONTROL.md](CHASSIS_CONTROL.md) |
+| **06** | **Allradlenkung & Hinterachslenkung (4WS)** | [REAR_WHEEL_STEERING.md](REAR_WHEEL_STEERING.md) |
+| **07** | **Nichtlineares MPC & C/GMRES Pfadverfolgung** | [NMPC_CONTROL.md](NMPC_CONTROL.md) & [cgmres_nmpc.md](cgmres_nmpc.md) |
+| **08** | Neuromuskuläres Preview-Fahrermodell | [DRIVER_MODEL.md](DRIVER_MODEL.md) |
+| **09** | Vertikal- & Wankdynamik (Skyhook / ARSDC) | [SUSPENSION_DYNAMICS.md](SUSPENSION_DYNAMICS.md) |
+| **10** | Zustandsschätzung (EKF, RLS, PSO) | [STATE_ESTIMATION.md](STATE_ESTIMATION.md) |
+| **11** | Virtuelle Validierungsplattform (ISO / ECE) | [VALIDATION_PLATFORM.md](VALIDATION_PLATFORM.md) |
+| **12** | Fahrzeughandling & Eigenlenkgradient (ISO 4138) | [HANDLING_LIMITS.md](HANDLING_LIMITS.md) |
+| **13** | Split-Mu Dynamik & Multi-Mu Benchmark-Matrix | [SPLIT_MU_DYNAMICS.md](SPLIT_MU_DYNAMICS.md) |
+| **14** | Visualisierung, Telemetrie & GIF-Engine | [VISUALIZATION_GUIDE.md](VISUALIZATION_GUIDE.md) |
+| **15** | Literatur- und Quellenverzeichnis | [REFERENCES.md](REFERENCES.md) |

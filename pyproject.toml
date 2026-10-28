@@ -14,17 +14,18 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["python"]
-include = ["vehicle_model*", "vehicle_visualization*"]
+where = ["src"]
+include = ["vehicle_model*"]
 
 [tool.setuptools.package-data]
 vehicle_model = [
     "config/*.yaml",
+    "config/tyres/*.yaml",
     "data/**/*.csv",
     "tire_model/tire_data/**/*.yaml",
     "tire_model/tire_data/**/*.tir",
 ]
 
 [tool.pytest.ini_options]
-pythonpath = ["python"]
+pythonpath = ["src"]
 testpaths = ["tests"]

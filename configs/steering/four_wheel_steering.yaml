@@ -1,0 +1,27 @@
+# Four-Wheel Steering (4WS) & Actuator Dynamics Configuration
+system: "FourWheelSteering"
+mode: "lookup_table"                 # "lookup_table", "speed_scheduled", "zero_sideslip"
+lut_path: "configs/steering/lut.json"
+
+actuator:
+  tau: 0.045                    # EPS first-order response time constant [s] (~45 ms)
+  max_angle: 0.610865           # Mechanical rack travel limit [rad] (~35 deg)
+  max_rate: 1.047198            # Maximum slew rate limit [rad/s] (~60 deg/s)
+  delay_s: 0.0                  # Pure transport delay [s]
+  fault_mode: "none"            # "none", "stuck", "free", "offset"
+  fault_val: 0.0
+
+rear_actuator:
+  tau: 0.035                    # Rear actuator response time constant [s]
+  max_angle: 0.174533           # Rear steering angle limit [rad] (~10 deg)
+  max_rate: 0.872665            # Rear slew rate limit [rad/s] (~50 deg/s)
+
+speed_scheduling:
+  v_switch: 10.0                # Transition speed [m/s] (~36 km/h)
+  v_width: 2.5                  # Transition transition width [m/s]
+  k_low_speed: -0.30            # Counter-phase ratio (agile, reduces turning radius)
+  k_high_speed: 0.20            # Same-phase ratio (stabilizing, minimizes sideslip)
+
+closed_loop_damping:
+  enabled: true                 # Active yaw disturbance feedback damping
+  k_yaw_damping: 0.08           # Rear counter-steer gain [rad / (rad/s)]

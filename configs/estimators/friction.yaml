@@ -1,0 +1,14 @@
+# Road Friction Coefficient (mu) Estimator Configuration
+estimator_name: "slip_slope_friction_estimator"
+
+algorithm:
+  forgetting_factor: 0.985       # Recursive least squares (RLS) forgetting factor lambda in [0.95, 0.99]
+  min_excitation_slip: 0.015     # Minimum longitudinal slip |kappa| required to update RLS estimate
+  max_excitation_slip: 0.12      # Maximum slip beyond which linear slope is invalid (saturation)
+  min_wheel_speed: 2.0           # Minimum speed [m/s] to prevent division by near-zero speed
+  initial_mu: 1.0                # Initial road friction assumption (nominal dry asphalt)
+  mu_min: 0.15                   # Lower physical saturation bound (smooth ice)
+  mu_max: 1.25                   # Upper physical saturation bound (high-grip track)
+
+slope_reference:
+  nominal_dry_slope: 30.0        # Normalized slip-slope d(Fx/Fz)/d(kappa) for nominal dry asphalt

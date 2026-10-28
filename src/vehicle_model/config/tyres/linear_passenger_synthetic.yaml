@@ -1,0 +1,18 @@
+model: linear
+parameters:
+  c_kappa: 16.0
+  c_alpha: 18.0
+  stiffness_load_sensitivity: 0.3
+  Fz0: 3000.0
+  saturate: false
+provenance:
+  formulation: Linear
+  version: "1.0"
+  source: Synthetic passenger-car stiffness values; same small-slip stiffness as fiala_passenger_synthetic.
+  data_class: synthetic
+  reference_load: 3000.0
+  valid_kappa: [-0.03, 0.03]
+  valid_alpha: [-0.04, 0.04]
+  limitations:
+    - No force saturation (unbounded forces outside the valid range)
+    - No combined-slip coupling

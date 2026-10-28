@@ -1,0 +1,29 @@
+# Extended Kalman Filter (EKF) Sideslip & State Estimator Configuration
+estimator_name: "ekf_sideslip_observer"
+
+# State vector: [vx, vy, r, bias_ay, bias_r]
+# Dimensions: 5 states, 4 measurements [vx_ref, ay_meas, r_meas, ax_meas]
+
+process_noise:
+  q_vx: 0.10                     # Longitudinal velocity variance [(m/s)^2 / s]
+  q_vy: 0.25                     # Lateral velocity variance [(m/s)^2 / s]
+  q_r: 0.05                      # Yaw rate variance [(rad/s)^2 / s]
+  q_bias_ay: 0.0005              # Lateral accelerometer bias random walk variance
+  q_bias_r: 0.00005              # Gyroscope bias random walk variance
+
+measurement_noise:
+  r_vx: 0.25                     # Wheel speed derived vehicle velocity variance [(m/s)^2]
+  r_ay: 0.10                     # Lateral acceleration sensor variance [(m/s^2)^2]
+  r_yaw_rate: 0.002              # Yaw rate sensor variance [(rad/s)^2]
+  r_ax: 0.15                     # Longitudinal acceleration sensor variance [(m/s^2)^2]
+
+initial_covariance:
+  p_vx: 1.0
+  p_vy: 1.0
+  p_r: 0.1
+  p_bias_ay: 0.1
+  p_bias_r: 0.01
+
+filter_settings:
+  min_speed_for_update: 1.0      # Minimum vehicle speed [m/s] for kinematic / dynamic updates
+  adaptive_measurement_noise: true # Scale R_ay when operating near non-linear tyre saturation

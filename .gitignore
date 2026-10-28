@@ -1,3 +1,10 @@
 __pycache__
 .venv
 .pytest_cache
+*.egg-info
+dist
+build
+output/
+logs/*.log
+logs/*.csv
+logs/*.json

@@ -1,0 +1,20 @@
+model: simplified_combined
+parameters:
+  kappa_peak: 0.12
+  alpha_peak: 0.0785398   # 4.5 deg
+  sliding_ratio: 0.85
+  peak_load_sensitivity: 0.3
+  friction_load_sensitivity: 0.10
+  Fz0: 3000.0
+provenance:
+  formulation: Simplified normalised combined slip
+  version: "1.0"
+  source: Synthetic passenger-car values chosen for illustration. Not a Pacejka MF fit.
+  data_class: synthetic
+  reference_load: 3000.0
+  valid_kappa: [-1.0, 1.0]
+  valid_alpha: [-0.35, 0.35]
+  limitations:
+    - Not a Pacejka MF 5.2/6.x model
+    - Single envelope shape shared by Fx and Fy
+    - No camber, pressure, relaxation length or aligning moment

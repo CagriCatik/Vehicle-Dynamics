@@ -1,0 +1,20 @@
+# Closed-Loop Neuromuscular Preview Driver Model Configuration
+
+driver_model:
+  t_near_preview_s: 0.35        # Near-point lookahead time for lateral lane keeping [s]
+  t_far_preview_s: 1.35         # Far-point lookahead time for road curvature anticipation [s]
+  min_lookahead_dist_m: 3.5     # Minimum lookahead distance at low speeds [m]
+
+  # Human neural & neuromuscular dynamics
+  tau_delay_s: 0.18             # Pure human cognitive/neural transport delay [s] (180 ms)
+  tau_neuromuscular_s: 0.10     # Arm/muscle neuromuscular first-order lag [s] (100 ms)
+  max_steer_deg: 35.0           # Maximum hand-wheel angle limit [deg]
+  max_steer_rate_degps: 600.0   # Maximum human arm slew rate limit [deg/s]
+
+  # Preview steering gains
+  k_near_lat_error: 0.05        # Near lateral error proportional gain [rad/m]
+  k_far_heading: 0.55           # Far preview heading angle gain [-]
+  k_yaw_rate_damping: 0.12      # Inner-loop yaw rate damping gain [rad / (rad/s)]
+
+  # Workload metrics
+  reversal_rate_deadband_deg: 1.5 # Steering angle deadband to record deliberate steering reversal [deg]

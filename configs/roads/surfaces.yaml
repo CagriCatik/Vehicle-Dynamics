@@ -1,0 +1,21 @@
+# Road Surface & Environmental Friction Presets
+
+presets:
+  dry_asphalt:
+    mu: 1.00
+    description: "Dry high-friction asphalt"
+  wet_asphalt:
+    mu: 0.70
+    description: "Wet asphalt / light rain"
+  gravel_snow:
+    mu: 0.40
+    description: "Packed snow or loose gravel"
+  black_ice:
+    mu: 0.20
+    description: "Polished sheet ice / black ice"
+
+mu_split_preset:
+  mu_left: 1.00
+  mu_right: 0.20
+  split_y: 0.00
+  transition_width: 0.25

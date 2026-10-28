@@ -1,0 +1,14 @@
+pso_optimization:
+  objective: yaw_rate_and_sideslip_minimization
+  best_cost: 0.03888538463176305
+  iterations_completed: 18
+  swarm_size: 15
+  execution_time_s: 78.094
+  reproducibility_seed: 42
+  generated_at: '2026-10-26T23:17:44.520320'
+  metadata:
+    vehicle_mass: 1200.0
+    target_maneuver: slalom_split_mu
+optimized_parameters:
+  kp_yaw: 6000.0
+  kd_yaw: 600.0

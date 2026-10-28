@@ -1,0 +1,23 @@
+# Automotive Sensor Models & Noise Configuration
+sensor_suite: standard_chassis_imu
+
+imu:
+  # Accelerometer parameters (x, y)
+  accel_noise_std: 0.15          # Gaussian white noise standard deviation [m/s^2]
+  accel_bias_init: 0.05          # Initial accelerometer bias [m/s^2]
+  accel_bias_drift_std: 0.001    # Random walk bias drift [m/s^2/sqrt(s)]
+
+  # Gyroscope parameters (yaw rate r)
+  gyro_noise_std: 0.015          # Gyro white noise standard deviation [rad/s] (~0.85 deg/s)
+  gyro_bias_init: 0.008          # Initial gyroscope bias [rad/s] (~0.45 deg/s)
+  gyro_bias_drift_std: 0.0001    # Random walk gyro drift [rad/s/sqrt(s)]
+
+wheel_speed_sensors:
+  encoder_ticks_per_rev: 48      # Standard automotive wheel speed ABS ring encoder pulses
+  noise_std: 0.20                # Speed noise standard deviation [rad/s]
+  quantization_enabled: true     # Quantize angular position/speed to encoder resolution
+
+steering_angle_sensor:
+  noise_std: 0.0017              # Steering angle noise standard deviation [rad] (~0.1 deg)
+  quantization_rad: 0.001        # Digital CAN bus quantization step (~0.05 deg)
+  lag_tau: 0.010                 # Sensor filtering lag time constant [s] (~10 ms)

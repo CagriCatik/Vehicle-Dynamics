@@ -1,0 +1,11 @@
+# Electric Powertrain & Inverter Configuration
+powertrain_type: "four_wheel_independent_drive"
+
+electric_drive:
+  tau: 0.020                    # Inverter + PMSM electric response time constant [s] (~20 ms)
+  max_torque: 1000.0            # Peak drive torque per wheel [Nm]
+  max_power: 125000.0           # Continuous rated power per corner [W] (125 kW x 4 = 500 kW total)
+  max_torque_slew_rate: 8000.0  # Maximum torque ramp rate [Nm/s]
+  base_wheel_speed: 35.0        # Wheel angular speed where field-weakening starts [rad/s] (~40 km/h)
+  efficiency: 0.94              # Inverter & motor round-trip efficiency [-]
+  total_battery_power_limit: 450000.0 # Total DC high-voltage battery discharge power limit [W] (450 kW)

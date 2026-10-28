@@ -1,0 +1,58 @@
+from .animation import animate_maneuver
+from .nmpc_dashboard import RealTimeDashboard
+from .plan_view import (
+    VehicleParams,
+    demo_ui,
+    draw_arrow,
+    draw_vehicle,
+    draw_vehicle_trajectory,
+    vehicle_polygons,
+)
+from .theme import (
+    ACCENT_AMBER,
+    ACCENT_BLUE,
+    ACCENT_CYAN,
+    ACCENT_EMERALD,
+    ACCENT_ROSE,
+    AXES_COLOR,
+    BG_COLOR,
+    CARD_COLOR,
+    GRID_COLOR,
+    MU_HIGH_COLOR,
+    MU_LOW_COLOR,
+    ROAD_COLOR,
+    TEXT_MUTED,
+    TEXT_PRIMARY,
+    TEXT_COLOR,
+    PANEL_BG,
+    apply_dark_theme,
+    style_axis,
+)
+
+__all__ = (
+    "VehicleParams",
+    "draw_vehicle",
+    "draw_vehicle_trajectory",
+    "draw_arrow",
+    "demo_ui",
+    "vehicle_polygons",
+    "RealTimeDashboard",
+    "animate_maneuver",
+    "apply_dark_theme",
+    "style_axis",
+    "BG_COLOR",
+    "AXES_COLOR",
+    "CARD_COLOR",
+    "ROAD_COLOR",
+    "GRID_COLOR",
+    "TEXT_PRIMARY",
+    "TEXT_MUTED",
+    "ACCENT_CYAN",
+    "ACCENT_BLUE",
+    "ACCENT_EMERALD",
+    "ACCENT_AMBER",
+    "ACCENT_ROSE",
+    "MU_HIGH_COLOR",
+    "MU_LOW_COLOR",
+)
+

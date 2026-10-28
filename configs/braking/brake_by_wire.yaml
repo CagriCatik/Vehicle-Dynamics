@@ -1,0 +1,15 @@
+# Brake-By-Wire & Regenerative Braking Configuration
+system: "BrakeByWireActuator"
+
+hydraulic_calipers:
+  tau_apply: 0.035              # Caliper pressure build-up time constant [s] (~35 ms)
+  tau_release: 0.025            # Rapid dump valve time constant [s] (~25 ms)
+  max_brake_torque: 3000.0      # Mechanical brake torque limit per wheel [Nm]
+  max_build_rate: 22000.0       # Max hydraulic pressure build rate [Nm/s]
+  max_dump_rate: 36000.0        # Max ABS pressure release rate [Nm/s]
+
+regenerative_blending:
+  enable_regen_blending: true   # Seamlessly blend electric motor regen with hydraulic friction
+  max_regen_torque: 500.0       # Maximum regenerative braking torque per wheel [Nm]
+  regen_cutoff_speed: 2.0       # Vehicle speed where regen blends out down to standstill [m/s]
+  regen_blend_bandwidth: 1.0    # Transition velocity band width [m/s]

@@ -1,0 +1,25 @@
+# Semi-active and active suspension controller configurations
+# Conforms to Milestone M7 (Plan.md §9, §19 M7)
+
+skyhook:
+  skyhook_damping: 3200.0       # Ns/m (c_sky, virtual body damper)
+  damper_min: 800.0             # Ns/m (softest valve state)
+  damper_max: 4800.0            # Ns/m (firmest valve state)
+  actuator_time_constant: 0.015 # s (solenoid response lag)
+
+groundhook:
+  groundhook_damping: 2400.0    # Ns/m (c_ground, wheel hop damper)
+  damper_min: 800.0             # Ns/m
+  damper_max: 4800.0            # Ns/m
+  actuator_time_constant: 0.015 # s
+
+hybrid:
+  skyhook_weight: 0.65          # alpha, comfort emphasis
+  groundhook_weight: 0.35       # 1 - alpha, road holding emphasis
+  damper_min: 800.0             # Ns/m
+  damper_max: 4800.0            # Ns/m
+
+active_suspension:
+  force_max: 3500.0             # N (hydraulic / electro-mechanical actuator limit)
+  rate_limit: 45000.0           # N/s (slew rate)
+  bandwidth_hz: 20.0            # Hz

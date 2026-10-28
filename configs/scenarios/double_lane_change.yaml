@@ -1,0 +1,22 @@
+# ISO 3888-2 Obstacle Avoidance / Double Lane Change Scenario Configuration
+scenario_name: "ISO 3888 Double Lane Change"
+
+initial_conditions:
+  vx: 22.222                    # Initial velocity [m/s] (80 km/h)
+  vy: 0.0
+  r: 0.0
+  psi: 0.0
+  X: 0.0
+  Y: 0.0
+
+steering_profile:
+  amplitude_rad: 0.083776       # Handwheel/road wheel amplitude [rad] (~4.8 deg)
+  t_pulse1_start: 0.5
+  t_pulse1_duration: 0.8
+  t_pulse2_start: 2.3
+  t_pulse2_duration: 0.8
+
+environment:
+  road_mu: 0.75                 # Damp pavement surface friction
+  duration_s: 4.5               # Maneuver duration [s]
+  dt_s: 0.005                   # Time step [s] (5 ms)

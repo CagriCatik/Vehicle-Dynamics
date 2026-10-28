@@ -1,0 +1,34 @@
+# Seven Degree-of-Freedom (7-DOF) Two-Track Passenger Vehicle Configuration
+vehicle_type: passenger_car
+description: "Realistic D-segment electric/hybrid passenger car"
+
+# Inertial Properties
+mass: 1200.0             # Total vehicle curb mass [kg]
+Iz: 1800.0               # Yaw moment of inertia around CoG [kg*m^2]
+lf: 1.30                 # Distance from CoG to front axle [m]
+lr: 1.50                 # Distance from CoG to rear axle [m]
+wf: 1.60                 # Front track width [m]
+wr: 1.60                 # Rear track width [m]
+hcog: 0.50               # Center of gravity height above ground [m]
+k_roll_f: 0.55           # Front axle roll stiffness distribution ratio [-]
+
+# Wheel & Tyre Mechanical Properties
+Iw: 1.50                 # Rotational inertia per wheel assembly [kg*m^2]
+Reff: 0.32               # Effective rolling radius [m]
+c_rr: 0.015              # Rolling resistance coefficient [-]
+wheel_damping: 0.10      # Viscous wheel bearing damping [Nm*s/rad]
+
+# Aerodynamic Properties
+Cd: 0.30                 # Aerodynamic drag coefficient [-]
+Af: 2.20                 # Frontal projected cross-sectional area [m^2]
+rho: 1.225               # Ambient air density [kg/m^3]
+
+# Physical Environment
+g: 9.81                  # Gravitational acceleration [m/s^2]
+
+# Actuator Limits
+max_steer_f: 0.610865    # Max front steering angle [rad] (~35 deg)
+max_steer_r: 0.174533    # Max rear steering angle [rad] (~10 deg)
+max_steer_rate: 0.872665 # Max steering rate [rad/s] (~50 deg/s)
+max_drive_torque: 1000.0 # Peak drive torque per wheel [Nm]
+max_brake_torque: 3000.0 # Peak friction brake torque per wheel [Nm]

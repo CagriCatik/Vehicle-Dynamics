@@ -1,0 +1,20 @@
+model: fiala
+parameters:
+  c_kappa: 16.0
+  c_alpha: 18.0
+  stiffness_load_sensitivity: 0.3
+  friction_load_sensitivity: 0.10
+  Fz0: 3000.0
+provenance:
+  formulation: Fiala brush (combined slip)
+  version: "1.0"
+  source: >-
+    Synthetic passenger-car values (C_kappa ~ 16 Fz, C_alpha ~ 18 Fz/rad at Fz0)
+    chosen for illustration. Not fitted to any measured tyre.
+  data_class: synthetic
+  reference_load: 3000.0
+  valid_kappa: [-1.0, 1.0]
+  valid_alpha: [-0.35, 0.35]
+  limitations:
+    - No friction drop after peak
+    - Isotropic friction; no camber, pressure, relaxation length or aligning moment

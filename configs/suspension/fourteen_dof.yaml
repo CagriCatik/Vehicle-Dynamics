@@ -1,0 +1,42 @@
+# Fourteen-DOF Full Vehicle Dynamics Configuration
+# Conforms to Milestone M7 (Plan.md §4.5, §9, §19 M7)
+
+sprung_mass: 1320.0             # kg (chassis + powertrain body mass)
+unsprung_mass_front: 45.0       # kg (per front wheel)
+unsprung_mass_rear: 45.0        # kg (per rear wheel)
+# Total vehicle mass = 1320 + 2*45 + 2*45 = 1500 kg
+
+# Inertia tensors (body frame about CG)
+Ixx: 480.0                      # kg*m^2 (roll inertia)
+Iyy: 1650.0                     # kg*m^2 (pitch inertia)
+Izz: 2200.0                     # kg*m^2 (yaw inertia)
+
+# Geometry
+wheelbase: 2.70                 # m
+a: 1.25                         # m (CG to front axle)
+b: 1.45                         # m (CG to rear axle)
+track_front: 1.60               # m
+track_rear: 1.58                # m
+cg_height: 0.52                 # m (sprung mass CG height from ground)
+roll_center_height_front: 0.12  # m
+roll_center_height_rear: 0.14   # m
+
+# Front Corner Suspension (per wheel)
+spring_stiffness_front: 36000.0 # N/m
+damping_front: 2300.0           # Ns/m
+anti_roll_bar_front: 450.0      # N*m/deg (roll stiffness contribution)
+bump_stop_front: 150000.0       # N/m
+
+# Rear Corner Suspension (per wheel)
+spring_stiffness_rear: 34000.0  # N/m
+damping_rear: 2100.0            # Ns/m
+anti_roll_bar_rear: 220.0       # N*m/deg
+bump_stop_rear: 150000.0        # N/m
+
+# Radial Tyre Compliance (per wheel)
+tyre_radial_stiffness_front: 210000.0 # N/m
+tyre_radial_damping_front: 250.0      # Ns/m
+tyre_radial_stiffness_rear: 210000.0  # N/m
+tyre_radial_damping_rear: 250.0       # Ns/m
+wheel_radius: 0.33                    # m
+wheel_inertia: 1.2                    # kg*m^2

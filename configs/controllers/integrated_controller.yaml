@@ -1,0 +1,29 @@
+# Integrated Vehicle Motion Controller (IVMC) Configuration
+
+subsystems_enabled:
+  enable_4ws: true
+  enable_tv: true
+  enable_abs: true
+  enable_tcs: true
+  enable_phase_plane: true
+
+phase_plane:
+  beta_sat_dry_deg: 9.0         # Peak sideslip saturation on dry road (mu=1.0) [deg]
+  c_phase_time_s: 0.20          # Phase-lead time constant C_phase [s]
+  s_approach: 0.65              # Stability index threshold to begin soft intervention
+  s_critical: 1.00              # Stability index threshold for hard emergency recovery
+  k_mz_envelope: 3800.0         # Maximum stabilizing yaw moment from envelope control [N*m]
+  k_steer_counter: 0.45         # Active counter-steer proportional gain [rad/rad]
+  k_speed_reduction_decel: 2.5  # Deceleration demand gain when S > 1.0 [m/s^2 per S_excess]
+
+torque_vectoring:
+  kp_yaw: 3500.0                # Proportional gain on yaw rate error [Nm / (rad/s)]
+  kd_yaw: 250.0                 # Derivative gain on yaw rate error [Nm / (rad/s^2)]
+  max_yaw_moment: 4000.0        # Upper bound on requested direct yaw moment [Nm]
+  max_torque_diff: 600.0        # Max differential torque per axle [Nm]
+
+stability_control:
+  k_yaw_counter_steer: 0.12     # Active steering counter-steer gain [rad / (rad/s)]
+  max_counter_steer_rad: 0.25   # Maximum active counter-steer intervention [rad] (~14.3 deg)
+  enable_gmr: true              # Giermomentenaufbau-Verzögerung (yaw build-up delay on mu-split)
+  gmr_asymmetry_threshold: 0.30# Delta mu threshold triggering GMR brake torque limitation
