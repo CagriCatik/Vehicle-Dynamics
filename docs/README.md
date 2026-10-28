@@ -30,3 +30,4 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **15** | Literatur- und Quellenverzeichnis | [REFERENCES.md](REFERENCES.md) |
 | **16** | Lenkgeometrie, Fahrwerks-K&C, Rollzentren, Eigenlenkbudget (M4) | [CHASSIS_KINEMATICS.md](CHASSIS_KINEMATICS.md) |
 | **17** | Schlupfregelung, Control Allocation, ESC/TV (M5) | [CONTROL_ALLOCATION.md](CONTROL_ALLOCATION.md) |
+| **18** | Reglerbibliothek (PI, LQR, GS-LQR, LTV-MPC), Solverdiagnostik, Benchmark (M6) | [MOTION_CONTROL.md](MOTION_CONTROL.md) |
