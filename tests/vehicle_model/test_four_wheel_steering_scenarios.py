@@ -34,6 +34,7 @@ def test_vehicle() -> SevenDOFModel:
 class TestFourWheelSteeringScenarios:
     """Validate 4WS across low-speed, high-speed, transient, and emergency scenarios."""
 
+    @pytest.mark.slow
     def test_low_speed_turning_circle_reduction(self, test_vehicle: SevenDOFModel):
         """Verify 4WS counter-phase significantly reduces turning circle radius compared to 2WS."""
         res_2ws = simulate_low_speed_turning_circle(
@@ -62,6 +63,7 @@ class TestFourWheelSteeringScenarios:
         assert r_4ws < r_2ws
         assert (r_2ws - r_4ws) / r_2ws > 0.15
 
+    @pytest.mark.slow
     def test_high_speed_double_lane_change_sideslip(self, test_vehicle: SevenDOFModel):
         """Verify 4WS in-phase steering minimizes body sideslip beta during 80 km/h double lane change."""
         ctrl_2ws = PassiveBaselineController()
@@ -106,6 +108,7 @@ class TestFourWheelSteeringScenarios:
         assert res.metrics.response_delay_ms >= 0.0
         assert not np.isnan(res.ay_mps2).any()
 
+    @pytest.mark.slow
     def test_split_mu_braking_active_yaw_damping(self, test_vehicle: SevenDOFModel):
         """Verify active yaw damping on rear wheels reduces yaw deviation during split-mu braking."""
         ctrl_open_loop = FourWheelSteeringController(mode=SteeringMode.LOOKUP_TABLE, enable_yaw_damping=False)
@@ -129,6 +132,7 @@ class TestFourWheelSteeringScenarios:
         # Closed-loop rear yaw damping must suppress lateral path perturbation compared to open-loop 4WS
         assert res_closed.metrics.max_lateral_dev_m <= res_open.metrics.max_lateral_dev_m
 
+    @pytest.mark.slow
     def test_parallel_parking_sweep_reduction(self, test_vehicle: SevenDOFModel):
         """Verify 4WS counter-phase achieves successful parking entry and reduced lateral offset."""
         res_2ws = simulate_parallel_parking(
@@ -151,6 +155,7 @@ class TestFourWheelSteeringScenarios:
         assert res_4ws.Y[-1] < res_2ws.Y[-1]
         assert res_4ws.metrics.final_heading_dev_deg < 2.0
 
+    @pytest.mark.slow
     def test_nhtsa_sine_with_dwell_stability(self, test_vehicle: SevenDOFModel):
         """Verify 4WS active yaw damping prevents spin-out and maintains stability during FMVSS 126 test."""
         ctrl_2ws = PassiveBaselineController()

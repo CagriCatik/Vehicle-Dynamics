@@ -32,6 +32,7 @@ def test_surface_name_mapping():
     assert "Ice" in get_surface_name(0.20)
 
 
+@pytest.mark.slow
 def test_dlc_multi_mu_simulation():
     """Verify ISO 3888-2 Double Lane Change across dry and snow surfaces."""
     mus = [1.00, 0.40]
@@ -51,6 +52,7 @@ def test_dlc_multi_mu_simulation():
     assert snow_kpis["integrated_ivmc"].max_sideslip_deg < 5.0
 
 
+@pytest.mark.slow
 def test_circle_handling_limit_scaling():
     """Verify that circular driving grip scales with road friction coefficient: a_y,max ∝ μ."""
     mus = [0.80, 0.30]
@@ -66,6 +68,7 @@ def test_circle_handling_limit_scaling():
     assert ay_low <= 0.35 * 1.15
 
 
+@pytest.mark.slow
 def test_multi_mu_dashboard_and_report_generation(tmp_path: Path):
     """Verify dashboard plotting and markdown report generation on a fast 2-point sweep."""
     summary = run_comprehensive_multi_mu_benchmark(

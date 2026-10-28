@@ -31,6 +31,7 @@ def test_vehicle() -> SevenDOFModel:
     return SevenDOFModel.from_yaml("configs/vehicles/seven_dof_passenger.yaml")
 
 
+@pytest.mark.slow
 def test_steady_state_circular_simulation(test_vehicle: SevenDOFModel):
     """Verify ISO 4138 circular drive runs with finite numerical states."""
     controller = PassiveBaselineController()
@@ -191,6 +192,7 @@ def test_compute_gg_diagram():
     assert not np.isnan(gg_dry.boundary_ax_g).any()
 
 
+@pytest.mark.slow
 def test_plot_handling_and_limits(tmp_path: Path, test_vehicle: SevenDOFModel):
     """Verify handling and limits 4-panel diagnostic dashboard renders to disk."""
     controller = PassiveBaselineController()

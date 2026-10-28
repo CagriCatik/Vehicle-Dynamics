@@ -29,3 +29,6 @@ vehicle_model = [
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+    "slow: long-running scenario and closed-loop tests; quick run: pytest -m 'not slow'",
+]

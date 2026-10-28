@@ -140,6 +140,7 @@ def test_tcs_prevents_wheel_spin(standard_params: SevenDOFParams):
     assert max_slip_tcs < 0.28, f"TCS failed to prevent wheelspin: max slip was {max_slip_tcs}"
 
 
+@pytest.mark.slow
 def test_integrated_controller_mu_split_braking(standard_params: SevenDOFParams):
     """Integrated controller maintains vehicle stability and heading during mu-split emergency braking."""
     model = SevenDOFModel(params=standard_params)

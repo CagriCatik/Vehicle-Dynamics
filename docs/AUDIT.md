@@ -28,6 +28,13 @@ Stand bei Audit-Beginn: Eine große Umstrukturierung (`python/` → `src/vehicle
 - Alle Tests sind grün.
 - Eine Laufzeit von 10 Minuten ist für den Entwicklungszyklus zu lang. Es gibt keine Trennung zwischen schnellen Unit-Tests und langsamen Szenario- und E2E-Tests (keine `pytest`-Marker).
 
+**Nach M0:** 21 Tests mit Laufzeit ≥ 2 s tragen den Marker `slow`. Drei davon verursachen rund 410 der 600 s (`test_multi_mu_dashboard_and_report_generation` 212 s, `test_circle_handling_limit_scaling` 114 s, `test_parallel_parking_sweep_reduction` 85 s).
+
+```
+pytest -m "not slow"   # 141 passed, 2 skipped, 1 xfailed, 21 deselected in 13 s
+pytest                 # 162 passed, 2 skipped, 1 xfailed in 579 s
+```
+
 ## 3. Architekturinventar (`src/vehicle_model/`)
 
 | Paket | Inhalt | Bezug Plan V2.0 |
@@ -72,16 +79,23 @@ Der Original-Code in `HEAD` hat SLSQP immerhin im Docstring offengelegt. Die Por
 
 ### 4.4 Kleinere Befunde
 
-- Der Docstring in `seven_dof.py` verweist auf `docs/vehicle_dynamics/seven_dof_model.md`. Diese Datei existiert nicht.
-- `pyproject.toml` deklariert `config/tyres/*.yaml` als Package-Data. Die Reifen-Configs liegen jedoch im Top-Level-Verzeichnis `configs/tyres/` und sind daher in einer installierten (nicht-editable) Variante nicht verfügbar.
+- Der Docstring in `seven_dof.py` verweist auf `docs/vehicle_dynamics/seven_dof_model.md`. Diese Datei existiert nicht. *(erledigt in M0)*
+- ~~`pyproject.toml`-Package-Data ist defekt.~~ Korrektur: Die Reifen-YAMLs liegen doppelt vor, in `configs/tyres/` und als Fallback in `src/vehicle_model/config/tyres/`. Das ist eine Konfigurationsduplikation (Plan.md, Abschnitt 2.2). Seit M0 prüft `test_config_provenance.py`, dass die Kopien identisch bleiben.
+- In `HANDLING_LIMITS.md` war der statische Vorderachslastanteil mit 52,5 % angegeben, korrekt ist l_r/L = 53,6 %. *(erledigt in M0)*
+- Die NMPC-Dokumentation enthielt Parameterwerte, Code-Ausschnitte und Benchmark-Zahlen, die nicht zum Code passten oder nicht belegt waren. *(korrigiert in M0)*
+- „Calibrated LUT“ bezeichnet in den 4WS-Szenarien eine synthetisch abgestimmte Tabelle. Die Bezeichnung ist missverständlich, aber nicht als reale Kalibrierung ausgewiesen. Offen.
 - Sehr große Szenario-Module (`split_mu_scenarios.py` 2612, `four_wheel_steering_scenarios.py` 2015, `validation_matrix.py` 1665 Zeilen) widersprechen dem Grundsatz „ein Modul, eine Verantwortung“.
+
+### 4.5 Geradeausfahrt des dynamischen Einspurmodells (Abschnitt 15.1): hoch
+
+`DynamicSingleTrack` erzeugt bei Lenkwinkel null und Schräglaufwinkel null Achsseitenkräfte von etwa 800 N (vorn) und 1600 N (hinten). Das Fahrzeug giert und driftet bei Geradeausfahrt (nach 2 s: ψ ≈ −0,03 rad). Ursache sind die Offset-Koeffizienten (PHY, PVY) der MF6.2-Beispielreifen. Beim Zusammenfassen beider Räder einer Achse heben sie sich nicht wie links/rechts gespiegelt auf. Die `TyreModel`-Implementierungen und das 7-DOF-Modell sind nicht betroffen (geprüft). Der Befund ist als `xfail(strict=True)` in `test_single_track_models.py` festgehalten.
 
 ## 5. Zuordnung der Befunde zur Roadmap (Plan.md, Abschnitt 19)
 
 | Meilenstein | Offene Punkte aus diesem Audit | Abnahme |
 |---|---|---|
-| **M0 – Repository Audit & Stabilization** | ~~Stand sichern~~ (erledigt, `041f48c`). Falsche C/GMRES-Bezeichnung korrigieren (`NMPCControllerCGMRES` → `SLSQPPathTrackingNMPC`, alter Name als `DeprecationWarning`-Alias, Docs, Examples und Config-Namen). Parameterherkunft korrigieren (`oem`-Reifendaten, Fahrzeug-YAML um `id/version/provenance`). Toten Doku-Verweis in `seven_dof.py` und Package-Data in `pyproject.toml` beheben. `pytest`-Marker `slow`/`e2e`. Regressionstests für die Bestandsmodelle. Abdeckung der portierten Alt-Tests prüfen. | `grep -ri "c/gmres"` findet nur noch Hinweise auf „nicht implementiert“; `pytest -m "not slow"` < 60 s; volle Suite grün |
-| **M1 – Virtual Reference Vehicle & Handling Fundamentals** | Referenzfahrzeug mit dokumentierter Herkunft. Lineares 2-DOF-Einspurmodell. Paket `handling_analysis` (Eigenwerte, Dämpfung, Eigenfrequenz, Gierverstärkung, Untersteuergradient, v_char/v_crit, Frequenzgang), aufbauend auf `simulation/handling_limits.py` statt parallel dazu. Hinterachs- bzw. 4WS-Geometrie im kinematischen Einspurmodell (Grenzfall δ_f = δ_r). | Analytische und numerische Gierverstärkung < 1 % Abweichung bei kleinem a_y; Prüfkriterien V1 |
+| **M0 – Repository Audit & Stabilization** | ~~Stand sichern~~ (`041f48c`). ~~C/GMRES-Bezeichnung korrigieren~~ (`0c5877a`). ~~Parameterherkunft korrigieren~~ (`1e45e33`). ~~Toten Doku-Verweis beheben~~ (`1e45e33`). ~~Regressionstests für die Bestandsmodelle~~ (`f8d164a`, `test_regression_baseline.py`). ~~Abdeckung der portierten Alt-Tests prüfen~~ (alle alten Testfälle übernommen, keine abgeschwächt). ~~`pytest`-Marker `slow`~~ (Schnelllauf 13 s). | `grep -ri "c/gmres"` findet nur noch Hinweise auf „nicht implementiert“; `pytest -m "not slow"` < 60 s; volle Suite grün |
+| **M1 – Virtual Reference Vehicle & Handling Fundamentals** | Geradeausfahrt-Defekt von `DynamicSingleTrack` beheben (4.5). Referenzfahrzeug mit dokumentierter Herkunft. Lineares 2-DOF-Einspurmodell. Paket `handling_analysis` (Eigenwerte, Dämpfung, Eigenfrequenz, Gierverstärkung, Untersteuergradient, v_char/v_crit, Frequenzgang), aufbauend auf `simulation/handling_limits.py` statt parallel dazu. Hinterachs- bzw. 4WS-Geometrie im kinematischen Einspurmodell (Grenzfall δ_f = δ_r). | Analytische und numerische Gierverstärkung < 1 % Abweichung bei kleinem a_y; Prüfkriterien V1 |
 | **M2 – Nonlinear Four-Wheel Vehicle Dynamics** | Kontaktverlust explizit behandeln: Ereignisflag in der Telemetrie, momentenkonsistente Lastverteilung statt Clip-und-Renormierung in `SevenDOFModel.compute_normal_loads`. | Invariantentest für Kräfte- und Momentenbilanz |
 | **M3 – Advanced Tyre Physics** | Transientes Reifenmodell mit Relaxationslänge fehlt. | gemäß Plan |
 | **M5 – Actuators, ABS, TCS, ESC & Torque Vectoring** | Eigenständige Control Allocation mit Machbarkeitsrückmeldung (Paket `allocation/`) fehlt. | gemäß Plan |

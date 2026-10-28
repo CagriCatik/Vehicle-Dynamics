@@ -130,6 +130,7 @@ class TestSplitMuRoadSurfaces:
 class TestSplitMuBraking:
     """Validate split-mu emergency braking physics and stabilization."""
 
+    @pytest.mark.slow
     def test_split_mu_braking_passive_vs_ivmc(self, test_vehicle: SevenDOFModel, ivmc_controller: IntegratedChassisController):
         """Verify IVMC drastically attenuates yaw perturbation compared to passive baseline."""
         # Passive baseline
@@ -168,6 +169,7 @@ class TestSplitMuBraking:
 class TestSplitMuLaunch:
     """Validate split-mu full-throttle launch and traction control."""
 
+    @pytest.mark.slow
     def test_split_mu_launch_traction(self, test_vehicle: SevenDOFModel, ivmc_controller: IntegratedChassisController):
         """Verify torque vectoring and TCS achieve superior tractive speed over open-diff."""
         res_pass = simulate_split_mu_launch(
@@ -194,6 +196,7 @@ class TestSplitMuLaunch:
 class TestSplitMuBrakingInTurn:
     """Validate ISO 7975 combined slip and roll load transfer on split-mu."""
 
+    @pytest.mark.slow
     def test_braking_in_turn_execution(self, test_vehicle: SevenDOFModel, ivmc_controller: IntegratedChassisController):
         """Verify circular turn braking executes with finite states and valid radial metrics."""
         res = simulate_split_mu_braking_in_turn(
@@ -264,6 +267,7 @@ class TestSplitMuEvasiveDLC:
 class TestSplitMuVisualization:
     """Validate 2D planar vehicle visualization, equal aspect ratio dashboard, and animated GIF generation."""
 
+    @pytest.mark.slow
     def test_dashboard_and_animation_generation(
         self,
         test_vehicle: SevenDOFModel,
@@ -298,6 +302,7 @@ class TestSplitMuVisualization:
         assert out_gif.exists()
         assert out_gif.stat().st_size > 10000
 
+    @pytest.mark.slow
     def test_friction_sweep_execution_and_plotting(self, tmp_path: Path):
         """Verify parametric friction sweep execution and 6-panel diagram export."""
         summary = simulate_split_mu_friction_sweep(
@@ -315,6 +320,7 @@ class TestSplitMuVisualization:
         assert out_png.exists()
         assert out_png.stat().st_size > 10000
 
+    @pytest.mark.slow
     def test_friction_sweep_all_four_vehicles(self, tmp_path: Path):
         """Verify parametric friction sweep with all 4 vehicles: Passive, Standalone 4WS, IVMC 2WS, and Full IVMC+4WS."""
         summary = simulate_split_mu_friction_sweep(

@@ -11,6 +11,7 @@ from vehicle_model.visualization.animation import animate_maneuver
 from vehicle_model.visualization.plan_view import VehicleParams
 
 
+@pytest.mark.slow
 def test_animate_maneuver_smoke(tmp_path: Path):
     """Verify animate_maneuver generates a valid .gif file."""
     t = np.linspace(0.0, 1.0, 15)
@@ -57,6 +58,7 @@ def test_animate_maneuver_empty_raises():
         animate_maneuver(histories={}, output_path="/tmp/dummy.gif")
 
 
+@pytest.mark.slow
 def test_animate_maneuver_with_reference_and_pylons(tmp_path: Path):
     """Verify animate_maneuver renders correctly with reference path and cones."""
     t = np.linspace(0.0, 0.5, 8)

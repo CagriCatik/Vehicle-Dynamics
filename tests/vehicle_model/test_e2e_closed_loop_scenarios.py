@@ -32,6 +32,7 @@ from vehicle_model.vehicle_models.seven_dof import SevenDOFModel
 # ---------------------------------------------------------------------------
 # Test 1: Closed-Loop Driver-in-the-Loop on Split-Mu Surface Transition
 # ---------------------------------------------------------------------------
+@pytest.mark.slow
 def test_e2e_driver_in_the_loop_split_mu_transition():
     """Verify coupled closed-loop stability when a human driver navigates across split-mu transition."""
     params = SevenDOFParams.from_yaml()
@@ -130,6 +131,7 @@ def test_e2e_driver_in_the_loop_split_mu_transition():
 # ---------------------------------------------------------------------------
 # Test 2: Dynamic Two-Track NMPC Trajectory Tracking & Kamm Friction Circle
 # ---------------------------------------------------------------------------
+@pytest.mark.slow
 def test_e2e_dynamic_nmpc_trajectory_tracking_kamm_circle():
     """Verify Dynamic Two-Track NMPC executes lane evasion while strictly honoring Kamm friction limits."""
     params = SevenDOFParams.from_yaml()
