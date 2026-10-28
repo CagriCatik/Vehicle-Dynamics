@@ -15,7 +15,11 @@ Modelling assumptions (documented in docs/VEHICLE_MODELS.md, section 2):
   * Unilateral wheel contact: a lifting wheel carries zero load and the chassis
     rests on three wheels with exact force/moment balance; tip-over is flagged
     (see :mod:`vehicle_model.vehicle_models.normal_loads`).
-  * Steering angles are inputs (no steering actuator dynamics here).
+  * Steering angles are inputs (no steering actuator dynamics here). Left and
+    right wheels share the axle angle unless a ``chassis`` (quasi-static K&C,
+    :mod:`vehicle_model.suspension.kinematics`) adds Ackermann geometry, bump
+    and compliance steer and roll-centre load transfer; without it the model
+    is unchanged.
   * Tyre forces come from any :class:`~vehicle_model.tire_model.TyreModel`.
   * Rolling resistance and aerodynamic drag act on the chassis.
   * Brake torque opposes wheel rotation via ``tanh(omega/omega_eps)``; static
@@ -24,6 +28,7 @@ Modelling assumptions (documented in docs/VEHICLE_MODELS.md, section 2):
 
 from __future__ import annotations
 
+import dataclasses
 import math
 
 import numpy as np
@@ -39,6 +44,7 @@ from vehicle_model.core.types import (
     WheelTelemetry,
 )
 from vehicle_model.roads.surface import RoadSurface, UniformRoad
+from vehicle_model.steering.geometry import wheel_steer_angles
 from vehicle_model.vehicle_models.normal_loads import (
     NormalLoads,
     quasi_static_normal_loads,
@@ -54,15 +60,20 @@ _LT_MAX_ITER = 25
 _RK4_STABILITY = 2.0   # safety-reduced RK4 stability bound (exact: ~2.78) for lambda*dt
 
 
-def _vehicle_yaml(path: str | None) -> dict:
-    """Raw vehicle YAML (same path resolution as ``SevenDOFParams.from_yaml``)."""
+def _vehicle_path(path: str | None):
+    """Vehicle YAML path (same resolution as ``SevenDOFParams.from_yaml``)."""
     from pathlib import Path
-
-    import yaml
 
     from vehicle_model.config.loader import get_configs_root
 
-    p = Path(path) if path is not None else get_configs_root() / "vehicles" / "seven_dof_passenger.yaml"
+    return Path(path) if path is not None else get_configs_root() / "vehicles" / "seven_dof_passenger.yaml"
+
+
+def _vehicle_yaml(path: str | None) -> dict:
+    """Raw vehicle YAML."""
+    import yaml
+
+    p = _vehicle_path(path)
     with open(p, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
@@ -80,8 +91,16 @@ class SevenDOFModel:
         tyre: TyreModel | None = None,
         road: RoadSurface | None = None,
         tyre_rear: TyreModel | None = None,
+        chassis=None,
     ):
         self.params = params or SevenDOFParams.from_yaml()
+        self.chassis = chassis  # QuasiStaticChassis or None
+        self._load_params = self.params
+        if chassis is not None:
+            if chassis.params != self.params:
+                raise ValueError("chassis was built for different vehicle parameters")
+            self._load_params = dataclasses.replace(
+                self.params, k_roll_f=chassis.front_lateral_transfer_share)
         from vehicle_model.tire_model import load_tyre
         self.tyre_front: TyreModel = tyre or load_tyre("pacejka_front_synthetic")
         self.tyre_rear: TyreModel = tyre_rear or load_tyre("pacejka_rear_synthetic")
@@ -98,18 +117,25 @@ class SevenDOFModel:
         tyre_name: str | None = None,
         road: RoadSurface | None = None,
         tyre_rear_name: str | None = None,
+        kc_config: str | None = None,
     ) -> SevenDOFModel:
         """Instantiate SevenDOFModel loaded from centralized YAML configuration files.
 
         Tyre selection per axle: explicit argument, else the vehicle YAML's
         ``tyres: {front, rear}`` section, else ``pacejka_{front,rear}_synthetic``.
+        ``kc_config``: optional K&C set (configs/suspension/kc_*.yaml); it needs the
+        vehicle YAML's ``chassis_extended`` section. Without it the model has no K&C.
         """
         from vehicle_model.tire_model import load_tyre
         p = SevenDOFParams.from_yaml(vehicle_config)
         yaml_tyres = _vehicle_yaml(vehicle_config).get("tyres") or {}
         front = tyre_name or yaml_tyres.get("front") or "pacejka_front_synthetic"
         rear = tyre_rear_name or yaml_tyres.get("rear") or "pacejka_rear_synthetic"
-        return cls(params=p, tyre=load_tyre(front), tyre_rear=load_tyre(rear), road=road)
+        chassis = None
+        if kc_config is not None:
+            from vehicle_model.suspension.kinematics import QuasiStaticChassis
+            chassis = QuasiStaticChassis.from_yaml(p, _vehicle_path(vehicle_config), kc_config)
+        return cls(params=p, tyre=load_tyre(front), tyre_rear=load_tyre(rear), road=road, chassis=chassis)
 
 
     # ------------------------------------------------------------------ geometry
@@ -124,20 +150,24 @@ class SevenDOFModel:
 
         See :meth:`compute_normal_load_state` for the contact state.
         """
-        return quasi_static_normal_loads(self.params, ax, ay).Fz
+        return quasi_static_normal_loads(self._load_params, ax, ay).Fz
 
     def compute_normal_load_state(self, ax: float, ay: float) -> NormalLoads:
         """Wheel loads with unilateral contact: lift-off and tip-over are reported, not hidden.
 
         Force, pitch- and roll-moment balance are exact unless ``support == "tip_over"``.
         """
-        return quasi_static_normal_loads(self.params, ax, ay)
+        return quasi_static_normal_loads(self._load_params, ax, ay)
 
     # ---------------------------------------------------------------- dynamics
-    def wheel_velocities(self, state: SevenDOFState, u: SevenDOFControlInput):
-        """``(steer, cos, sin, v_wx, v_wy)``: wheel-centre velocity in each wheel frame [m/s]."""
+    def wheel_velocities(self, state: SevenDOFState, u: SevenDOFControlInput, steer: np.ndarray | None = None):
+        """``(steer, cos, sin, v_wx, v_wy)``: wheel-centre velocity in each wheel frame [m/s].
+
+        ``steer`` defaults to the axle angles of ``u`` (left = right).
+        """
         pos = self.wheel_positions
-        steer = np.array([u.steer_f, u.steer_f, u.steer_r, u.steer_r], dtype=float)
+        if steer is None:
+            steer = np.array([u.steer_f, u.steer_f, u.steer_r, u.steer_r], dtype=float)
         cos_d, sin_d = np.cos(steer), np.sin(steer)
         vxb = state.vx - state.r * pos[:, 1]
         vyb = state.vy + state.r * pos[:, 0]
@@ -170,11 +200,14 @@ class SevenDOFModel:
         vx, vy, r, omega, psi = state.vx, state.vy, state.r, state.omega, state.psi
 
         pos = self.wheel_positions
-        steer, cos_d, sin_d, v_wx, v_wy = self.wheel_velocities(state, u)
-
-        # Regularised slips
         v_wheel = omega * p.Reff
-        kappa, alpha = self._slips(state, v_wx, v_wy, v_wheel)
+        chassis = self.chassis
+        if chassis is None:
+            steer, cos_d, sin_d, v_wx, v_wy = self.wheel_velocities(state, u)
+            kappa, alpha = self._slips(state, v_wx, v_wy, v_wheel)
+        else:
+            kc = chassis.kc
+            steer_geo = wheel_steer_angles(u.steer_f, u.steer_r, pos, p.lf, p.lr, kc.ackermann_front, kc.ackermann_rear)
 
         # Friction at contact patches
         c_psi, s_psi = math.cos(psi), math.sin(psi)
@@ -187,9 +220,15 @@ class SevenDOFModel:
 
         # Fixed-point solution of the quasi-static load-transfer loop
         ax, ay = self._accel_guess
+        Fy_axle = (p.mass * p.lr / p.wheelbase * ay, p.mass * p.lf / p.wheelbase * ay)  # first guess
         converged = False
         for _ in range(_LT_MAX_ITER):
-            loads = quasi_static_normal_loads(p, ax, ay)
+            if chassis is not None:
+                # K&C steer depends on (ax, ay) and the axle lateral forces: part of the fixed point
+                steer = steer_geo + chassis.steer_change(ax, ay, *Fy_axle)
+                steer, cos_d, sin_d, v_wx, v_wy = self.wheel_velocities(state, u, steer)
+                kappa, alpha = self._slips(state, v_wx, v_wy, v_wheel)
+            loads = quasi_static_normal_loads(self._load_params, ax, ay)
             Fz = loads.Fz
             Fx_w, Fy_w = self._tyre_forces(kappa, alpha, Fz, mu)
             Fx_b = Fx_w * cos_d - Fy_w * sin_d
@@ -197,6 +236,10 @@ class SevenDOFModel:
             ax_new = (Fx_b.sum() - F_aero - F_roll) / p.mass
             ay_new = Fy_b.sum() / p.mass
             converged = abs(ax_new - ax) < _LT_TOL and abs(ay_new - ay) < _LT_TOL
+            if chassis is not None:
+                Fy_new = (Fy_w[:2].sum(), Fy_w[2:].sum())
+                converged = converged and max(abs(Fy_new[0] - Fy_axle[0]), abs(Fy_new[1] - Fy_axle[1])) < _LT_TOL * p.mass
+                Fy_axle = Fy_new
             ax, ay = ax_new, ay_new
             if converged:
                 break

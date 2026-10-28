@@ -1,0 +1,26 @@
+# Quasi-static kinematics & compliance for configs/vehicles/reference_passenger_car.yaml
+# (src/vehicle_model/suspension/kinematics.py). Opt-in:
+#   SevenDOFModel.from_yaml("configs/vehicles/reference_passenger_car.yaml",
+#                           kc_config="configs/suspension/kc_reference_passenger_car.yaml")
+provenance:
+  data_class: synthetic
+  source: >-
+    Values chosen from general textbook ranges for front-MacPherson / rear-multi-link
+    passenger cars (Milliken & Milliken 1995; Heissing/Ersoy 2011; Gillespie 1992).
+    Not measured on, fitted to or validated against any real vehicle or K&C rig.
+  assumptions:
+    - "roll steer from bump steer and roll; both axles understeer-promoting"
+    - "compliance steer acts instantly (no bushing dynamics)"
+
+kinematics_compliance:
+  roll_centre_height_front: 0.05    # [m] MacPherson-typical, low
+  roll_centre_height_rear: 0.10     # [m] multi-link-typical
+  # Toe-in [rad] over wheel compression [m]; scalar = constant gradient [rad/m]
+  bump_steer_front: -0.10           # toe-out on bump: front roll steer -0.077 rad/rad (out of the turn)
+  bump_steer_rear:                  # toe-in on bump, progressive: gradient 0.05 rad/m at z = 0
+    travel: [-0.08, -0.04, 0.0, 0.04, 0.08]
+    toe_in: [-0.0050, -0.0022, 0.0, 0.0018, 0.0032]
+  compliance_steer_front: 1.75e-6   # [rad/N] = 0.10 deg/kN, front steers out of the turn
+  compliance_steer_rear: 0.52e-6    # [rad/N] = 0.03 deg/kN, rear steers into the turn
+  ackermann_front: 0.6              # [-] 60 % Ackermann
+  ackermann_rear: 0.0

@@ -64,7 +64,7 @@ class TransientSevenDOFModel(SevenDOFModel):
     @classmethod
     def from_yaml(cls, *args, relaxation: TyreRelaxation | None = None, **kwargs) -> TransientSevenDOFModel:
         base = SevenDOFModel.from_yaml(*args, **kwargs)
-        return cls(base.params, base.tyre_front, base.road, base.tyre_rear, relaxation=relaxation)
+        return cls(base.params, base.tyre_front, base.road, base.tyre_rear, chassis=base.chassis, relaxation=relaxation)
 
     # ----------------------------------------------------------------- hooks
     def _slips(self, state, v_wx, v_wy, v_wheel):
@@ -76,9 +76,14 @@ class TransientSevenDOFModel(SevenDOFModel):
 
     # ------------------------------------------------------------ utilities
     def steady_slip_state(self, state: SevenDOFState, u: SevenDOFControlInput) -> TransientSevenDOFState:
-        """``state`` with the transient slips set to their steady (quasi-static) values."""
-        _, _, _, v_wx, v_wy = self.wheel_velocities(state, u.clamped(self.params))
-        k, s = self.relaxation.steady_state(v_wx, v_wy, state.omega * self.params.Reff)
+        """``state`` with the transient slips set to their steady (quasi-static) values.
+
+        With K&C the wheel angles depend on the forces, so the quasi-static model
+        is evaluated once to obtain the wheel velocities.
+        """
+        quasi_static = SevenDOFModel(self.params, self.tyre_front, self.road, self.tyre_rear, chassis=self.chassis)
+        _, tel, _, _ = quasi_static.evaluate_dynamics(SevenDOFState.from_array(state.to_array()[:10]), u.clamped(self.params))
+        k, s = self.relaxation.steady_state(tel.v_wx, tel.v_wy, state.omega * self.params.Reff)
         return TransientSevenDOFState(vx=state.vx, vy=state.vy, r=state.r, omega=state.omega.copy(),
                                       X=state.X, Y=state.Y, psi=state.psi, kappa_t=k, tan_alpha_t=s)
 
