@@ -226,7 +226,12 @@ class QuarterCarModel:
         active_force: float = 0.0,
         damper_c: float | None = None,
     ) -> Tuple[QuarterCarState, QuarterCarOutputs]:
-        """Advance the system state by dt using classic Runge-Kutta 4th order."""
+        """Advance the system state by dt using classic Runge-Kutta 4th order.
+
+        The road input is held constant over the step (zero-order hold), which delays
+        the excitation by dt/2 and makes energy bookkeeping first-order accurate; use
+        :meth:`step_with_road` for a road given as a function of time.
+        """
         x0 = state.as_array()
 
         k1, out = self.evaluate_derivatives(state, road_z, road_dz, active_force, damper_c)
@@ -244,3 +249,21 @@ class QuarterCarModel:
         next_state = QuarterCarState.from_array(x_next)
 
         return next_state, out
+
+    def step_with_road(
+        self,
+        state: QuarterCarState,
+        t: float,
+        dt: float,
+        road,
+        active_force: float = 0.0,
+        damper_c: float | None = None,
+    ) -> Tuple[QuarterCarState, QuarterCarOutputs]:
+        """RK4 step with the road ``road(t) -> (z_r, z_r')`` evaluated at the stage times t, t+dt/2, t+dt."""
+        x0 = state.as_array()
+        z0, z_half, z1 = road(t), road(t + 0.5 * dt), road(t + dt)
+        k1, out = self.evaluate_derivatives(state, *z0, active_force, damper_c)
+        k2, _ = self.evaluate_derivatives(QuarterCarState.from_array(x0 + 0.5 * dt * k1), *z_half, active_force, damper_c)
+        k3, _ = self.evaluate_derivatives(QuarterCarState.from_array(x0 + 0.5 * dt * k2), *z_half, active_force, damper_c)
+        k4, _ = self.evaluate_derivatives(QuarterCarState.from_array(x0 + dt * k3), *z1, active_force, damper_c)
+        return QuarterCarState.from_array(x0 + (dt / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)), out
