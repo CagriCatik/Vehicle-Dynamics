@@ -1,4 +1,4 @@
-"""Real-time Matplotlib dashboard for CGMRES-NMPC vehicle simulation.
+"""Real-time Matplotlib dashboard for the SLSQP NMPC path-tracking simulation.
 
 Displays:
   - Left panel: bird's eye view tracking sinusoidal reference with 4WS vehicle polygons.
@@ -18,7 +18,7 @@ import numpy as np
 
 from vehicle_model.controllers.nmpc import (
     KinematicBicycleSystem,
-    NMPCControllerCGMRES,
+    SLSQPPathTrackingNMPC,
     get_ref_state,
 )
 from vehicle_model.visualization.plan_view import vehicle_polygons
@@ -79,7 +79,7 @@ class RealTimeDashboard:
     def __init__(
         self,
         plant: KinematicBicycleSystem,
-        controller: NMPCControllerCGMRES,
+        controller: SLSQPPathTrackingNMPC,
         dt: float = 0.05,
         max_iter: int = 400,
         init_x: float = 0.0,

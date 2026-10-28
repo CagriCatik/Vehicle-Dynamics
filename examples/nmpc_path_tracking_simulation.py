@@ -1,11 +1,11 @@
 """Closed-loop Nonlinear Model Predictive Control (NMPC) path tracking simulation.
 
-Tracks a sinusoidal slalom path using the C/GMRES formulation with calibrated
-Ackermann rear-axle steering lookup table (LUT).
+Tracks a sinusoidal slalom path with the SLSQP single-shooting NMPC and a synthetic
+rear-axle steering lookup table (LUT).
 
 Run:
-    python examples/cgmres_nmpc_simulation.py
-    python examples/cgmres_nmpc_simulation.py --headless
+    python examples/nmpc_path_tracking_simulation.py
+    python examples/nmpc_path_tracking_simulation.py --headless
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ import numpy as np
 from vehicle_model.controllers.nmpc import (
     KinematicBicycleSystem,
     NMPCConfig,
-    NMPCControllerCGMRES,
+    SLSQPPathTrackingNMPC,
     get_ref_state,
 )
 from vehicle_model.visualization.nmpc_dashboard import RealTimeDashboard
@@ -50,7 +50,7 @@ def run_simulation(headless: bool = False, n_steps: int = 120, output_dir: str =
         init_v=config.target_v,
         wheelbase=config.wheelbase,
     )
-    controller = NMPCControllerCGMRES(init_x=0.0, config=config)
+    controller = SLSQPPathTrackingNMPC(init_x=0.0, config=config)
 
     if not headless:
         print("Launching interactive NMPC RealTimeDashboard...")
@@ -156,14 +156,14 @@ def run_simulation(headless: bool = False, n_steps: int = 120, output_dir: str =
     axes[2].legend(facecolor=PANEL_BG, edgecolor=GRID_COLOR, labelcolor=TEXT_COLOR)
 
     plt.tight_layout()
-    save_path = out_p / "cgmres_nmpc_simulation.png"
+    save_path = out_p / "nmpc_path_tracking_simulation.png"
     fig.savefig(save_path, dpi=150, facecolor=fig.get_facecolor(), edgecolor="none")
     plt.close(fig)
     print(f"Saved headless simulation summary plot to {save_path}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="CGMRES-NMPC Path Tracking Simulation")
+    parser = argparse.ArgumentParser(description="SLSQP NMPC Path Tracking Simulation")
     parser.add_argument("--headless", action="store_true", help="Run without opening GUI and save plot")
     parser.add_argument("--steps", type=int, default=120, help="Number of simulation steps")
     args = parser.parse_args()

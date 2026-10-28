@@ -31,7 +31,7 @@ graph TD
         FWS[4WS Speed-Scheduled LUT Coordinator]
         PPE[Phase-Plane Envelope Controller: beta-beta_dot Manifold]
         ARSD[Active Roll Stiffness Distribution: 14-DOF ARSDC]
-        NMPC[Nonlinear MPC: C/GMRES & Dynamic Two-Track]
+        NMPC[Nonlinear MPC: SLSQP Path Tracker & Dynamic Two-Track]
     end
 
     subgraph Actuator Dynamics & Allocation
@@ -105,7 +105,7 @@ All detailed theoretical formulations, mathematical derivations, component guide
 | **04** | [Actuator Physics & Braking Systems](docs/ACTUATORS.md) | EPS steering lag/rate limits, 4-motor EV inverter envelope, and BBW regen blending |
 | **05** | [Integrated Chassis Control](docs/CHASSIS_CONTROL.md) | IVMC architecture, active torque vectoring, phase-plane envelope control, and ARSDC |
 | **06** | [Allradlenkung & Hinterachslenkung (4WS)](docs/REAR_WHEEL_STEERING.md) | Counter-phase, in-phase, analytical zero-sideslip condition ($\beta \to 0$), 2D LUT map |
-| **07** | [Non-Linear Model Predictive Control](docs/NMPC_CONTROL.md) & [C/GMRES NMPC](docs/cgmres_nmpc.md) | C/GMRES real-time path tracker and Dynamic Two-Track NMPC with 4-wheel Kamm bounds |
+| **07** | [Non-Linear Model Predictive Control](docs/NMPC_CONTROL.md) & [NMPC Path Tracking](docs/NMPC_PATH_TRACKING.md) | SLSQP single-shooting path tracker and Dynamic Two-Track NMPC with friction-circle penalty |
 | **08** | [Neuromuscular Driver Model](docs/DRIVER_MODEL.md) | Closed-loop preview guidance (MacAdam/Salvucci), human delay ($\tau_d$), and workload metrics |
 | **09** | [Suspension Dynamics & Ride Comfort](docs/SUSPENSION_DYNAMICS.md) | 2-DOF quarter-car modal analysis, Skyhook/Groundhook damping, and 14-DOF coupled ride |
 | **10** | [State Estimation & Optimization](docs/STATE_ESTIMATION.md) | Sensor noise models, EKF sideslip observer, RLS real-time friction, and PSO gain tuning |
@@ -125,7 +125,7 @@ All detailed theoretical formulations, mathematical derivations, component guide
 - **Active Chassis Control:** Integrated Vehicle Motion Control (IVMC) combining feedforward steady-state steering, feedback PID/LQR yaw damping, 4WS speed scheduling, and constrained torque vectoring.
 - **Handling Limits & Understeer Evaluation (ISO 4138):** Full circular steady-state driving test measuring understeer gradient $K_{\text{us}}(a_y)$, Ackermann reference line, characteristic speed $v_{\text{char}}$, critical speed $v_{\text{crit}}$, and combined G-G acceleration envelopes.
 - **Advanced Stability Envelopes:** $(\beta, \dot{\beta})$ Phase-Plane Envelope Control for lift-off oversteer recovery and 14-DOF Active Roll Stiffness Distribution Control (ARSDC) for rollover mitigation ($LTR < 0.70$).
-- **Nonlinear Model Predictive Control (NMPC):** High-speed Continuation/GMRES (C/GMRES) path tracking and full Dynamic Two-Track NMPC enforcing 4-wheel Kamm circle friction constraints.
+- **Nonlinear Model Predictive Control (NMPC):** SLSQP single-shooting kinematic path tracker and Dynamic Two-Track NMPC with a soft friction-circle penalty (no C/GMRES implementation).
 - **Closed-Loop Driver-in-the-Loop Dynamics:** MacAdam/Salvucci preview driver with human neural latency ($\tau_d \approx 160\text{ ms}$) and neuromuscular lag ($\tau_n \approx 100\text{ ms}$) for driver workload evaluation.
 - **State Estimation Suite:** Extended Kalman Filter (EKF) sideslip observer, Recursive Least Squares (RLS) real-time friction estimator, and Particle Swarm Optimization (PSO) tuning engine.
 - **Automated Validation Platform:** Executes 10 standardized ISO and NHTSA maneuvers, compiling interactive HTML dashboards, markdown validation reports, and synchronized 20 FPS real-time 2D planar animations (GIFs).
@@ -162,7 +162,7 @@ Vehicle-Dynamics/
 │   ├── CHASSIS_CONTROL.md             # IVMC, 4WS speed scheduling, phase-plane envelope & ARSDC
 │   ├── REAR_WHEEL_STEERING.md         # Coordinated 4WS, virtual wheelbase, counter/in-phase
 │   ├── NMPC_CONTROL.md                # Dynamic Two-Track NMPC with 4-wheel Kamm circle bounds
-│   ├── cgmres_nmpc.md                 # Real-time C/GMRES NMPC solver & trajectory tracking
+│   ├── NMPC_PATH_TRACKING.md          # SLSQP NMPC path tracker (formulation & limits)
 │   ├── DRIVER_MODEL.md                # Closed-loop neuromuscular preview driver dynamics
 │   ├── SUSPENSION_DYNAMICS.md         # Quarter-car modal analysis, Skyhook/Groundhook & 14-DOF ride
 │   ├── STATE_ESTIMATION.md            # Sensor models, EKF sideslip observer, RLS friction & PSO

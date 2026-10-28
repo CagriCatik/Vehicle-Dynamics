@@ -9,7 +9,7 @@ Generates high-definition, synchronized animated GIFs for standard automotive ma
 6. NHTSA Dynamic Fishhook (80 km/h: Rollover / Spinout Mitigation & Yaw Stabilization)
 7. Low-Speed Slalom (30 km/h: Virtual Wheelbase Reduction via Counter-Phase 4WS)
 8. High-Speed Highway Lane Change (120 km/h: In-Phase 4WS Crab Translation)
-9. C/GMRES NMPC Slalom Path Tracking (Kinematic Bicycle with Rear-Axle Steering LUT)
+9. SLSQP NMPC Slalom Path Tracking (Kinematic Bicycle with Rear-Axle Steering LUT)
 
 Run:
     python examples/generate_maneuver_animations.py
@@ -37,7 +37,7 @@ from vehicle_model.controllers import (
 from vehicle_model.controllers.nmpc import (
     KinematicBicycleSystem,
     NMPCConfig,
-    NMPCControllerCGMRES,
+    SLSQPPathTrackingNMPC,
     NMPCPathTrackingController,
     get_ref_state,
 )
@@ -470,10 +470,10 @@ def generate_all_animations(
         print("\n[8/9] Skipping High-Speed Lane Change (already exists)")
 
     # -------------------------------------------------------------------------
-    # 9. C/GMRES NMPC Slalom Path Tracking (Full-Scale 7-DOF Vehicle Dynamics)
+    # 9. SLSQP NMPC Slalom Path Tracking (Full-Scale 7-DOF Vehicle Dynamics)
     # -------------------------------------------------------------------------
-    if not should_skip("cgmres_nmpc_slalom"):
-        print("\n[9/9] Simulating and Animating: C/GMRES NMPC Slalom Path Tracking...")
+    if not should_skip("nmpc_slalom"):
+        print("\n[9/9] Simulating and Animating: SLSQP NMPC Slalom Path Tracking...")
         t0 = time.time()
         m_sample = SevenDOFModel.from_yaml("configs/vehicles/seven_dof_passenger.yaml")
         v_params_nmpc = VehicleParams.from_seven_dof_params(m_sample.params)
@@ -535,7 +535,7 @@ def generate_all_animations(
         ctrls_nmpc = {
             "passive": (PassiveBaselineController(), delta_passive),
             "nmpc_front_steer": (NMPCPathTrackingController(config=cfg_fws, params=m_sample.params), np.zeros(steps_nmpc)),
-            "cgmres_nmpc_4ws": (NMPCPathTrackingController(config=cfg_4ws, params=m_sample.params), np.zeros(steps_nmpc)),
+            "nmpc_4ws": (NMPCPathTrackingController(config=cfg_4ws, params=m_sample.params), np.zeros(steps_nmpc)),
         }
 
         hists_nmpc = {}
@@ -554,9 +554,9 @@ def generate_all_animations(
             )
 
         save_and_replicate(
-            name="cgmres_nmpc_slalom",
+            name="nmpc_slalom",
             histories=hists_nmpc,
-            title="C/GMRES NMPC Slalom Path Tracking (4WS LUT vs Front Steer vs Passive)",
+            title="SLSQP NMPC Slalom Path Tracking (4WS LUT vs Front Steer vs Passive)",
             v_params=v_params_nmpc,
             fps=fps,
             road_y_bounds=(-4.0, 4.0),
@@ -564,9 +564,9 @@ def generate_all_animations(
             reference_path=(x_ref, y_ref),
             pylons=cone_positions,
         )
-        print(f"      Saved cgmres_nmpc_slalom.gif in {time.time() - t0:.1f}s")
+        print(f"      Saved nmpc_slalom.gif in {time.time() - t0:.1f}s")
     else:
-        print("\n[9/9] Skipping C/GMRES NMPC Slalom (already exists)")
+        print("\n[9/9] Skipping SLSQP NMPC Slalom (already exists)")
 
     print("\n=================================================================")
     print("ALL 9 VEHICLE DYNAMICS ANIMATIONS SUCCESSFULLY GENERATED!")

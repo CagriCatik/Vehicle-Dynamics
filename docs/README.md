@@ -19,7 +19,7 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **04** | Aktorik, EPS & Brake-by-Wire | [ACTUATORS.md](ACTUATORS.md) |
 | **05** | Integrierte Regelung (IVMC, TV, Phasenraum) | [CHASSIS_CONTROL.md](CHASSIS_CONTROL.md) |
 | **06** | **Allradlenkung & Hinterachslenkung (4WS)** | [REAR_WHEEL_STEERING.md](REAR_WHEEL_STEERING.md) |
-| **07** | **Nichtlineares MPC & C/GMRES Pfadverfolgung** | [NMPC_CONTROL.md](NMPC_CONTROL.md) & [cgmres_nmpc.md](cgmres_nmpc.md) |
+| **07** | **Nichtlineares MPC & Pfadverfolgung (SLSQP)** | [NMPC_CONTROL.md](NMPC_CONTROL.md) & [NMPC_PATH_TRACKING.md](NMPC_PATH_TRACKING.md) |
 | **08** | Neuromuskuläres Preview-Fahrermodell | [DRIVER_MODEL.md](DRIVER_MODEL.md) |
 | **09** | Vertikal- & Wankdynamik (Skyhook / ARSDC) | [SUSPENSION_DYNAMICS.md](SUSPENSION_DYNAMICS.md) |
 | **10** | Zustandsschätzung (EKF, RLS, PSO) | [STATE_ESTIMATION.md](STATE_ESTIMATION.md) |

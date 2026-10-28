@@ -16,6 +16,7 @@ from .nmpc import (
     KinematicBicycleSystem,
     NMPCConfig,
     NMPCControllerCGMRES,
+    SLSQPPathTrackingNMPC,
     NMPCPathTrackingController,
 )
 from .phase_plane import (
@@ -54,6 +55,7 @@ __all__ = [
     "DynamicNMPCConfig",
     "NMPCConfig",
     "NMPCControllerCGMRES",
+    "SLSQPPathTrackingNMPC",
     "NMPCPathTrackingController",
     "KinematicBicycleSystem",
 ]

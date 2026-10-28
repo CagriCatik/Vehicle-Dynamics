@@ -97,7 +97,7 @@ python examples/generate_maneuver_animations.py
 
 To re-generate a specific maneuver while preserving the caches of all other animations:
 ```bash
-python examples/generate_maneuver_animations.py cgmres_nmpc_slalom
+python examples/generate_maneuver_animations.py nmpc_slalom
 ```
 
 Generated animation files are saved to `output/validation_report/animations/` and `output/animations/`:
@@ -109,7 +109,7 @@ Generated animation files are saved to `output/validation_report/animations/` an
 6. `fishhook_ncap.gif`: NHTSA Dynamic Fishhook at 80 km/h (Rollover Prevention)
 7. `low_speed_slalom_4ws.gif`: Low-Speed Slalom at 30 km/h (Counter-Phase Agility)
 8. `high_speed_lane_change.gif`: High-Speed Highway Lane Change at 120 km/h (In-Phase Crab)
-9. `cgmres_nmpc_slalom.gif`: C/GMRES NMPC Slalom Path Tracking (4WS LUT vs FWS vs Passive)
+9. `nmpc_slalom.gif`: SLSQP NMPC Slalom Path Tracking (4WS LUT vs FWS vs Passive)
 
 ---
 

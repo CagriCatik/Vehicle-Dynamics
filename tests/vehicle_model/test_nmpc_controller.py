@@ -14,6 +14,7 @@ from vehicle_model.controllers.nmpc import (
     NMPCConfig,
     NMPCControllerCGMRES,
     NMPCPathTrackingController,
+    SLSQPPathTrackingNMPC,
     bicycle_kinematic_model,
     get_ref_state,
 )
@@ -56,11 +57,11 @@ def test_kinematic_bicycle_plant_step():
     assert len(plant.history_steer_r) == 2
 
 
-def test_nmpc_cgmres_controller_steps():
-    """Verify NMPCControllerCGMRES closed-loop steps converge and return finite inputs."""
+def test_slsqp_nmpc_controller_steps():
+    """Verify SLSQPPathTrackingNMPC closed-loop steps converge and return finite inputs."""
     dt = 0.05
     plant = KinematicBicycleSystem(0.0, 0.0, 0.0, 0.5)
-    ctrl = NMPCControllerCGMRES(init_x=0.0)
+    ctrl = SLSQPPathTrackingNMPC(init_x=0.0)
 
     for i in range(5):
         t = (i + 1) * dt
@@ -73,6 +74,22 @@ def test_nmpc_cgmres_controller_steps():
 
     assert plant.x > 0.0
     assert np.isfinite([plant.x, plant.y, plant.yaw, plant.v]).all()
+
+
+def test_cgmres_name_is_deprecated_alias():
+    """The old class name still works but warns that the solver is SLSQP, not C/GMRES."""
+    with pytest.warns(DeprecationWarning, match="SLSQP"):
+        ctrl = NMPCControllerCGMRES(init_x=0.0)
+    assert isinstance(ctrl, SLSQPPathTrackingNMPC)
+
+
+def test_nmpc_yaml_weights_are_loaded(tmp_path):
+    """Control weights come from the YAML file, not from hidden defaults."""
+    cfg_file = tmp_path / "nmpc.yaml"
+    cfg_file.write_text("controller:\n  r_steer: 0.7\n  r_accel: 0.3\n")
+    cfg = NMPCConfig.from_yaml(cfg_file)
+    assert cfg.r_steer == pytest.approx(0.7)
+    assert cfg.r_accel == pytest.approx(0.3)
 
 
 def test_nmpc_path_tracking_controller_protocol():

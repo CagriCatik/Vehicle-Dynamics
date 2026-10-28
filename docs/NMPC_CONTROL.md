@@ -2,48 +2,23 @@
 
 Model Predictive Control (MPC) solves an optimal control problem repeatedly over a future finite prediction horizon, computing the optimal sequence of control inputs and applying only the first step before updating the state estimate.
 
-The platform implements two complementary NMPC architectures:
-1. **Continuation / GMRES (C/GMRES) NMPC Path Tracker** (`NMPCControllerCGMRES` & `NMPCPathTrackingController`)
-2. **Dynamic Two-Track NMPC with 4-Wheel Kamm Friction Bounds** (`DynamicTwoTrackNMPC`)
+The platform implements two NMPC controllers. Both are solved with `scipy.optimize.minimize(method="SLSQP")` using **single shooting** (only the input sequence is optimised, the states are rolled out inside the cost function):
+1. **Kinematic NMPC path tracker** (`SLSQPPathTrackingNMPC` & `NMPCPathTrackingController`)
+2. **Dynamic two-track NMPC with friction-circle penalty** (`DynamicTwoTrackNMPC`)
+
+> [!IMPORTANT]
+> Neither controller implements C/GMRES (Ohtsuka's continuation/GMRES method). The old class name `NMPCControllerCGMRES` is a deprecated alias of `SLSQPPathTrackingNMPC`.
 
 ---
 
-## 1. Continuation / GMRES (C/GMRES) Real-Time Path Tracker
+## 1. Kinematic NMPC Path Tracker
 
-The C/GMRES algorithm (developed by T. Ohtsuka) solves the non-linear Karush-Kuhn-Tucker (KKT) optimality conditions in real-time by tracking the solution trajectory continuously through time rather than solving a non-linear program (NLP) from scratch at each step.
+Prediction model: kinematic bicycle `[X, Y, psi, v]` with inputs `[a_x, delta_f]`, forward-Euler rollout, rear steer slaved to the front steer through a synthetic LUT, $\delta_r = \operatorname{LUT}(v, \delta_f)$.
 
-### 1.1 Mathematical Formulation
+Cost (no terminal cost):
+$$J = \sum_{k=0}^{N-1} \left[ q_y (y_k - y_{\text{ref}})^2 + q_{\psi} (\psi_k - \psi_{\text{ref}})^2 + q_v (v_k - v_{\text{ref}})^2 \right] + r_{\delta} \sum_k u_{\delta,k}^2 + r_a \sum_k u_{a,k}^2$$
 
-Let the system dynamics and constraints be:
-$$\dot{\mathbf{x}}(t) = \mathbf{f}(\mathbf{x}(t), \mathbf{u}(t))$$
-$$\mathbf{C}(\mathbf{x}(t), \mathbf{u}(t)) \le \mathbf{0}$$
-
-Over the horizon $\tau \in [0, T_f]$, the optimal control problem minimizes the objective:
-$$J = \Phi(\mathbf{x}(t + T_f)) + \int_t^{t + T_f} L(\mathbf{x}(\tau), \mathbf{u}(\tau)) d\tau$$
-
-#### Hamiltonian Formulation
-$$H(\mathbf{x}, \mathbf{u}, \boldsymbol{\lambda}) = L(\mathbf{x}, \mathbf{u}) + \boldsymbol{\lambda}^T \mathbf{f}(\mathbf{x}, \mathbf{u})$$
-
-The Euler-Lagrange optimality conditions yield:
-$$\dot{\boldsymbol{\lambda}} = -\left(\frac{\partial H}{\partial \mathbf{x}}\right)^T, \quad \frac{\partial H}{\partial \mathbf{u}} = \mathbf{0}, \quad \boldsymbol{\lambda}(t + T_f) = \left(\frac{\partial \Phi}{\partial \mathbf{x}}\right)^T$$
-
-### 1.2 Continuation Method & GMRES Linear Solver
-Instead of iteratively solving $\mathbf{F}(\mathbf{U}, \mathbf{x}, t) = \mathbf{0}$ at each step, C/GMRES differentiates the optimality condition with respect to real time $t$:
-$$\dot{\mathbf{F}} = \frac{\partial \mathbf{F}}{\partial \mathbf{U}} \dot{\mathbf{U}} + \frac{\partial \mathbf{F}}{\partial \mathbf{x}} \dot{\mathbf{x}} + \frac{\partial \mathbf{F}}{\partial t} = -\zeta \mathbf{F}$$
-
-This transforms the non-linear optimization problem into a linear equation in $\dot{\mathbf{U}}$:
-$$\frac{\partial \mathbf{F}}{\partial \mathbf{U}} \dot{\mathbf{U}} = -\zeta \mathbf{F} - \frac{\partial \mathbf{F}}{\partial \mathbf{x}} \dot{\mathbf{x}} - \frac{\partial \mathbf{F}}{\partial t}$$
-
-The **Generalized Minimal Residual (GMRES)** algorithm solves this linear system efficiently using forward-difference Jacobian-vector products without computing or inverting the full Hessian matrix, achieving millisecond-level update rates.
-
-### 1.3 Cost Function & Trajectory Tracking
-In [nmpc.py](../src/vehicle_model/controllers/nmpc.py), the stage cost penalizes lateral path deviation, heading error, velocity error, and control action:
-$$L = q_y (y - y_{\text{ref}})^2 + q_{\psi} (\psi - \psi_{\text{ref}})^2 + q_v (v - v_{\text{ref}})^2 + r_{\delta} u_{\delta}^2 + r_a u_a^2$$
-
-#### 4WS Rear Steer LUT Integration
-The front steer command computed by C/GMRES is seamlessly passed to the calibrated rear-axle lookup table:
-$$\delta_r = \operatorname{LUT}(v_x, \delta_{f,\text{opt}})$$
-Providing coordinated 4WS yaw damping and zero-sideslip crab translation during high-speed trajectory tracking.
+Only box bounds on the inputs are enforced. Full formulation, parameters and known limitations: [NMPC_PATH_TRACKING.md](NMPC_PATH_TRACKING.md).
 
 ---
 
@@ -68,13 +43,13 @@ Where:
 $$\mathbf{x}_{k+1} = \mathbf{x}_k + \frac{\Delta t}{6}(k_1 + 2 k_2 + 2 k_3 + k_4)$$
 Where each stage evaluates the non-linear continuous dynamics with individual wheel slips $\alpha_i, \kappa_i$ and load transfer $F_{z,i}$.
 
-### 2.3 Strict Kamm's Friction Circle Boundary Constraints
-At every prediction step $k \in \{0, \dots, N-1\}$ and for every wheel $i \in \{FL, FR, RL, RR\}$, the total horizontal tyre force must remain inside the friction circle:
+### 2.3 Friction-Circle Penalty (soft, not a hard constraint)
+At every prediction step $k$ and wheel $i$ the friction-circle utilisation is evaluated:
 
-$$\rho_{i,k} = \frac{\sqrt{F_{x,i,k}^2 + F_{y,i,k}^2}}{\mu_i F_{z,i,k}} \le 1.0$$
+$$\rho_{i,k} = \frac{\sqrt{F_{x,i,k}^2 + F_{y,i,k}^2}}{\mu_i F_{z,i,k}}$$
 
-The controller includes penalty barrier functions in the optimization cost:
-$$J_{\text{kamm}} = w_{\text{kamm}} \sum_{k=0}^{N-1} \sum_{i=1}^4 \max\left(0, \rho_{i,k} - 1.0\right)^2$$
+Utilisation above 0.90 is penalised in the cost; it is **not** enforced as a constraint:
+$$J_{\text{kamm}} = w_{\text{kamm}} \sum_{k=0}^{N-1} \sum_{i=1}^4 \max\left(0, \rho_{i,k} - 0.90\right)^2$$
 
 ### 2.4 Multi-Objective Horizon Cost
 The total objective function over prediction horizon $N$ is:
@@ -87,15 +62,11 @@ Where:
 
 ---
 
-## 3. Comparative Benchmark: C/GMRES Slalom Path Tracking
+## 3. Slalom Benchmark
 
-In the standardized 20 FPS animation benchmark (`cgmres_nmpc_slalom`), the controllers were evaluated on a high-speed slalom course ($\lambda = 35\text{ m}$, $A = 1.6\text{ m}$, $v_x = 36\text{ km/h}$):
+The animation scenario `nmpc_slalom` (`python examples/generate_maneuver_animations.py nmpc_slalom`) compares a passive baseline, NMPC with front steer only, and NMPC with the slaved 4WS LUT on the 7-DOF plant.
 
-| Controller Configuration | Path Tracking Performance | Peak Sideslip Angle ($\beta$) | Slalom Cones Cleared |
-| :--- | :--- | :---: | :---: |
-| **Passive Baseline (Open-Loop Driver)** | Drifts off centerline ($Y > 9\text{ m}$) | $3.01^\circ$ | Failed (Collided) |
-| **NMPC Front-Steer Only (FWS)** | Accurate tracking ($|e_y| < 0.25\text{ m}$) | $4.24^\circ$ | 100% Cleared |
-| **NMPC + Coordinated 4WS LUT** | Accurate tracking ($|e_y| < 0.18\text{ m}$) | **$2.73^\circ$ (35% reduction)** | 100% Cleared |
+Quantitative results (tracking error, sideslip) will be produced reproducibly by the KPI and experiment framework (milestones M6/M9). Earlier figures in this section could not be traced to a documented run and were removed.
 
 ---
 
@@ -103,6 +74,6 @@ In the standardized 20 FPS animation benchmark (`cgmres_nmpc_slalom`), the contr
 
 | Module | Class Name | Source File | Unit Tests |
 | :--- | :--- | :--- | :--- |
-| **C/GMRES Algorithm** | `NMPCControllerCGMRES` | [nmpc.py](../src/vehicle_model/controllers/nmpc.py) | [test_nmpc_controller.py](../tests/vehicle_model/test_nmpc_controller.py) |
+| **Kinematic NMPC (SLSQP)** | `SLSQPPathTrackingNMPC` | [nmpc.py](../src/vehicle_model/controllers/nmpc.py) | [test_nmpc_controller.py](../tests/vehicle_model/test_nmpc_controller.py) |
 | **NMPC Vehicle Controller** | `NMPCPathTrackingController` | [nmpc.py](../src/vehicle_model/controllers/nmpc.py) | [test_nmpc_controller.py](../tests/vehicle_model/test_nmpc_controller.py) |
 | **Dynamic Two-Track NMPC** | `DynamicTwoTrackNMPC` | [dynamic_two_track_nmpc.py](../src/vehicle_model/controllers/dynamic_two_track_nmpc.py) | [test_dynamic_two_track_nmpc.py](../tests/vehicle_model/test_dynamic_two_track_nmpc.py) |

@@ -19,7 +19,7 @@ graph TD
         CTRL{VehicleController Protocol}
         PID[Yaw-Rate PID]
         LQR[Gain-Scheduled LQR]
-        NMPC[C/GMRES NMPC Path Tracker]
+        NMPC[SLSQP NMPC Path Tracker]
         FWS[4WS Speed-Scheduled LUT Coordinator]
         IVMC[Integrated Vehicle Motion Control: IVMC]
         PPE[Phase-Plane Envelope Controller: beta-beta_dot Manifold]

@@ -120,8 +120,8 @@ Dieses Dokument bietet eine strukturierte Übersicht über die wissenschaftliche
 - **Zeitschrift:** Automatica, Vol. 40, No. 4, S. 563–574, 2004.
 - **DOI:** [10.1016/j.automatica.2003.11.005](https://doi.org/10.1016/j.automatica.2003.11.005)
 - **Inhaltlicher Bezug im Projekt:**
-  - Mathematische Grundlage für den Echtzeit-C/GMRES-Algorithmus zur Lösung der Karush-Kuhn-Tucker-Bedingungen.
-  - Verwendet in: [NMPC_CONTROL.md](NMPC_CONTROL.md), [cgmres_nmpc.md](cgmres_nmpc.md).
+  - Hintergrundliteratur zu schnellen NMPC-Verfahren. C/GMRES ist im Repository **nicht** implementiert; die NMPC-Regler verwenden SLSQP.
+  - Erwähnt in: [NMPC_CONTROL.md](NMPC_CONTROL.md), [NMPC_PATH_TRACKING.md](NMPC_PATH_TRACKING.md).
 
 ### [12] Borrelli, Francesco; Bemporad, Alberto; Frazzoli, Emilio
 - **Titel:** *Predictive Control for Automotive Applications*

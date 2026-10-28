@@ -189,7 +189,7 @@ $$\begin{aligned}
 \dot{\psi} &= \frac{v}{L} \cos \beta_{\text{kin}} (\tan \delta_f - \tan \delta_r) \\
 \beta_{\text{kin}} &= \arctan\left(\frac{l_r \tan \delta_f + l_f \tan \delta_r}{L}\right)
 \end{aligned}$$
-Used extensively inside the real-time C/GMRES NMPC preview optimizer.
+Used as the prediction model of the SLSQP NMPC path tracker.
 
 ---
 

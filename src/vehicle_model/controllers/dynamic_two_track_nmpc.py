@@ -1,7 +1,8 @@
 """Dynamic Two-Track Nonlinear Model Predictive Control (Dynamic NMPC).
 
-Solves a finite-horizon optimal control problem (OCP) at 50 Hz on the full
-planar two-track vehicle plant with combined-slip tyre friction constraints.
+Solves a finite-horizon optimal control problem (OCP) on a planar two-track
+prediction model with combined-slip tyre forces, using
+``scipy.optimize.minimize(method="SLSQP")``.
 
 State Vector (x in R^6):
     x = [X, Y, psi, vx, vy, r]^T
@@ -13,10 +14,12 @@ Control Input Vector (u in R^4):
 
 Features:
 1. Dynamic two-track non-linear prediction model with dynamic normal load transfer.
-2. Combined-slip Magic Formula tyre model with Kamm circle friction limit enforcement.
-3. Multiple-shooting discretization with warm-started optimization.
+2. Combined-slip Magic Formula tyre model; friction-circle utilisation above 0.90 is
+   penalised in the cost (soft penalty, not a hard constraint).
+3. Single-shooting discretisation (decision variables are the 4N inputs, states are
+   rolled out with RK4) with a shifted warm start.
 4. Active four-wheel steering (4WS) and direct yaw moment coordination.
-5. Strict actuator rate and amplitude constraints.
+5. Hard box bounds on input amplitudes; input rates are only penalised in the cost.
 
 Conforms to Plan.md §4.3, §5, §10.2, §19.
 """
@@ -352,7 +355,7 @@ class DynamicTwoTrackNMPC(VehicleController):
                     delta_r_opt = k_4ws_ratio * u_k[0]
                     cost += 0.8 * cfg.r_steer_r * ((u_k[1] - delta_r_opt) ** 2)
 
-                # Terminal Lyapunov weighting to enforce asymptotic convergence at horizon end
+                # Heuristic terminal weighting (no formal stability guarantee)
                 if k_step == N - 1:
                     cost += 2.0 * cfg.q_lat_err * (e_y ** 2)
                     cost += 2.0 * cfg.q_heading_err * (e_psi ** 2)

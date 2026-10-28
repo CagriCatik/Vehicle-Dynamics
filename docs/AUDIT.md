@@ -50,7 +50,7 @@ Stand bei Audit-Beginn: Eine große Umstrukturierung (`python/` → `src/vehicle
 
 ### 4.1 Falsche Bezeichnung „C/GMRES“ (Abschnitt 3, 10.1): kritisch
 
-`controllers/nmpc.py` beschreibt sich als „NMPC … with C/GMRES formulation“ und `NMPCControllerCGMRES`. Tatsächlich wird das Problem per Direct Multiple Shooting mit **`scipy.optimize.minimize(method="SLSQP")`** gelöst. Eine Kontinuierung oder ein GMRES-Verfahren gibt es nicht.
+`controllers/nmpc.py` beschreibt sich als „NMPC … with C/GMRES formulation“ und `NMPCControllerCGMRES`. Tatsächlich wird das Problem per Single Shooting (nur Stellgrößen als Entscheidungsvariablen) mit **`scipy.optimize.minimize(method="SLSQP")`** gelöst. Dasselbe gilt für `DynamicTwoTrackNMPC`, das sich fälschlich als „multiple shooting“ mit „strict“ Reibkreis-Constraints beschrieb (tatsächlich: weiche Strafterme). Eine Kontinuierung oder ein GMRES-Verfahren gibt es nicht.
 
 Die falsche Bezeichnung steht auch an diesen Stellen:
 - `controllers/nmpc.py:1`, `:293`, `:392` (`name` = „NMPC Path Tracking Controller (C/GMRES)“)

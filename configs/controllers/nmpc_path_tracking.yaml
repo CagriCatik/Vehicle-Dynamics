@@ -21,19 +21,18 @@ trajectory:
 
 obstacles: []          # no cones – pure sine analysis
 
+# SLSQP single-shooting NMPC (see src/vehicle_model/controllers/nmpc.py).
+# The former C/GMRES keys (zeta, ht, phi_*) were never read by the solver and were removed.
 controller:
-  zeta: 100.0
-  ht: 0.01
-  tf: 1.5
-  alpha: 0.5
-  N: 8
-  phi_v: 0.01
-  phi_steer: 0.01
-  phi_obs: 0.01
+  tf: 1.5          # s   – steady-state horizon length
+  alpha: 0.5       # 1/s – horizon ramp-up rate, dt = tf*(1-exp(-alpha*t))/N
+  N: 8             # –   – horizon steps
   q_x: 0.0
   q_y: 25.0
   q_yaw: 3.0
   q_v: 20.0
+  r_steer: 0.05
+  r_accel: 0.01
 
 paths:
   lut_json: "configs/steering/lut.json"

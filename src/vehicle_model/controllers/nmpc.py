@@ -1,4 +1,4 @@
-"""Nonlinear Model Predictive Control (NMPC) path tracking controller with C/GMRES formulation.
+"""Nonlinear Model Predictive Control (NMPC) path tracking controller (SLSQP, single shooting).
 
 Algorithm Overview
 ------------------
@@ -13,8 +13,22 @@ subject to:
     -U_A_MAX     <= u_a_i   <= U_A_MAX
     -U_STEER_MAX <= u_sf_i  <= U_STEER_MAX
 
-Transcribed as a direct multiple shooting nonlinear program and solved with SLSQP warm-starting.
-The kinematic bicycle model includes calibrated rear-axle steering look-up table (LUT).
+Transcribed as a single-shooting nonlinear program: the decision variables are only the 2N
+control inputs, the states are rolled out by forward Euler inside the cost function. Solved with
+``scipy.optimize.minimize(method="SLSQP")`` warm-started from the previous solution.
+
+This is *not* a C/GMRES (Ohtsuka continuation / GMRES) implementation. The class name
+``NMPCControllerCGMRES`` is kept only as a deprecated alias of :class:`SLSQPPathTrackingNMPC`
+for backward compatibility.
+
+The prediction model is a kinematic bicycle whose rear-axle steer angle is slaved to the
+front steer via a synthetic look-up table (LUT).
+
+Known limitations (fixed constants, not configurable yet):
+  * front steer clamp +-30 deg inside the prediction model, speed clamp 0..15 m/s,
+    LUT speed clamp 0..20 m/s
+  * obstacle barrier weight 80, minimum horizon step 0.05 s
+  * SLSQP non-convergence is not reported as a failure status
 """
 
 from __future__ import annotations
@@ -24,6 +38,7 @@ import math
 from pathlib import Path
 import time
 from typing import Any, Sequence
+import warnings
 
 import numpy as np
 from scipy.optimize import minimize
@@ -76,9 +91,9 @@ class NMPCConfig:
         """Load configuration from YAML."""
         if path is None:
             from vehicle_model.config.loader import get_configs_root
-            candidate = get_configs_root() / "controllers" / "cgmres_nmpc.yaml"
+            candidate = get_configs_root() / "controllers" / "nmpc_path_tracking.yaml"
             if not candidate.exists():
-                candidate = Path("configs/controllers/cgmres_nmpc.yaml").resolve()
+                candidate = Path("configs/controllers/nmpc_path_tracking.yaml").resolve()
             path = candidate
         else:
             path = Path(path)
@@ -107,6 +122,8 @@ class NMPCConfig:
             q_y=float(ctrl.get("q_y", 25.0)),
             q_yaw=float(ctrl.get("q_yaw", 3.0)),
             q_v=float(ctrl.get("q_v", 20.0)),
+            r_steer=float(ctrl.get("r_steer", 0.05)),
+            r_accel=float(ctrl.get("r_accel", 0.01)),
             target_v=target_v,
             amplitude=float(traj.get("amplitude", 1.5)),
             frequency=freq,
@@ -159,6 +176,8 @@ def bicycle_kinematic_model(
     """Evaluate continuous kinematic bicycle state derivatives with LUT rear-axle steer.
 
     Returns: (dx, dy, d_yaw, dv, u_steer_r)
+
+    Yaw rate uses the small-sideslip approximation ``v / L * (sin(delta_f) - sin(delta_r))``.
     """
     steer_f_clamped = max(-math.radians(30.0), min(math.radians(30.0), u_steer_f))
     if steering_lut is not None:
@@ -243,7 +262,7 @@ def _mpc_cost(
     config: NMPCConfig,
     steering_lut: LookupTable | None,
 ) -> float:
-    """Evaluate NMPC finite-horizon multiple-shooting cost."""
+    """Evaluate the finite-horizon single-shooting cost (states rolled out by forward Euler)."""
     N = config.N
     xi, yi, yawi, vi = x0, y0, yaw0, v0
     cost = 0.0
@@ -290,10 +309,10 @@ def _mpc_cost(
     return cost
 
 
-class NMPCControllerCGMRES:
-    """Receding-horizon NMPC controller solved via SLSQP with warm starting.
+class SLSQPPathTrackingNMPC:
+    """Receding-horizon NMPC path tracker solved via SLSQP (single shooting) with warm starting.
 
-    Compatible with original CGMRES simulator interface `calc_input(x, y, yaw, v, time)`.
+    Keeps the original simulator interface ``calc_input(x, y, yaw, v, time)``.
     """
 
     def __init__(
@@ -364,6 +383,22 @@ class NMPCControllerCGMRES:
         return self.u1, self.u2
 
 
+class NMPCControllerCGMRES(SLSQPPathTrackingNMPC):
+    """Deprecated alias of :class:`SLSQPPathTrackingNMPC`.
+
+    The controller never implemented the C/GMRES algorithm; use ``SLSQPPathTrackingNMPC``.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        warnings.warn(
+            "NMPCControllerCGMRES is deprecated: the solver is SLSQP, not C/GMRES. "
+            "Use SLSQPPathTrackingNMPC instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
 class NMPCPathTrackingController:
     """NMPC path-tracking controller conforming to VehicleController protocol."""
 
@@ -375,7 +410,7 @@ class NMPCPathTrackingController:
     ):
         self.config = config or NMPCConfig()
         self.params = params or SevenDOFParams()
-        self.controller = NMPCControllerCGMRES(
+        self.controller = SLSQPPathTrackingNMPC(
             init_x=0.0,
             config=self.config,
             steering_lut=steering_lut,
@@ -389,7 +424,7 @@ class NMPCPathTrackingController:
 
     @property
     def name(self) -> str:
-        return "NMPC Path Tracking Controller (C/GMRES)"
+        return "NMPC Path Tracking Controller (SLSQP)"
 
     def reset(self) -> None:
         self.controller.reset()
@@ -465,6 +500,7 @@ __all__ = (
     "get_ref_state",
     "bicycle_kinematic_model",
     "KinematicBicycleSystem",
+    "SLSQPPathTrackingNMPC",
     "NMPCControllerCGMRES",
     "NMPCPathTrackingController",
 )

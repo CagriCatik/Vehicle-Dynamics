@@ -22,7 +22,7 @@ graph TD
     subgraph Aktive Fahrwerksregelung & Lenkung
         CTRL[05. Integrierte Regelung IVMC & Torque Vectoring<br/>docs/CHASSIS_CONTROL.md]
         RWS[06. Allradlenkung & Hinterachslenkung 4WS<br/>docs/REAR_WHEEL_STEERING.md]
-        NMPC[07. Nichtlineares MPC & C/GMRES Pfadverfolgung<br/>docs/NMPC_CONTROL.md & docs/cgmres_nmpc.md]
+        NMPC[07. Nichtlineares MPC & Pfadverfolgung (SLSQP)<br/>docs/NMPC_CONTROL.md & docs/NMPC_PATH_TRACKING.md]
         DRV[08. Neuromuskuläres Preview-Fahrermodell<br/>docs/DRIVER_MODEL.md]
         SUSP[09. Vertikal- & Wankdynamik Skyhook / ARSDC<br/>docs/SUSPENSION_DYNAMICS.md]
     end
@@ -98,8 +98,8 @@ graph TD
 - **Aktive Gierdämpfung:** Rückgekoppelte Überlagerung $\Delta\delta_r = k_r \cdot (r - r_{\text{target}})$.
 - **Reibwertgrenzen:** Phänomenologie der Querkraftsättigung auf Schnee/Eis ($\mu \le 0.40$) und Zusammenspiel mit IVMC-Differenzbremsen.
 
-### [Kapitel 7: Non-Linear Model Predictive Control & C/GMRES](NMPC_CONTROL.md) & [docs/cgmres_nmpc.md](cgmres_nmpc.md)
-- **Continuation / GMRES (C/GMRES):** Fortsetzungsmethode nach T. Ohtsuka zur Lösung der KKT-Optimalitätsbedingungen in Echtzeit ohne Matrixinversion.
+### [Kapitel 7: Non-Linear Model Predictive Control](NMPC_CONTROL.md) & [docs/NMPC_PATH_TRACKING.md](NMPC_PATH_TRACKING.md)
+- **SLSQP Single Shooting:** Beide NMPC-Regler optimieren nur die Stellgrößenfolge mit `scipy` SLSQP; C/GMRES ist nicht implementiert.
 - **Pfadverfolgung mit Hindernisausweich-Barrieren:** Raumbezogene Referenztrajektorie $Y_{\text{ref}}(X)$, weiche logarithmische Barrierenfunktionen und Warm-Starting.
 - **Elektronisch gekoppelte 4WS-Hinterachse:** Einbindung der Hinterachslenkung $\delta_r = \operatorname{LUT}(v_x, \delta_f)$ in den Prädiktionsrollout.
 - **Dynamic Two-Track NMPC:** Nichtlineare Prädiktion über dem vollen Zweispurmodell mit expliziter Einhaltung der Kamm'schen Reibkreise an allen 4 Rädern:
@@ -174,10 +174,10 @@ graph TD
 - [Semi-aktive Dämpfung (Skyhook / Groundhook)](SUSPENSION_DYNAMICS.md#2-semi-active-suspension-control-policies)
 
 ### III. Autonome Bahnplanung & Prädiktion
-- [C/GMRES NMPC Pfadverfolgung](cgmres_nmpc.md)
-- [Slaved 4WS NMPC Integration](cgmres_nmpc.md#41-kinematisches-ackermann-bicycle-modell-mit-4ws-kopplung)
+- [NMPC Pfadverfolgung (SLSQP)](NMPC_PATH_TRACKING.md)
+- [Slaved 4WS NMPC Integration](NMPC_PATH_TRACKING.md#3-prädiktionsmodell-kinematisches-einspurmodell-mit-gekoppelter-hinterachslenkung)
 - [Dynamischer Two-Track Kamm NMPC](NMPC_CONTROL.md#2-dynamic-two-track-nmpc-with-4-wheel-kamm-friction-bounds)
-- [Warm-Starting & SQP Rechenzeitoptimierung](cgmres_nmpc.md#6-warm-starting--rechenzeit-optimierung)
+- [Warm Start & Lösungsübernahme](NMPC_PATH_TRACKING.md#4-warm-start-und-lösungsübernahme)
 
 ### IV. Schätzung, Fahrer & Parametersuche
 - [Extended Kalman Filter (EKF) für Schwimmwinkel $\beta$](STATE_ESTIMATION.md#2-extended-kalman-filter-ekf-for-sideslip-estimation)
@@ -201,13 +201,12 @@ graph TD
 | **Ackermann-Geometrie** | [Kap. 2](VEHICLE_MODELS.md) & [Kap. 6](REAR_WHEEL_STEERING.md) | $\delta_{\text{ack}} = L / R$, Spurdifferenzwinkel |
 | **Active Roll Stiffness (ARSDC)** | [Kap. 5](CHASSIS_CONTROL.md#5-active-roll-stiffness-distribution-control-arsdc) | $\kappa_{\text{roll},f} \in [0.32, 0.82]$, Wankmomentverteilung |
 | **Allradlenkung (4WS / RWS)** | [Kap. 6](REAR_WHEEL_STEERING.md) | Gegenphase, Gleichphase, $v_{\text{switch}} \approx 36\,\text{km/h}$ |
-| **Bilineare Lookup-Tabelle (LUT)** | [Kap. 6](REAR_WHEEL_STEERING.md#5-2d-bilineare-lookup-tabelle-lutjson) & [Kap. 7](cgmres_nmpc.md#41-kinematisches-ackermann-bicycle-modell-mit-4ws-kopplung) | `configs/steering/lut.json`, $\delta_r(v_x, \delta_f)$ |
+| **Bilineare Lookup-Tabelle (LUT)** | [Kap. 6](REAR_WHEEL_STEERING.md#5-2d-bilineare-lookup-tabelle-lutjson) & [Kap. 7](NMPC_PATH_TRACKING.md#3-prädiktionsmodell-kinematisches-einspurmodell-mit-gekoppelter-hinterachslenkung) | `configs/steering/lut.json`, $\delta_r(v_x, \delta_f)$ |
 | **Bremsen in der Kurve (ISO 7975)** | [Kap. 11](VALIDATION_PLATFORM.md) & [Kap. 13](SPLIT_MU_DYNAMICS.md) | Kombinierte Brems- und Querkräfte, Lasttransfer |
 | **Brake-by-Wire (BBW)** | [Kap. 4](ACTUATORS.md#3-brake-by-wire-brakebywireactuator) | Asymmetrische Gradienten (Aufbau $22\,\text{kN/s}$, Abbau $36\,\text{kN/s}$) |
-| **C/GMRES Algorithmus** | [Kap. 7](cgmres_nmpc.md) | Fortsetzungsmethode, Krylow-Unterraum, $\dot{\mathbf{F}} = -\zeta \mathbf{F}$ |
 | **Charakteristische Geschwindigkeit** | [Kap. 12](HANDLING_LIMITS.md#4-characteristic-and-critical-speeds) | $v_{\text{char}} = \sqrt{L / K_{\text{us}}}$ (für $K_{\text{us}} > 0$) |
 | **Crab-Translation (Hundegang)** | [Kap. 6](REAR_WHEEL_STEERING.md#22-gleichphasenlenkung-bei-hohen-geschwindigkeiten-v_x--v_textswitch) | Parallele Karosserieverschiebung bei Gleichphasen-4WS |
-| **Direct Multiple Shooting** | [Kap. 7](cgmres_nmpc.md#4-implementierungsarchitektur-im-fahrzeug-framework) | Diskrete Zustandsintegration über Horizont $N$ |
+| **Single Shooting** | [Kap. 7](NMPC_PATH_TRACKING.md#2-optimalsteuerungsproblem) | Nur Stellgrößen als Entscheidungsvariablen, Zustands-Rollout in der Kostenfunktion |
 | **Double Lane Change (ISO 3888-2)** | [Kap. 11](VALIDATION_PLATFORM.md) & [Kap. 13](SPLIT_MU_DYNAMICS.md) | Elchtest / Hindernisausweichen bei $80\,\text{km/h}$ |
 | **Driver-in-the-Loop** | [Kap. 8](DRIVER_MODEL.md) | MacAdam Vorschauhorizont, Totzeit $\tau_d = 160\,\text{ms}$ |
 | **Dynamic Load Transfer ($F_{z,i}$)** | [Kap. 2](VEHICLE_MODELS.md#12-dynamic-vertical-load-transfer) | $\Delta F_{z,\text{long}} = m a_x h / L$, $\Delta F_{z,\text{lat}} = m a_y h / w$ |
@@ -227,7 +226,7 @@ graph TD
 | **Kritische Geschwindigkeit** | [Kap. 12](HANDLING_LIMITS.md#4-characteristic-and-critical-speeds) | $v_{\text{crit}} = \sqrt{-L / K_{\text{us}}}$ (für Übersteuern $K_{\text{us}} < 0$) |
 | **Multi-Mu Matrix Framework** | [Kap. 13](SPLIT_MU_DYNAMICS.md) & [Report](../output/benchmark/multi_mu_scenarios_report.md) | 6 Manöver $\times$ 4 Reibwerte ($\mu \in [0.20, 1.00]$) |
 | **Neuromuskuläre Verzögerung** | [Kap. 8](DRIVER_MODEL.md) | Menschliche Muskelzeitkonstante $\tau_n \approx 100\,\text{ms}$ |
-| **NMPC (Nichtlineares MPC)** | [Kap. 7](NMPC_CONTROL.md) & [docs/cgmres_nmpc.md](cgmres_nmpc.md) | Prädiktive Trajektorienoptimierung |
+| **NMPC (Nichtlineares MPC)** | [Kap. 7](NMPC_CONTROL.md) & [docs/NMPC_PATH_TRACKING.md](NMPC_PATH_TRACKING.md) | Prädiktive Trajektorienoptimierung |
 | **Pacejka Magic Formula (MF 6.2)** | [Kap. 3](TYRE_MODELS.md#4-pacejkatyre-magic-formula-62) | $y(x) = D \sin(C \arctan(B x - E (B x - \arctan(B x))))$ |
 | **Particle Swarm Optimization (PSO)**| [Kap. 10](STATE_ESTIMATION.md#4-offline-particle-swarm-optimization-pso) | Globale stochastische Parameteridentifikation |
 | **Phasenraum-Hüllkurve $(\beta, \dot{\beta})$**| [Kap. 5](CHASSIS_CONTROL.md#4-beta-dot-beta-phase-plane-envelope-control) | Schwimmwinkel-Phasenebene Stabilitätsgrenzen |
@@ -242,5 +241,5 @@ graph TD
 | **Understeer (Untersteuern)** | [Kap. 12](HANDLING_LIMITS.md) | $K_{\text{us}} > 0$, Schiebt über Vorderräder |
 | **Validation Platform** | [Kap. 11](VALIDATION_PLATFORM.md) | Virtuelle Testplattform für Regressionsprüfung |
 | **Virtueller Radstand** | [Kap. 6](REAR_WHEEL_STEERING.md#21-gegenphasenlenkung-bei-niedrigen-geschwindigkeiten-v_x--v_textswitch) | $l_{\text{virt}} < l$ bei Gegenphasenlenkung |
-| **Warm-Starting** | [Kap. 7](cgmres_nmpc.md#6-warm-starting--rechenzeit-optimierung) | Initialisierung mit verschobener Vorlösung |
+| **Warm-Starting** | [Kap. 7](NMPC_PATH_TRACKING.md#4-warm-start-und-lösungsübernahme) | Initialisierung mit der Vorlösung |
 | **Zweispurmodell (7-DOF)** | [Kap. 2](VEHICLE_MODELS.md#1-the-7-dof-two-track-vehicle-model) | Vollständige ebene Dynamik + 4 Raddrehzahlen |

@@ -30,7 +30,7 @@ src/vehicle_model/
 │   ├── torque_vectoring.py    # Direct yaw moment controller and wheel torque allocator
 │   ├── abs.py                 # Antilock Braking System (slip-ratio threshold modulation)
 │   ├── tcs.py                 # Traction Control System (drive-slip regulation)
-│   ├── nmpc/                  # C/GMRES Continuation-based Nonlinear MPC path tracker
+│   ├── nmpc/                  # SLSQP single-shooting NMPC path tracker
 │   └── framework.py           # Unified VehicleController protocol & baseline wrappers
 │
 ├── steering/                  # Steering dynamics & multi-axle coordination:
