@@ -96,6 +96,6 @@ Installation in der CI: `pip install -e ".[test]"`; pytest ist das optionale Ext
 ## 6. Grenzen und offene Punkte
 
 - Manöver und Regler sind auf die Gierstabilisierung beschränkt (Lenkwinkelsprung, Sine with Dwell, Split-µ-Bremsung). Die Bestandsszenarien in `simulation/` (4WS, Split-µ-Varianten, Validierungsmatrix) und die Pfadfolge-NMPCs sind nicht über YAML erreichbar.
-- Die großen Szenariomodule (`split_mu_scenarios.py` 2612, `four_wheel_steering_scenarios.py` 2015, `validation_matrix.py` 1665 Zeilen) sind nicht aufgeteilt (Audit 4.4). Das ist ein reines Refactoring ohne neue Funktion und wurde zugunsten der Verifikation zurückgestellt.
+- Die großen Szenariomodule sind seit V3.0 aufgeteilt in die Pakete `simulation/split_mu/`, `simulation/four_wheel_steering/` und `simulation/validation/` (Teilmodule nach Verantwortung: Ergebnisse, Szenariogruppen, Sweep, Grafiken, Animation; Basisklasse plus Szenario-Mixins), größtes Teilmodul 836 Zeilen; die alten Module sind Kompatibilitätsfassaden. Offen: Trennung von Manöver, Fahrer, Ausführung und Kennzahlen innerhalb der Szenariofunktionen.
 - Monte-Carlo-Studien (M7) laufen über Python (`simulation/robustness.py`), noch nicht über die YAML-Spezifikation.
 - Die GIF-Ausgabe zeigt eine schematische Draufsicht (Rechteck je Fahrzeug), nicht die detaillierte Fahrzeuggrafik von `visualization/plan_view.py`.
