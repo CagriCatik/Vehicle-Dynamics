@@ -1,0 +1,12 @@
+# Full braking on split friction with the steering held straight.
+name: split_mu_braking
+description: Passive car against PI and LQR yaw control through the bounded allocation (M5/M6).
+vehicle: configs/vehicles/reference_passenger_car.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+road: {type: split_mu, mu_left: 1.0, mu_right: 0.2}
+manoeuvre: {type: split_mu_braking, speed_kph: 90}
+controllers:
+  - {law: passive}
+  - {law: pi}
+  - {law: lqr, inputs: tv}
+outputs: {directory: output/experiments/split_mu_braking}

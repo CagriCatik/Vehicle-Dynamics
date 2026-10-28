@@ -1,0 +1,19 @@
+# Yaw stability controllers in a sine with dwell (modelled on FMVSS 126), reference car with K&C.
+#   python -m vehicle_model.experiments run configs/experiments/sine_with_dwell_comparison.yaml
+name: sine_with_dwell_comparison
+description: >-
+  Passive car against PI, gain-scheduled LQR (4WS + torque vectoring) and LTV-MPC with an
+  observer in the loop; synthetic reference car with MF tyres and the synthetic K&C set.
+vehicle: configs/vehicles/reference_passenger_car.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+kc: configs/suspension/kc_reference_passenger_car.yaml
+road: {type: uniform, mu: 1.0}
+manoeuvre: {type: sine_with_dwell, speed_kph: 80, amplitude_deg: 8}
+controllers:
+  - {law: passive}
+  - {law: pi}
+  - {law: gs_lqr, inputs: 4ws_tv}
+  - {law: ltv_mpc, inputs: tv, estimated_state: true}
+dt: 0.005
+seed: 0
+outputs: {directory: output/experiments/sine_with_dwell_comparison, formats: [csv, json, png, md]}

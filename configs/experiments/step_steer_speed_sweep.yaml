@@ -1,0 +1,12 @@
+# Step steer at three speeds: torque vectoring vs integrated 4WS + TV (gain-scheduled LQR).
+name: step_steer_speed_sweep
+vehicle: configs/vehicles/reference_passenger_car.yaml
+kc: configs/suspension/kc_reference_passenger_car.yaml
+road: {type: uniform, mu: 1.0}
+manoeuvre: {type: step_steer, speed_kph: 72, steer_deg: 1.5, duration_s: 2.5}
+controllers:
+  - {law: passive}
+  - {law: gs_lqr, inputs: tv}
+  - {law: gs_lqr, inputs: 4ws_tv}
+sweep: {parameter: manoeuvre.speed_kph, values: [50, 80, 110]}
+outputs: {directory: output/experiments/step_steer_speed_sweep, formats: [csv, json, png, md]}

@@ -1,0 +1,295 @@
+"""Run an experiment specification and write results and report (Plan.md M9).
+
+For each sweep point (or once without a sweep) every controller runs on a fresh
+plant built from the specification, through the controller benchmark of M6
+(:mod:`vehicle_model.simulation.controller_benchmark`). Model-based laws use the
+linear single track of the configured vehicle without K&C as design model.
+
+Outputs in ``outputs.directory`` (selectable formats):
+
+    results.json      specification, verification checks, KPIs per sweep point and controller,
+                      provenance (git commit, package versions)
+    kpis.csv          one row per sweep point and controller
+    histories/*.csv   time histories per run
+    <point>.png       yaw rate, sideslip and lateral position per controller
+    <point>.gif       plan-view animation of all controllers (opt-in format "gif")
+    report.md         engineering report: setup, verification, KPI tables, information access, limits
+"""
+
+from __future__ import annotations
+
+import csv
+import dataclasses
+import json
+import math
+import platform
+import subprocess
+from datetime import datetime, timezone
+from pathlib import Path
+
+import numpy as np
+
+from vehicle_model.controllers.estimated_feedback import EstimatedStateFeedback
+from vehicle_model.controllers.motion_control import MotionController
+from vehicle_model.controllers.yaw_laws import INPUTS_4WS_TV, INPUTS_TV, LQRYawLaw, LTVMPCYawLaw, YawRatePI
+from vehicle_model.estimation.blended_sideslip import BlendedSideslipObserver
+from vehicle_model.handling_analysis import linear_params_from_seven_dof
+from vehicle_model.roads.surface import MuSplitRoad, UniformRoad
+from vehicle_model.simulation.controller_benchmark import (
+    run_scenario,
+    sine_with_dwell_scenario,
+    split_mu_braking_scenario,
+    step_steer_scenario,
+)
+from vehicle_model.vehicle_models import SevenDOFModel
+
+from .spec import ExperimentSpec
+from .verification import verify_model
+
+SCHEDULE_SPEEDS = (5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0)
+_HISTORY_KEYS = ("t", "X", "Y", "psi", "vx", "r", "r_ref", "beta", "steer_f", "steer_r", "Mz_demand", "Mz_allocated")
+
+
+def make_road(spec: ExperimentSpec):
+    r = spec.road
+    if r["type"] == "uniform":
+        return UniformRoad(mu=float(r["mu"]))
+    return MuSplitRoad(mu_left=float(r["mu_left"]), mu_right=float(r["mu_right"]), split_y=0.0, transition_width=0.05)
+
+
+def plant_factory(spec: ExperimentSpec):
+    def build(road):
+        return SevenDOFModel.from_yaml(spec.vehicle, tyre_name=spec.tyres.get("front"), road=road,
+                                       tyre_rear_name=spec.tyres.get("rear"), kc_config=spec.kc)
+    return build
+
+
+def make_scenario(spec: ExperimentSpec):
+    m = spec.manoeuvre
+    v = float(m["speed_kph"]) / 3.6
+    if m["type"] == "step_steer":
+        sc = step_steer_scenario(v, math.radians(float(m.get("steer_deg", 2.3))), float(m.get("duration_s", 3.0)))
+    elif m["type"] == "sine_with_dwell":
+        sc = sine_with_dwell_scenario(v, math.radians(float(m.get("amplitude_deg", 8.0))))
+    else:
+        sc = split_mu_braking_scenario(v)
+    return dataclasses.replace(sc, road=lambda: make_road(spec))
+
+
+def controller_factories(spec: ExperimentSpec) -> dict:
+    base = SevenDOFModel.from_yaml(spec.vehicle, tyre_name=spec.tyres.get("front"), tyre_rear_name=spec.tyres.get("rear"))
+    design = linear_params_from_seven_dof(base.params, base.tyre_front, base.tyre_rear)
+    out = {}
+    for c in spec.controllers:
+        if c.law == "passive":
+            out[c.label] = None
+            continue
+        inputs = INPUTS_4WS_TV if c.inputs == "4ws_tv" else INPUTS_TV
+
+        def factory(p, c=c, inputs=inputs):
+            if c.law == "pi":
+                law = YawRatePI()
+            elif c.law == "lqr":
+                law = LQRYawLaw(design, inputs, design_speed=20.0)
+            elif c.law == "gs_lqr":
+                law = LQRYawLaw(design, inputs, design_speed=None, schedule_speeds=SCHEDULE_SPEEDS)
+            else:
+                law = LTVMPCYawLaw(design, inputs)
+            ctrl = MotionController(p, law)
+            return EstimatedStateFeedback(ctrl, BlendedSideslipObserver(p), seed=spec.seed) if c.estimated_state else ctrl
+        out[c.label] = factory
+    return out
+
+
+def _provenance() -> dict:
+    try:
+        commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, timeout=5).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        commit = ""
+    import numpy, scipy
+    return {"git_commit": commit or "unknown", "python": platform.python_version(), "numpy": numpy.__version__,
+            "scipy": scipy.__version__, "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+
+
+def run_experiment(spec: ExperimentSpec, out_dir: str | Path | None = None, verify: bool | None = None) -> dict:
+    out = Path(out_dir or spec.outputs["directory"])
+    out.mkdir(parents=True, exist_ok=True)
+    formats = set(spec.outputs.get("formats", ()))
+    points = [(None, spec)] if not spec.sweep else [
+        (v, spec.with_parameter(spec.sweep["parameter"], v)) for v in spec.sweep["values"]]
+
+    verification = []
+    if spec.verification if verify is None else verify:
+        verification = verify_model(lambda: plant_factory(spec)(UniformRoad(mu=1.0)))
+
+    results = []
+    for value, sp in points:
+        sc = make_scenario(sp)
+        runs = []
+        point = "base" if value is None else "{}={}".format(spec.sweep["parameter"], value)
+        for label, factory in controller_factories(sp).items():
+            r = run_scenario(plant_factory(sp), factory, sc, sp.dt)
+            runs.append((label, r))
+            results.append({"point": point, "sweep_value": value, "controller": label, "kpis": r.kpis})
+            if "csv" in formats:
+                (out / "histories").mkdir(exist_ok=True)
+                fname = out / "histories" / f"{_slug(point)}__{_slug(label)}.csv"
+                with open(fname, "w", newline="", encoding="utf-8") as f:
+                    w = csv.writer(f)
+                    w.writerow(_HISTORY_KEYS)
+                    w.writerows(zip(*(r.history[k] for k in _HISTORY_KEYS)))
+        if "png" in formats:
+            _plot(runs, out / (_slug(point) + ".png"), sp)
+        if "gif" in formats:
+            _animate(runs, out / (_slug(point) + ".gif"), sp)
+
+    summary = {"experiment": spec.to_dict(), "source": spec.source, "provenance": _provenance(),
+               "verification": verification, "results": results}
+    if "json" in formats:
+        (out / "results.json").write_text(json.dumps(summary, indent=2, default=_json_default), encoding="utf-8")
+    if "csv" in formats:
+        keys = sorted({k for r in results for k, v in r["kpis"].items() if not isinstance(v, dict)})
+        with open(out / "kpis.csv", "w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(["point", "controller", *keys])
+            for r in results:
+                w.writerow([r["point"], r["controller"], *(r["kpis"].get(k, "") for k in keys)])
+    if "md" in formats:
+        (out / "report.md").write_text(_report(spec, summary), encoding="utf-8")
+    return summary
+
+
+def _slug(s: str) -> str:
+    return "".join(ch if ch.isalnum() or ch in "-_." else "_" for ch in s).strip("_")
+
+
+def _json_default(o):
+    if isinstance(o, (np.floating, np.integer)):
+        return o.item()
+    if isinstance(o, np.ndarray):
+        return o.tolist()
+    raise TypeError(type(o))
+
+
+def _plot(runs, path, spec):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from vehicle_model.visualization.theme import TEXT_MUTED, apply_dark_theme, style_axis
+    colours = ("#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300")  # validated slots 1-6
+    apply_dark_theme()
+    fig, ax = plt.subplots(1, 3, figsize=(17, 5))
+    cols = iter(colours)
+    for label, r in runs:
+        h = r.history
+        c = TEXT_MUTED if label == "passive" else next(cols, TEXT_MUTED)
+        ls = "--" if label == "passive" else "-"
+        ax[0].plot(h["t"], h["r"], color=c, ls=ls, lw=1.6, label=label)
+        ax[1].plot(h["t"], np.degrees(h["beta"]), color=c, ls=ls, lw=1.6)
+        ax[2].plot(h["X"], h["Y"], color=c, ls=ls, lw=1.6)
+    ax[0].legend(fontsize=8, loc="best")
+    style_axis(ax[0], "yaw rate", "time [s]", "[rad/s]")
+    style_axis(ax[1], "sideslip angle", "time [s]", "[deg]")
+    style_axis(ax[2], "path", "X [m]", "Y [m]")
+    fig.suptitle(f"{spec.name}: {spec.manoeuvre['type']} at {spec.manoeuvre['speed_kph']} km/h (synthetic parameters)")
+    fig.tight_layout()
+    fig.savefig(path, dpi=130, facecolor=fig.get_facecolor())
+    plt.close(fig)
+
+
+def _kv(d) -> str:
+    return ", ".join(f"{k}: {v}" for k, v in d.items())
+
+
+def _animate(runs, path, spec, frames: int = 50, length: float = 4.6, width: float = 1.8):
+    """Plan view: each controller's vehicle as an oriented rectangle on its path (``frames`` frames)."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation, PillowWriter
+
+    from vehicle_model.visualization.theme import TEXT_MUTED, apply_dark_theme, style_axis
+    colours = ("#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300")
+    apply_dark_theme()
+    fig, ax = plt.subplots(figsize=(9, 4.5))
+    t_end = max(r.history["t"][-1] for _, r in runs)
+    xs = np.concatenate([r.history["X"] for _, r in runs])
+    ys = np.concatenate([r.history["Y"] for _, r in runs])
+    pad = 4.0
+    ax.set_xlim(xs.min() - pad, xs.max() + pad)
+    ax.set_ylim(min(ys.min(), -3.0) - pad, max(ys.max(), 3.0) + pad)
+    ax.set_aspect("equal")
+    style_axis(ax, f"{spec.name}: plan view", "X [m]", "Y [m]")
+    body = np.array([[length / 2, width / 2], [-length / 2, width / 2], [-length / 2, -width / 2], [length / 2, -width / 2]])
+    cols = iter(colours)
+    artists = []
+    for label, r in runs:
+        c = TEXT_MUTED if label == "passive" else next(cols, TEXT_MUTED)
+        trail, = ax.plot([], [], color=c, lw=1.2, alpha=0.8)
+        car = plt.Polygon(body, closed=True, fc=c, ec="#0f172a", alpha=0.9, label=label)
+        ax.add_patch(car)
+        artists.append((r.history, trail, car))
+    ax.legend(loc="upper left", fontsize=8)
+    stamp = ax.text(0.99, 0.02, "", transform=ax.transAxes, ha="right", color=TEXT_MUTED, fontsize=9)
+
+    def draw(i):
+        t = t_end * i / (frames - 1)
+        for h, trail, car in artists:
+            k = int(np.searchsorted(h["t"], min(t, h["t"][-1])))
+            k = min(k, len(h["t"]) - 1)
+            trail.set_data(h["X"][:k + 1], h["Y"][:k + 1])
+            c, s = np.cos(h["psi"][k]), np.sin(h["psi"][k])
+            car.set_xy(body @ np.array([[c, s], [-s, c]]) + [h["X"][k], h["Y"][k]])
+        stamp.set_text(f"t = {t:4.2f} s")
+        return []
+
+    FuncAnimation(fig, draw, frames=frames).save(path, writer=PillowWriter(fps=12), dpi=80)
+    plt.close(fig)
+
+
+def _fmt(v):
+    if isinstance(v, float):
+        return "–" if math.isnan(v) else f"{v:.4g}"
+    return str(v)
+
+
+def _report(spec: ExperimentSpec, summary: dict) -> str:
+    L = [f"# Experiment report: {spec.name}", ""]
+    if spec.description:
+        L += [spec.description, ""]
+    pv = summary["provenance"]
+    L += ["## Setup", "", "| item | value |", "|---|---|",
+          f"| specification | `{spec.source}` |", f"| vehicle | `{spec.vehicle}` |",
+          f"| tyres | {_kv(spec.tyres) or 'from the vehicle file'} |", f"| K&C | {spec.kc or 'none'} |",
+          f"| road | {_kv(spec.road)} |", f"| manoeuvre | {_kv(spec.manoeuvre)} |",
+          f"| sweep | {_kv(spec.sweep) if spec.sweep else 'none'} |", f"| step size / seed | {spec.dt} s / {spec.seed} |",
+          f"| code | git {pv['git_commit']}, Python {pv['python']}, numpy {pv['numpy']}, scipy {pv['scipy']} |", ""]
+    L += ["All parameters are synthetic; results describe the virtual vehicle, not a real one.", ""]
+    if summary["verification"]:
+        ok = all(c["passed"] for c in summary["verification"])
+        L += ["## Model verification", "", f"Overall: **{'PASS' if ok else 'FAIL'}**", "",
+              "| check | result | value | tolerance | description |", "|---|---|---|---|---|"]
+        for c in summary["verification"]:
+            L.append(f"| {c['name']} | {'PASS' if c['passed'] else '**FAIL**'} | {_fmt(c['value'])} | {_fmt(c['tolerance'])} | {c['description']} |")
+        L.append("")
+    L += ["## Results", ""]
+    for point in dict.fromkeys(r["point"] for r in summary["results"]):
+        rows = [r for r in summary["results"] if r["point"] == point]
+        keys = [k for k in rows[0]["kpis"] if not isinstance(rows[0]["kpis"][k], dict) and not k.startswith("computation")]
+        L += [f"### {point}", "", "| controller | " + " | ".join(keys) + " | status counts |", "|---" * (len(keys) + 2) + "|"]
+        for r in rows:
+            st = ", ".join(f"{k}: {v}" for k, v in r["kpis"]["status_counts"].items())
+            L.append(f"| {r['controller']} | " + " | ".join(_fmt(r["kpis"][k]) for k in keys) + f" | {st} |")
+        L.append("")
+    L += ["## Information access and limits", "",
+          "- Controllers use the vehicle state and the telemetry (wheel loads, lateral forces, road friction): idealised",
+          "  full-state feedback, except where marked `+ observer` (motion state from virtual sensors and the blended",
+          "  sideslip observer; allocation and slip control still use the telemetry).",
+          "- Model-based laws use the linear single track of the configured vehicle without K&C as design model.",
+          "- Sine with dwell is modelled on FMVSS 126 (limits 0.35 / 0.20 / 1.83 m); it is a simulation, not the regulatory test.",
+          "- Computation times are wall clock and not reproducible; all other results are (same specification, same code).", ""]
+    return "\n".join(L)
+
+
+__all__ = ("controller_factories", "make_road", "make_scenario", "plant_factory", "run_experiment")

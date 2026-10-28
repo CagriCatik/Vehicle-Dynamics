@@ -1,0 +1,57 @@
+# Continuous integration (Plan.md M9).
+#   push / pull request: quick tests (pytest -m "not slow") and validation of the experiment specifications
+#   weekly and on demand: the full suite including the slow scenario tests
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quick:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13"]
+    env:
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install
+        run: python -m pip install -e ".[test]"
+      - name: Quick tests
+        run: python -m pytest -q -m "not slow"
+      - name: Validate experiment specifications
+        run: python -m vehicle_model.experiments validate configs/experiments/*.yaml
+
+  full:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install
+        run: python -m pip install -e ".[test]"
+      - name: Full test suite
+        run: python -m pytest -q
+      - name: Example experiment with model verification
+        run: python -m vehicle_model.experiments run configs/experiments/split_mu_braking.yaml --out output/ci_experiment
