@@ -13,3 +13,4 @@ regenerative_blending:
   max_regen_torque: 500.0       # Maximum regenerative braking torque per wheel [Nm]
   regen_cutoff_speed: 2.0       # Vehicle speed where regen blends out down to standstill [m/s]
   regen_blend_bandwidth: 1.0    # Transition velocity band width [m/s]
+  tau_regen: 0.020              # Regenerative torque time constant [s] (electric drive)

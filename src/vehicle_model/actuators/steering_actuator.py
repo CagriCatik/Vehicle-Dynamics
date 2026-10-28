@@ -18,8 +18,10 @@ class SteeringActuatorConfig:
 
     tau: float = 0.045                    # Actuator first-order time constant [s] (~45 ms for modern EPS)
     max_angle: float = math.radians(35.0) # Maximum steering angle limit [rad]
-    max_rate: float = math.radians(60.0)  # Maximum slew rate [rad/s] (~344 deg/s)
+    max_rate: float = math.radians(60.0)  # Maximum road-wheel slew rate [rad/s] (60 deg/s)
     delay_s: float = 0.0                  # Pure transport delay [s]
+    steering_ratio: float = 1.0           # Handwheel / road-wheel angle [-]; 1.0: commands are road-wheel angles
+    ideal: bool = False                   # True: no lag, rate limit or delay (angle limit and faults still apply)
     fault_mode: str = "none"              # "none", "stuck", "free", "offset"
     fault_val: float = 0.0                # Stuck angle or additive offset [rad]
 
@@ -58,6 +60,16 @@ class SteeringActuator:
         self.config.fault_mode = mode
         self.config.fault_val = value
 
+    def road_wheel_command(self, handwheel_angle: float) -> float:
+        """Road-wheel angle commanded by a handwheel angle [rad] (constant ratio)."""
+        if self.config.steering_ratio <= 0.0:
+            raise ValueError("steering_ratio must be positive")
+        return handwheel_angle / self.config.steering_ratio
+
+    def step_handwheel(self, handwheel_angle: float, dt: float) -> float:
+        """Like :meth:`step`, commanded by a handwheel angle; returns the road-wheel angle [rad]."""
+        return self.step(self.road_wheel_command(handwheel_angle), dt)
+
     def step(self, cmd_angle: float, dt: float) -> float:
         """Step actuator dynamics forward by dt seconds and return actual wheel angle [rad]."""
         if dt <= 0.0:
@@ -66,7 +78,7 @@ class SteeringActuator:
         self._current_time += dt
 
         # 1. Handle transport delay
-        if self.config.delay_s > 1e-6:
+        if self.config.delay_s > 1e-6 and not self.config.ideal:
             self._delay_queue.append((self._current_time, cmd_angle))
             delayed_time = self._current_time - self.config.delay_s
             while len(self._delay_queue) > 1 and self._delay_queue[1][0] <= delayed_time:
@@ -91,6 +103,12 @@ class SteeringActuator:
         # 3. Position limit clamping of target
         target = float(np.clip(effective_cmd, -self.config.max_angle, self.config.max_angle))
         self.target = target
+        if self.config.ideal:
+            self.saturated_rate = False
+            self.saturated_angle = abs(target) >= (self.config.max_angle - 1e-9)
+            self.rate = (target - self.angle) / dt
+            self.angle = target
+            return self.angle
 
         # 4. First-order response: d(angle)/dt = (target - angle) / tau
         tau = max(self.config.tau, 1e-4)

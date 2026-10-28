@@ -19,12 +19,14 @@ class BrakeActuatorConfig:
     max_brake_torque: float = 3000.0      # Caliper torque limit per wheel [Nm]
     max_build_rate: float = 22000.0       # Max hydraulic pressure build slew rate [Nm/s]
     max_dump_rate: float = 36000.0        # Max ABS dump valve slew rate [Nm/s]
+    ideal: bool = False                   # True: torques follow the command instantly (limits still apply)
 
     # Regenerative braking blending parameters
     enable_regen_blending: bool = True    # Blend electric motor regen with hydraulic friction
     max_regen_torque: float = 500.0       # Max regenerative braking torque per wheel [Nm]
     regen_cutoff_speed: float = 2.0       # Speed [m/s] where regen blends down to 0 for smooth stop
     regen_blend_bandwidth: float = 1.0    # Transition band width [m/s]
+    tau_regen: float = 0.020              # Regenerative torque time constant [s] (electric drive)
 
     @classmethod
     def from_yaml(cls, path: str | None = None) -> BrakeActuatorConfig:
@@ -54,6 +56,8 @@ class BrakeActuatorConfig:
             max_regen_torque=float(regen.get("max_regen_torque", 500.0)),
             regen_cutoff_speed=float(regen.get("regen_cutoff_speed", 2.0)),
             regen_blend_bandwidth=float(regen.get("regen_blend_bandwidth", 1.0)),
+            tau_regen=float(regen.get("tau_regen", 0.020)),
+            ideal=bool(data.get("ideal", False)),
         )
 
 
@@ -143,25 +147,29 @@ class BrakeByWireActuator:
                     target_friction[i] = cmd[i]
 
         # 2. Electric Motor Regen Dynamics (Fast electrical torque control)
-        tau_regen = 0.02
-        rate_regen = (target_regen - self.regen_torque) / tau_regen
-        self.regen_torque = np.clip(self.regen_torque + rate_regen * dt, 0.0, self.config.max_regen_torque)
+        if self.config.ideal:
+            self.regen_torque = np.clip(target_regen, 0.0, self.config.max_regen_torque)
+            self.friction_torque = np.clip(target_friction, 0.0, self.config.max_brake_torque)
+        else:
+            rate_regen = (target_regen - self.regen_torque) / max(self.config.tau_regen, 1e-4)
+            self.regen_torque = np.clip(self.regen_torque + rate_regen * dt, 0.0, self.config.max_regen_torque)
 
         # 3. Electro-Hydraulic Caliper Dynamics with Asymmetric Apply / Release
-        for i in range(4):
-            t_curr = self.friction_torque[i]
-            t_des = target_friction[i]
+        if not self.config.ideal:
+            for i in range(4):
+                t_curr = self.friction_torque[i]
+                t_des = target_friction[i]
 
-            if t_des >= t_curr:
-                # Pressure build-up
-                tau = max(self.config.tau_apply, 1e-4)
-                rate = min((t_des - t_curr) / tau, self.config.max_build_rate)
-            else:
-                # Dump valve release (faster pressure relief)
-                tau = max(self.config.tau_release, 1e-4)
-                rate = max((t_des - t_curr) / tau, -self.config.max_dump_rate)
+                if t_des >= t_curr:
+                    # Pressure build-up
+                    tau = max(self.config.tau_apply, 1e-4)
+                    rate = min((t_des - t_curr) / tau, self.config.max_build_rate)
+                else:
+                    # Dump valve release (faster pressure relief)
+                    tau = max(self.config.tau_release, 1e-4)
+                    rate = max((t_des - t_curr) / tau, -self.config.max_dump_rate)
 
-            self.friction_torque[i] = float(np.clip(t_curr + rate * dt, 0.0, self.config.max_brake_torque))
+                self.friction_torque[i] = float(np.clip(t_curr + rate * dt, 0.0, self.config.max_brake_torque))
 
         # 4. Diagnostics & Telemetry
         total_delivered = self.friction_torque + self.regen_torque

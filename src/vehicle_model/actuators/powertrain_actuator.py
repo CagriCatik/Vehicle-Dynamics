@@ -22,6 +22,7 @@ class ElectricDriveConfig:
     base_wheel_speed: float = 35.0        # Wheel speed where field weakening begins [rad/s] (~40 km/h)
     efficiency: float = 0.94              # Inverter & motor round-trip efficiency [-]
     total_battery_power_limit: float = 450000.0  # Total DC battery pack discharge limit [W]
+    ideal: bool = False                   # True: no lag or slew limit (torque and power limits still apply)
 
     @classmethod
     def from_yaml(cls, path: str | None = None) -> ElectricDriveConfig:
@@ -47,6 +48,7 @@ class ElectricDriveConfig:
             base_wheel_speed=float(ed.get("base_wheel_speed", 35.0)),
             efficiency=float(ed.get("efficiency", 0.94)),
             total_battery_power_limit=float(ed.get("total_battery_power_limit", 450000.0)),
+            ideal=bool(ed.get("ideal", False)),
         )
 
 
@@ -114,18 +116,22 @@ class ElectricPowertrainActuator:
             t_target = t_target * scale
             power_limited = True
 
-        # 3. First-order actuator response: dT/dt_raw = (target - actual) / tau
-        tau = max(self.config.tau, 1e-4)
-        desired_rate = (t_target - self.actual_torque) / tau
+        if self.config.ideal:
+            self.actual_torque = np.clip(t_target, 0.0, t_avail)
+            slew_limited = False
+        else:
+            # 3. First-order actuator response: dT/dt_raw = (target - actual) / tau
+            tau = max(self.config.tau, 1e-4)
+            desired_rate = (t_target - self.actual_torque) / tau
 
-        # 4. Slew rate limiting: |dT/dt| <= max_torque_slew_rate
-        max_slew = self.config.max_torque_slew_rate
-        actual_rate = np.clip(desired_rate, -max_slew, max_slew)
-        slew_limited = bool(np.any(np.abs(desired_rate) > max_slew + 1e-6))
+            # 4. Slew rate limiting: |dT/dt| <= max_torque_slew_rate
+            max_slew = self.config.max_torque_slew_rate
+            actual_rate = np.clip(desired_rate, -max_slew, max_slew)
+            slew_limited = bool(np.any(np.abs(desired_rate) > max_slew + 1e-6))
 
-        # 5. Integration
-        new_torque = self.actual_torque + actual_rate * dt
-        self.actual_torque = np.clip(new_torque, 0.0, t_avail)
+            # 5. Integration
+            new_torque = self.actual_torque + actual_rate * dt
+            self.actual_torque = np.clip(new_torque, 0.0, t_avail)
 
         # 6. Operational telemetry
         mech_p = self.actual_torque * np.abs(omega)
