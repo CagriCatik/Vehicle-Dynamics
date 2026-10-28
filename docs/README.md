@@ -31,3 +31,5 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **16** | Lenkgeometrie, Fahrwerks-K&C, Rollzentren, Eigenlenkbudget (M4) | [CHASSIS_KINEMATICS.md](CHASSIS_KINEMATICS.md) |
 | **17** | Schlupfregelung, Control Allocation, ESC/TV (M5) | [CONTROL_ALLOCATION.md](CONTROL_ALLOCATION.md) |
 | **18** | Reglerbibliothek (PI, LQR, GS-LQR, LTV-MPC), Solverdiagnostik, Benchmark (M6) | [MOTION_CONTROL.md](MOTION_CONTROL.md) |
+| **19** | Virtuelle Sensoren, Schwimmwinkelbeobachter, Monte-Carlo-Robustheit (M7) | [ESTIMATION_ROBUSTNESS.md](ESTIMATION_ROBUSTNESS.md) |
+| **20** | Vertikaldynamik: Verifikation, Frequenzgänge, ISO-8608-Straßen (M8) | [VERTICAL_DYNAMICS.md](VERTICAL_DYNAMICS.md) |

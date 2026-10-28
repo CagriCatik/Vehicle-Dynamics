@@ -4,7 +4,7 @@ The vehicle suspension system governs two competing performance objectives:
 1. **Ride Comfort (ISO 2631):** Isolating vehicle passengers from high-frequency road vibrations and vertical body acceleration ($\ddot{z}_s$).
 2. **Road Holding & Handling:** Maintaining consistent vertical tyre contact force ($F_z$) across rough roads to ensure traction and cornering grip.
 
-This document details the quarter-car and 14-DOF suspension models and semi-active damping policies implemented in `src/vehicle_model/suspension/`.
+This document details the quarter-car and 14-DOF suspension models and semi-active damping policies (`src/vehicle_model/suspension/`, 14-DOF model in `src/vehicle_model/vehicle_models/`).
 
 ---
 
@@ -75,19 +75,19 @@ $$F_{\text{act}} = \begin{cases}
 0 & \text{otherwise}
 \end{cases}$$
 
-**Performance Result:** Reduces passenger vertical acceleration RMS ($\text{RMS}(\ddot{z}_s)$) by **$>20\%$** across ISO 2631 bump traversals compared to passive dampers.
+**Measured (M8, default parameters, `tests/vehicle_model/test_vertical_dynamics.py`):** body acceleration RMS −33 % at the bounce frequency (1.45 Hz) and −18 % on an ISO 8608 class C road at 72 km/h, compared with the passive damper. The price is road holding: near wheel hop (11.5 Hz) the dynamic tyre load rises by about 75 %.
 
 ### 2.2 Groundhook Damping
 Groundhook ties the virtual damper to the stationary road frame to minimize tyre deflection:
 $$F_{\text{ground}} = C_{\text{ground}} \dot{z}_u$$
 $$\text{Condition: } \dot{z}_u (\dot{z}_s - \dot{z}_u) \le 0$$
-Stabilizes dynamic tyre normal load fluctuations $\Delta F_z$, maximizing braking grip and contact patch adhesion over washboard roads.
+Intended to reduce dynamic tyre load fluctuations $\Delta F_z$. **Measured (M8, default tuning):** only −2.6 % dynamic tyre load at wheel hop; at the bounce frequency the body mode runs at $c_{min}$ and the dynamic tyre load doubles, and on an ISO 8608 class C road the dynamic tyre load RMS is 8 % *higher* than with the passive damper. With this tuning, groundhook does not improve road holding on broadband roads.
 
 ---
 
 ## 3. Fourteen Degree-of-Freedom (14-DOF) Full Vehicle Dynamics
 
-The `FourteenDOFVehicleModel` ([fourteen_dof.py](../src/vehicle_model/suspension/fourteen_dof.py)) provides complete multi-body coupled chassis simulation:
+The `FourteenDOFModel` ([fourteen_dof.py](../src/vehicle_model/vehicle_models/fourteen_dof.py)) provides complete multi-body coupled chassis simulation:
 
 ```mermaid
 graph TD
@@ -121,5 +121,11 @@ graph TD
 | Component | Class Name | Source File | Unit Tests |
 | :--- | :--- | :--- | :--- |
 | **Quarter-Car Plant** | `QuarterCarModel` | [quarter_car.py](../src/vehicle_model/suspension/quarter_car.py) | [test_suspension.py](../tests/vehicle_model/test_suspension.py) |
-| **Skyhook Controller** | `SkyhookController` | [quarter_car.py](../src/vehicle_model/suspension/quarter_car.py) | [test_suspension.py](../tests/vehicle_model/test_suspension.py) |
-| **14-DOF Vehicle Plant** | `FourteenDOFVehicleModel` | [fourteen_dof.py](../src/vehicle_model/suspension/fourteen_dof.py) | [test_suspension.py](../tests/vehicle_model/test_suspension.py) |
+| **Skyhook / Groundhook Controllers** | `SkyhookController`, `GroundhookController` | [controllers.py](../src/vehicle_model/suspension/controllers.py) | [test_suspension.py](../tests/vehicle_model/test_suspension.py) |
+| **14-DOF Vehicle Plant** | `FourteenDOFModel` | [fourteen_dof.py](../src/vehicle_model/vehicle_models/fourteen_dof.py) | [test_suspension.py](../tests/vehicle_model/test_suspension.py) |
+
+---
+
+## 5. Verification and road excitations (M8)
+
+See [VERTICAL_DYNAMICS.md](VERTICAL_DYNAMICS.md): analytical frequency responses, energy balance, ISO 8608 roads and the semi-active trade-off.

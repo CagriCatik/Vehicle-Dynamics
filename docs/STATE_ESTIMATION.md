@@ -122,3 +122,9 @@ Where:
 | **EKF Sideslip Observer** | `EKFSideslipEstimator` | [ekf.py](../src/vehicle_model/estimation/ekf.py) | [test_estimation.py](../tests/vehicle_model/test_estimation.py) |
 | **RLS Friction Estimator** | `RLSFrictionEstimator` | [friction_estimator.py](../src/vehicle_model/estimation/friction_estimator.py) | [test_estimation.py](../tests/vehicle_model/test_estimation.py) |
 | **PSO Calibration Engine** | `ParticleSwarmOptimizer` | [pso.py](../src/vehicle_model/estimation/pso.py) | [test_estimation.py](../tests/vehicle_model/test_estimation.py) |
+
+---
+
+## 6. Sensor timing, information access, observer comparison and robustness (M7)
+
+See [ESTIMATION_ROBUSTNESS.md](ESTIMATION_ROBUSTNESS.md). Note: the RLS friction estimator (section 3) reads tyre forces, slips and wheel loads from the simulation telemetry; it is declared as a ground-truth reference (`information = "ground_truth_tyre_forces"`), not a sensor-based estimator.
