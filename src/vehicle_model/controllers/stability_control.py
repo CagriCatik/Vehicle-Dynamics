@@ -48,8 +48,8 @@ from vehicle_model.vehicle_models.normal_loads import quasi_static_normal_loads,
 @dataclass(frozen=True)
 class StabilityControlConfig:
     understeer_gradient_ref: float = 0.0010   # [rad/(m/s^2)] reference EG (~0.56 deg/g)
-    kp_yaw: float = 8000.0                    # [N m/(rad/s)]
-    ki_yaw: float = 20000.0                   # [N m/rad]
+    kp_yaw: float = 15000.0                   # [N m/(rad/s)]  95 % of the TV reference in 0.17 s, no overshoot
+    ki_yaw: float = 100000.0                  # [N m/rad]
     max_yaw_moment: float = 4000.0            # [N m]
     deadband: float = 0.0                     # [rad/s] 0: continuous TV; > 0: ESC-like intervention
     mu_utilisation: float = 0.85              # [-] k_mu in the yaw-rate limit
