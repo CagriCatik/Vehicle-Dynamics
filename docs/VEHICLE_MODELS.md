@@ -98,7 +98,7 @@ $$\kappa_i = \frac{\omega_i R_{\text{eff}} - v_{w,x,i}}{\max\left(|v_{w,x,i}|, v
 
 #### 2.2.2 Tyre Slip Angle ($\alpha_i$)
 $$\alpha_i = -\arctan\left(\frac{v_{w,y,i}}{\max\left(|v_{w,x,i}|, v_{\epsilon}\right)}\right)$$
-Where $v_{\epsilon} = 0.1\text{ m/s}$ is a regularisation velocity avoiding division by zero at standstill.
+Where $v_{\epsilon} = 0.2\text{ m/s}$ (`_V_EPS` in `seven_dof.py`) is a regularisation velocity avoiding division by zero at standstill.
 
 ---
 
@@ -119,14 +119,29 @@ Where:
 - $a_x = \dot{v}_x - r v_y$: Longitudinal acceleration [$\text{m/s}^2$]
 - $a_y = \dot{v}_y + r v_x$: Lateral acceleration [$\text{m/s}^2$]
 
-#### Non-Linear Contact Constraint & Conservation
-To prevent unphysical negative vertical loads under severe cornering or rollover:
-$$F_{z,i} \ge 0 \quad \forall i \in \{FL, FR, RL, RR\}$$
-The total normal load is strictly conserved to machine precision:
-$$\sum_{i=1}^4 F_{z,i} \equiv m g \quad (\text{verified to } < 10^{-11}\text{ N in unit tests})$$
+The four formulas satisfy three equilibrium conditions: $\sum F_{z,i} = mg$, $\sum x_i F_{z,i} = -m a_x h_{\text{cog}}$ and $\sum y_i F_{z,i} = -m a_y h_{\text{cog}}$. The centre of pressure therefore lies at $(-a_x h_{\text{cog}}/g,\ -a_y h_{\text{cog}}/g)$ relative to the CoG. With four loads and three conditions, one *warp* mode remains, $q = (1/w_f,\ -1/w_f,\ -1/w_r,\ 1/w_r)$. It changes no resultant, and the roll stiffness split $k_{\text{roll},f}$ fixes it.
 
-> [!WARNING]
-> **Known limitation (wheel lift-off):** Negative loads are clipped to zero and *all* four loads are then rescaled to $mg$. This keeps the vertical force balance but violates the roll and pitch moment balance, and the lift-off is not reported as an event. An explicit contact-loss treatment is planned for M2 (Plan.md, Abschnitt 8; docs/AUDIT.md, 4.3).
+#### Unilateral Contact (Wheel Lift-Off and Tip-Over)
+
+Contact is unilateral: $F_{z,i} \ge 0$. Treating the warp mode as elastic, the consistent loads are $F = F^* + \text{clip}(0, w_{lo}, w_{hi})\, q$. Here $F^*$ are the formulas above, and $[w_{lo}, w_{hi}]$ is the interval of warp offsets that keeps all four loads non-negative ([normal_loads.py](../src/vehicle_model/vehicle_models/normal_loads.py)):
+
+| Case | `support` | Loads | Balances |
+|---|---|---|---|
+| $F^* \ge 0$ | `four_wheel` | formulas above | force, pitch, roll exact; roll split $= k_{\text{roll},f}$ |
+| a wheel would go negative | `three_wheel` | that wheel $= 0$, the other three statically determinate | force, pitch, roll exact; roll split no longer enforced |
+| CoP outside the support polygon | `tip_over` | nearest boundary point, shared by two wheels | moment the contacts cannot carry is reported as `moment_residual` |
+
+The lift-off transition is continuous. Once the inner front wheel has lifted, any further roll moment goes to the rear axle, because an anti-roll bar cannot pull a wheel down. In the `tip_over` state the vehicle would roll or pitch over. Results there are outside the model's validity.
+
+Reporting: `WheelTelemetry.in_contact`, `.support` and `.load_transfer_converged`; `SimulationHistory.in_contact`, `.support` and `.contact_events()` (lift-off and touch-down with time and wheel). There is no silent clipping and no rescaling.
+
+Analytical thresholds at $a_x = 0$:
+- Inner front wheel lifts at $a_y = \tfrac{1}{2} g \frac{l_r}{L} \frac{w_f}{h_{\text{cog}} k_{\text{roll},f}}$.
+- Tip-over at $a_y = g \frac{w_f l_r + w_r l_f}{2 L h_{\text{cog}}}$.
+
+For the reference car, lift-off would require $a_y \approx 13.7$ m/s², beyond the friction limit at µ = 1. The tests therefore use a variant with $h_{\text{cog}} = 0.9$ m and $k_{\text{roll},f} = 0.9$.
+
+Tests: [test_normal_loads.py](../tests/vehicle_model/test_normal_loads.py) and [test_seven_dof_balances.py](../tests/vehicle_model/test_seven_dof_balances.py).
 
 ---
 

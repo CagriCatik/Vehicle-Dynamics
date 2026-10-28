@@ -41,6 +41,18 @@ class SimulationHistory:
     Fy_wheel: np.ndarray     # Shape (N, 4)
     Fx_body: np.ndarray      # Shape (N, 4)
     Fy_body: np.ndarray      # Shape (N, 4)
+    in_contact: np.ndarray | None = None  # Shape (N, 4), bool
+    support: np.ndarray | None = None     # Shape (N,), "four_wheel" | "three_wheel" | "tip_over"
+
+    def contact_events(self) -> list[tuple[float, int, str]]:
+        """Wheel lift-off / touch-down transitions as ``(time, wheel_index, "lift_off" | "touch_down")``."""
+        if self.in_contact is None:
+            return []
+        events = []
+        change = np.diff(self.in_contact.astype(int), axis=0)
+        for k, i in zip(*np.nonzero(change)):
+            events.append((float(self.time[k + 1]), int(i), "touch_down" if change[k, i] > 0 else "lift_off"))
+        return events
 
     @property
     def sideslip_angle(self) -> np.ndarray:
@@ -107,6 +119,8 @@ class ScenarioRunner:
         Fy_wheel = np.zeros((n_steps, 4))
         Fx_body = np.zeros((n_steps, 4))
         Fy_body = np.zeros((n_steps, 4))
+        in_contact = np.ones((n_steps, 4), dtype=bool)
+        support = np.empty(n_steps, dtype=object)
 
         current_state = init_state
         last_telemetry: WheelTelemetry | None = None
@@ -144,6 +158,9 @@ class ScenarioRunner:
             Fy_wheel[k, :] = telemetry.Fy_wheel
             Fx_body[k, :] = telemetry.Fx_body
             Fy_body[k, :] = telemetry.Fy_body
+            if telemetry.in_contact is not None:
+                in_contact[k, :] = telemetry.in_contact
+            support[k] = telemetry.support
 
             current_state = next_state
 
@@ -168,6 +185,8 @@ class ScenarioRunner:
             Fy_wheel=Fy_wheel,
             Fx_body=Fx_body,
             Fy_body=Fy_body,
+            in_contact=in_contact,
+            support=support,
         )
 
 

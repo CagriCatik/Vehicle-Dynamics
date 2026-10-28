@@ -11,6 +11,10 @@ Modelling assumptions (documented in docs/VEHICLE_MODELS.md, section 2):
   * Quasi-static longitudinal/lateral load transfer; no suspension dynamics.
     The algebraic loop ``ax, ay -> Fz -> tyre forces -> ax, ay`` is solved by
     fixed-point iteration, so the derivative is a pure function of the state.
+    Non-convergence is reported in the telemetry (``load_transfer_converged``).
+  * Unilateral wheel contact: a lifting wheel carries zero load and the chassis
+    rests on three wheels with exact force/moment balance; tip-over is flagged
+    (see :mod:`vehicle_model.vehicle_models.normal_loads`).
   * Steering angles are inputs (no steering actuator dynamics here).
   * Tyre forces come from any :class:`~vehicle_model.tire_model.TyreModel`.
   * Rolling resistance and aerodynamic drag act on the chassis.
@@ -35,6 +39,11 @@ from vehicle_model.core.types import (
     WheelTelemetry,
 )
 from vehicle_model.roads.surface import RoadSurface, UniformRoad
+from vehicle_model.vehicle_models.normal_loads import (
+    NormalLoads,
+    quasi_static_normal_loads,
+    wheel_contact_positions,
+)
 from vehicle_model.tire_model.combined_slip import SimplifiedCombinedSlipTyre
 from vehicle_model.tire_model.framework import TyreModel
 
@@ -106,41 +115,22 @@ class SevenDOFModel:
     @property
     def wheel_positions(self) -> np.ndarray:
         """Wheel centre positions [x, y] in the body frame, rows FL, FR, RL, RR."""
-        p = self.params
-        return np.array([
-            [p.lf, p.wf / 2.0],
-            [p.lf, -p.wf / 2.0],
-            [-p.lr, p.wr / 2.0],
-            [-p.lr, -p.wr / 2.0],
-        ], dtype=float)
+        return wheel_contact_positions(self.params)
 
     # ------------------------------------------------------------- normal loads
     def compute_normal_loads(self, ax: float, ay: float) -> np.ndarray:
         """Quasi-static wheel loads [N]; ``Fz >= 0`` and ``sum(Fz) == m g`` on level ground.
 
-        If a wheel would lift (negative load) it is clipped to zero and the
-        remaining loads are rescaled to keep vertical equilibrium. The rescaling
-        does not preserve the pitch/roll moment balance exactly; results beyond
-        wheel lift are outside the model's validity.
+        See :meth:`compute_normal_load_state` for the contact state.
         """
-        p = self.params
-        L = p.wheelbase
-        mg = p.mass * p.g
-        Fz_f_stat = mg * p.lr / L
-        Fz_r_stat = mg * p.lf / L
-        d_long = p.mass * ax * p.hcog / L                      # ax > 0 -> load to rear
-        d_lat_f = p.mass * ay * p.hcog / p.wf * p.k_roll_f     # ay > 0 (left turn) -> load to right
-        d_lat_r = p.mass * ay * p.hcog / p.wr * (1.0 - p.k_roll_f)
+        return quasi_static_normal_loads(self.params, ax, ay).Fz
 
-        Fz = np.array([
-            0.5 * (Fz_f_stat - d_long) - d_lat_f,
-            0.5 * (Fz_f_stat - d_long) + d_lat_f,
-            0.5 * (Fz_r_stat + d_long) - d_lat_r,
-            0.5 * (Fz_r_stat + d_long) + d_lat_r,
-        ])
-        Fz = np.maximum(Fz, 0.0)
-        total = Fz.sum()
-        return Fz * (mg / total) if total > 1e-3 else np.full(4, mg / 4.0)
+    def compute_normal_load_state(self, ax: float, ay: float) -> NormalLoads:
+        """Wheel loads with unilateral contact: lift-off and tip-over are reported, not hidden.
+
+        Force, pitch- and roll-moment balance are exact unless ``support == "tip_over"``.
+        """
+        return quasi_static_normal_loads(self.params, ax, ay)
 
     # ---------------------------------------------------------------- dynamics
     def _tyre_forces(self, kappa, alpha, Fz, mu):
@@ -185,8 +175,10 @@ class SevenDOFModel:
 
         # Fixed-point solution of the quasi-static load-transfer loop
         ax, ay = self._accel_guess
+        converged = False
         for _ in range(_LT_MAX_ITER):
-            Fz = self.compute_normal_loads(ax, ay)
+            loads = quasi_static_normal_loads(p, ax, ay)
+            Fz = loads.Fz
             Fx_w, Fy_w = self._tyre_forces(kappa, alpha, Fz, mu)
             Fx_b = Fx_w * cos_d - Fy_w * sin_d
             Fy_b = Fx_w * sin_d + Fy_w * cos_d
@@ -196,6 +188,7 @@ class SevenDOFModel:
             ax, ay = ax_new, ay_new
             if converged:
                 break
+        # The loads belong to the previous iterate; on non-convergence they lag (ax, ay).
         self._accel_guess = (ax, ay)
 
         # Body equations: m(vx_dot - r vy) = sum Fx, m(vy_dot + r vx) = sum Fy
@@ -215,6 +208,8 @@ class SevenDOFModel:
         telemetry = WheelTelemetry(
             omega=omega.copy(), v_wx=v_wx, v_wy=v_wy, kappa=kappa, alpha=alpha, Fz=Fz, mu=mu,
             Fx_wheel=Fx_w, Fy_wheel=Fy_w, Fx_body=Fx_b, Fy_body=Fy_b, steer_angles=steer,
+            in_contact=loads.in_contact, support=loads.support,
+            load_transfer_converged=converged, contact_xy=np.column_stack([X_c, Y_c]),
         )
         return deriv, telemetry, float(ax), float(ay)
 

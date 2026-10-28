@@ -221,6 +221,11 @@ class WheelTelemetry:
     Fx_body: np.ndarray        # Longitudinal ground force in vehicle body frame [N]
     Fy_body: np.ndarray        # Lateral ground force in vehicle body frame [N]
     steer_angles: np.ndarray   # Steer angle of each wheel [rad]
+    # Contact state of the quasi-static load distribution (7-DOF model; defaults if not provided)
+    in_contact: np.ndarray | None = None   # bool per wheel
+    support: str = "four_wheel"            # "four_wheel" | "three_wheel" | "tip_over"
+    load_transfer_converged: bool = True   # fixed-point iteration ax, ay -> Fz converged
+    contact_xy: np.ndarray | None = None   # (4, 2) contact-point positions, global X, Y [m]
 
 
 def seven_dof_params_from_config(config_path: str | None = None) -> SevenDOFParams:
