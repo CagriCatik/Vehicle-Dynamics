@@ -120,12 +120,8 @@ def test_validation_telemetry_contains_dynamic_force_channels():
     assert np.isfinite(telemetry.signals["front_tire_utilization"]).all()
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Known defect (docs/AUDIT.md 4.5): MF6.2 offsets (PHY/PVY) give ~800/1600 N lateral "
-    "axle force at zero slip, so the vehicle drifts at zero steer. Fix planned in M1.",
-)
 def test_dynamic_model_drives_straight_at_zero_steer():
+    """Symmetric vehicle at zero steer: no yaw, no lateral drift (Plan.md 15.1, audit finding 4.5)."""
     model = DynamicSingleTrack()
     t = np.arange(0.0, 2.0 + 1e-9, 0.01)
     x, _ = model.sim_continuous(np.array([0.0, 0.0, 15.0, 0.0, 0.0, 0.0, 0.0]), np.array([0.0, 0.0]), t)

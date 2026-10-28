@@ -86,9 +86,17 @@ Der Original-Code in `HEAD` hat SLSQP immerhin im Docstring offengelegt. Die Por
 - „Calibrated LUT“ bezeichnet in den 4WS-Szenarien eine synthetisch abgestimmte Tabelle. Die Bezeichnung ist missverständlich, aber nicht als reale Kalibrierung ausgewiesen. Offen.
 - Sehr große Szenario-Module (`split_mu_scenarios.py` 2612, `four_wheel_steering_scenarios.py` 2015, `validation_matrix.py` 1665 Zeilen) widersprechen dem Grundsatz „ein Modul, eine Verantwortung“.
 
-### 4.5 Geradeausfahrt des dynamischen Einspurmodells (Abschnitt 15.1): hoch
+### 4.5 Geradeausfahrt des dynamischen Einspurmodells (Abschnitt 15.1): hoch, *behoben in M1*
 
-`DynamicSingleTrack` erzeugt bei Lenkwinkel null und Schräglaufwinkel null Achsseitenkräfte von etwa 800 N (vorn) und 1600 N (hinten). Das Fahrzeug giert und driftet bei Geradeausfahrt (nach 2 s: ψ ≈ −0,03 rad). Ursache sind die Offset-Koeffizienten (PHY, PVY) der MF6.2-Beispielreifen. Beim Zusammenfassen beider Räder einer Achse heben sie sich nicht wie links/rechts gespiegelt auf. Die `TyreModel`-Implementierungen und das 7-DOF-Modell sind nicht betroffen (geprüft). Der Befund ist als `xfail(strict=True)` in `test_single_track_models.py` festgehalten.
+`DynamicSingleTrack` erzeugte bei Lenkwinkel null und Schräglaufwinkel null Achsseitenkräfte von etwa 800 N (vorn) und 1600 N (hinten). Das Fahrzeug gierte und driftete bei Geradeausfahrt (nach 2 s: ψ ≈ −0,03 rad).
+
+Korrigierte Ursache: nicht die MF6.2-Dateien (dieser Pfad ist inaktiv, weil die Dateien `VEHICLE_*_TIRE` fehlen), sondern die Verschiebungsterme `Shfy`, `Shry`, `Svfy` und `Svry` der vereinfachten Magic Formula in `default.yaml`. Ihre Herkunft ist nicht dokumentiert (vermutlich ein Fit an den Autoverse-Simulatorlauf).
+
+Behebung: Die Verschiebungsterme sind null; die alten Werte bleiben über Commit `4190954` reproduzierbar. `default.yaml` liegt ebenfalls doppelt vor (`configs/` und Paket-Fallback). Ein Test sichert jetzt die Gleichheit beider Kopien.
+
+### 4.6 Reifen `pacejka_*_synthetic` (Abschnitt 7): mittel, offen (M3)
+
+Die Standardreifen des 7-DOF-Modells erreichen Fy = µ·Fz bereits bei etwa 2° Schräglaufwinkel und werden dort hart abgeschnitten. Die normierte Schräglaufsteifigkeit beträgt etwa 36/rad, für Pkw-Reifen typisch sind 15–25/rad. Die harte Begrenzung ist eine nicht stetige, nicht gemeldete Näherung. Das Referenzfahrzeug verwendet deshalb die Fiala-Reifen.
 
 ## 5. Zuordnung der Befunde zur Roadmap (Plan.md, Abschnitt 19)
 

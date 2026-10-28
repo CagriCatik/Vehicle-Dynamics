@@ -38,6 +38,12 @@ def test_synthetic_tyres_do_not_claim_calibration(name):
         assert "calibrated" not in prov.source.lower()
 
 
+def test_bundled_default_config_matches_configs():
+    """The package fallback default.yaml must not drift from configs/default.yaml."""
+    bundled = BUNDLED_TYRES.parent / "default.yaml"
+    assert bundled.read_text(encoding="utf-8") == (CONFIGS / "default.yaml").read_text(encoding="utf-8")
+
+
 @pytest.mark.parametrize("path", sorted(BUNDLED_TYRES.glob("*.yaml")), ids=lambda p: p.stem)
 def test_bundled_tyre_copies_match_configs(path):
     """The package fallback copies must not drift from configs/tyres (single source of truth)."""
