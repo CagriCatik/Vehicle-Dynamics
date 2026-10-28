@@ -129,6 +129,7 @@ def test_iso8608_class_values_and_variance():
     assert np.std(z) == pytest.approx(math.sqrt(c.variance), rel=0.05)
 
 
+@pytest.mark.slow
 def test_iso8608_profile_has_the_target_psd():
     road = ISO8608Profile("B", seed=4)
     dx = 0.05
