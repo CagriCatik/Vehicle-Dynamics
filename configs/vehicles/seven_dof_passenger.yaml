@@ -1,6 +1,19 @@
 # Seven Degree-of-Freedom (7-DOF) Two-Track Passenger Vehicle Configuration
+id: seven_dof_passenger
+version: "1.0"
 vehicle_type: passenger_car
-description: "Realistic D-segment electric/hybrid passenger car"
+description: "Synthetic compact passenger car parameter set for the planar 7-DOF model"
+
+# Parameter provenance (Plan.md, Abschnitt 4.2).
+# data_class: analytical | synthetic | derived_from_assumptions | optimised_virtual
+provenance:
+  data_class: synthetic
+  source: >-
+    Hand-chosen, physically plausible values for a compact passenger car.
+    Not derived from, fitted to or validated against a real vehicle.
+  notes:
+    - "mass 1200 kg is light for a D-segment car; the revised virtual reference vehicle follows in M1"
+    - "static front axle load share lr/L = 1.50/2.80 = 53.6 %"
 
 # Inertial Properties
 mass: 1200.0             # Total vehicle curb mass [kg]

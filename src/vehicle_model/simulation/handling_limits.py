@@ -630,8 +630,7 @@ def plot_handling_and_limits(
     colors = {
         "passive": "#f43f5e",                  # Rose Red
         "passive_baseline": "#f43f5e",
-        "passive_oem": "#f59e0b",              # Amber Orange
-        "passive_oem_calibrated": "#f59e0b",
+        "passive_staggered": "#f59e0b",        # Amber Orange
         "four_wheel_steering": "#38bdf8",      # Cyan
         "4ws": "#38bdf8",
         "ivmc_2ws": "#3b82f6",                 # Blue

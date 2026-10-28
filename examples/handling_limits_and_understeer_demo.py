@@ -80,11 +80,11 @@ def main() -> int:
             None,
             None,
         ),
-        "passive_oem": (
-            "Passive OEM (Staggered Tyres)",
+        "passive_staggered": (
+            "Passive Staggered (Synthetic Tyres)",
             PassiveBaselineController(),
-            "simplified_combined_oem_front",
-            "simplified_combined_oem_rear",
+            "simplified_combined_staggered_front",
+            "simplified_combined_staggered_rear",
         ),
         "four_wheel_steering": (
             "Active 4WS (Zero Sideslip Strategy)",
@@ -171,11 +171,11 @@ def main() -> int:
     print("\n" + "=" * 115)
     print("CRITICAL VEHICLE DYNAMICS INTERPRETATION & METHODOLOGICAL ANALYSIS (ISO 4138 / Ferit Küçükay):")
     print("-" * 115)
-    print("1. PASSIVE SYMMETRIC BASELINE vs. OEM CALIBRATION (Kus = +0.20°/g vs. +1.34°/g):")
+    print("1. PASSIVE SYMMETRIC BASELINE vs. SYNTHETIC STAGGERED TYRES (Kus = +0.20°/g vs. +1.34°/g):")
     print("   - Symmetric baseline has identical front and rear tyres without suspension elastokinematics.")
     print("   - Theoretical linear bicycle formula: Kus = (m/L) * (lr/C_alpha,f - lf/C_alpha,r) = +0.152°/g.")
-    print("   - Calibrated OEM setup (alpha_peak,f = 5.8°, alpha_peak,r = 3.8°) yields Kus = +1.34°/g and")
-    print("     v_char = 123.3 km/h, matching authentic production D-segment passenger car cornering characteristics.")
+    print("   - Hand-chosen synthetic staggered tyres (alpha_peak,f = 5.8°, alpha_peak,r = 3.8°) yield Kus = +1.34°/g and")
+    print("     v_char = 123.3 km/h, inside the literature target range (not an OEM calibration, not validated).")
     print("\n2. FOUR-WHEEL STEERING ARTIFACT IN ISO 4138 (Kus,front vs Kus,eff):")
     print("   - Standard ISO 4138 measures only front-wheel angle delta_f. At low speed (20 km/h), 4WS steers counter-phase")
     print("     (delta_r = -0.8°), requiring delta_f = 3.5° (below Ackermann). At high speed (80 km/h), in-phase rear steer")

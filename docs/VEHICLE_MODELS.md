@@ -125,6 +125,9 @@ $$F_{z,i} \ge 0 \quad \forall i \in \{FL, FR, RL, RR\}$$
 The total normal load is strictly conserved to machine precision:
 $$\sum_{i=1}^4 F_{z,i} \equiv m g \quad (\text{verified to } < 10^{-11}\text{ N in unit tests})$$
 
+> [!WARNING]
+> **Known limitation (wheel lift-off):** Negative loads are clipped to zero and *all* four loads are then rescaled to $mg$. This keeps the vertical force balance but violates the roll and pitch moment balance, and the lift-off is not reported as an event. An explicit contact-loss treatment is planned for M2 (Plan.md, Abschnitt 8; docs/AUDIT.md, 4.3).
+
 ---
 
 ### 2.4 Force Transformation from Wheel Frame to Chassis Frame

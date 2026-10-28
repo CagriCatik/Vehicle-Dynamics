@@ -6,7 +6,7 @@ Dynamic degrees of freedom (7):
 Navigation states (3, integrated, not extra DOFs):
   X, Y [m], psi [rad]
 
-Modelling assumptions (documented, see docs/vehicle_dynamics/seven_dof_model.md):
+Modelling assumptions (documented in docs/VEHICLE_MODELS.md, section 2):
   * Planar motion on a level road, ISO 8855 axes (x forward, y left, z up).
   * Quasi-static longitudinal/lateral load transfer; no suspension dynamics.
     The algebraic loop ``ax, ay -> Fz -> tyre forces -> ax, ay`` is solved by

@@ -99,16 +99,16 @@ Evaluating the **Effective Understeer Gradient** $K_{\text{us},\text{eff}}$:
 $$K_{\text{us},\text{eff}} = \frac{d\delta_{\text{eff}}}{da_y} = \frac{d(\delta_f - \delta_r)}{da_y} = -1.24^\circ/g$$
 This negative effective gradient proves that 4WS increases cornering responsiveness and reduces the net chassis angle required to negotiate the curve.
 
-### 3.5 Baseline Symmetric Tyres vs. OEM Passenger Car Calibration
-The uncalibrated physical baseline with identical front and rear tyres yields:
-$$K_{\text{us}} = \frac{m}{L}\left(\frac{l_r}{C_{\alpha,f}} - \frac{l_f}{C_{\alpha,r}}\right) = +0.152^\circ/g \quad (\text{measured: } +0.20^\circ/g)$$
+### 3.5 Symmetric Baseline vs. Synthetic Staggered Tyre Set
+The baseline with identical front and rear tyres yields:
+$$K_{\text{us}} = \frac{m}{L}\left(\frac{l_r}{C_{\alpha,f}} - \frac{l_f}{C_{\alpha,r}}\right) = +0.152^\circ/g \quad (\text{simulated: } +0.20^\circ/g)$$
 While statically stable, this value ($v_{\text{char}} \approx 317\text{ km/h}$) feels nervous to typical drivers.
 
-In automotive series production (Ferit Küçükay 2022, Kap. 6; Heißing et al. 2020), D-segment passenger vehicles are calibrated for $K_{\text{us}} \in [+1.0, +2.0]^\circ/g$ via:
+The literature (Küçükay 2022, Kap. 6; Heißing et al. 2020) quotes design target ranges of roughly $K_{\text{us}} \in [+1.0, +2.0]^\circ/g$ for passenger cars, typically achieved via:
 1. **Suspension Elastokinematics**: Bushing compliance produces front axle lateral toe-out and rear axle lateral toe-in under lateral forces ($+0.8^\circ/g \dots +1.2^\circ/g$).
-2. **Staggered Tyre Characteristics**: Calibrating a softer front peak slip angle ($\alpha_{\text{peak},f} = 5.8^\circ$) relative to the rear axle ($\alpha_{\text{peak},r} = 3.8^\circ$) generates an authentic OEM understeer gradient:
-   $$K_{\text{us},\text{OEM}} = +1.34^\circ/g \implies v_{\text{char}} = 123.3\text{ km/h}$$
-This characteristic speed matches the target highway cruising velocity of production road vehicles.
+2. **Staggered Tyre Characteristics**: The synthetic tyre sets `simplified_combined_staggered_{front,rear}` use a larger front peak slip angle ($\alpha_{\text{peak},f} = 5.8^\circ$) than rear ($\alpha_{\text{peak},r} = 3.8^\circ$). In simulation this gives:
+   $$K_{\text{us}} = +1.34^\circ/g \implies v_{\text{char}} = 123.3\text{ km/h}$$
+The values were hand-chosen to land inside the literature target range. They are **not** an OEM calibration and are not validated against a real vehicle; elastokinematics (item 1) is not modelled.
 
 ---
 
@@ -171,20 +171,20 @@ Where:
 
 ---
 
-## 7. Comparative Benchmark: Passive vs OEM vs 4WS vs IVMC
+## 7. Comparative Benchmark: Passive vs Staggered vs 4WS vs IVMC
 
 Below are results obtained on a $R = 40.0\text{ m}$ circular track on dry asphalt ($\mu = 1.0$) with the 7-DOF vehicle model:
 
 | Vehicle Configuration | Front $K_{\text{us}}$ [°/g] | Effective $K_{\text{us},\text{eff}}$ [°/g] | ISO 8855 Class | $v_{\text{char}}$ [km/h] | $a_{y,\max}$ [g] | Max $\Delta\beta$ [°] |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Passive Baseline (Symmetric Tyres)** | $+0.20$ | $+0.20$ | Mild Understeer | $317.1$ | $0.90$ | $4.12^\circ$ |
-| **Passive OEM (Staggered Tyres)** | $+1.34$ | $+1.34$ | Realistic Understeer | $123.3$ | $0.89$ | $4.13^\circ$ |
+| **Passive Staggered (synthetic tyres)** | $+1.34$ | $+1.34$ | Understeer | $123.3$ | $0.89$ | $4.13^\circ$ |
 | **Active 4WS (Zero Sideslip)** | $+2.43$ | $-1.24$ | Agile / Understeer | $91.6$ | $0.89$ | $3.44^\circ$ |
 | **Integrated IVMC (4WS + TV)** | $+2.62$ | $-0.98$ | Stable Understeer | $88.2$ | $0.90$ | $3.44^\circ$ |
 
 ### Physical Interpretation:
-1. **Passive Symmetric Baseline**: Inherent mild understeer solely due to static weight distribution (52.5% front). High characteristic speed ($317.1\text{ km/h}$).
-2. **Passive OEM Calibrated**: Replicates realistic production car suspension compliance and rear tyre grip advantage ($\alpha_{\text{peak},r} = 3.8^\circ$), achieving $K_{\text{us}} = +1.34^\circ/g$ and $v_{\text{char}} = 123.3\text{ km/h}$, aligning with German automotive standards (Küçükay 2022).
+1. **Passive Symmetric Baseline**: Inherent mild understeer solely due to static weight distribution (53.6% front, $l_r/L$). High characteristic speed ($317.1\text{ km/h}$).
+2. **Passive Staggered (synthetic)**: The smaller rear peak slip angle ($\alpha_{\text{peak},r} = 3.8^\circ$) shifts the balance towards understeer, giving $K_{\text{us}} = +1.34^\circ/g$ and $v_{\text{char}} = 123.3\text{ km/h}$, inside the literature target range (Küçükay 2022). No suspension compliance is modelled.
 3. **Four-Wheel Steering (4WS)**: In-phase rear steering suppresses dynamic sideslip by **-16.5%** ($4.12^\circ \to 3.44^\circ$) while achieving an agile effective chassis gradient $K_{\text{us},\text{eff}} = -1.24^\circ/g$.
 4. **Integrated Chassis Control (IVMC)**: Couples active 4WS with active torque vectoring, stabilizing the vehicle envelope and capping sideslip while maintaining steady understeer stability margin ($K_{\text{us},\text{eff}} = -0.98^\circ/g$).
 

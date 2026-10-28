@@ -27,7 +27,7 @@ PANEL_BG: str = CARD_COLOR       # Alias for card/panel background
 ACCENT_CYAN: str = "#38bdf8"     # Cyan / Sky for 4WS / dynamic accents
 ACCENT_BLUE: str = "#3b82f6"     # Vivid blue
 ACCENT_EMERALD: str = "#10b981"  # Emerald green for IVMC / Pass
-ACCENT_AMBER: str = "#f59e0b"    # Amber / Orange for OEM / Caution
+ACCENT_AMBER: str = "#f59e0b"    # Amber / Orange for staggered setup / Caution
 ACCENT_ROSE: str = "#f43f5e"     # Rose / Red for Passive / Limits / Fail
 ACCENT_PURPLE: str = "#a855f7"   # Violet for specialized controllers
 

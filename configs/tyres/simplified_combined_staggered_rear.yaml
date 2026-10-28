@@ -1,0 +1,22 @@
+model: simplified_combined
+parameters:
+  kappa_peak: 0.12
+  alpha_peak: 0.0663225  # 3.8 deg (hand-chosen, stiffer rear axle)
+  sliding_ratio: 0.85
+  peak_load_sensitivity: 0.30
+  friction_load_sensitivity: 0.10
+  Fz0: 3000.0
+provenance:
+  formulation: Simplified normalised combined slip (Rear Axle Staggered Setup)
+  version: "1.0"
+  source: >-
+    Synthetic rear-axle variant of simplified_combined_synthetic. alpha_peak (3.8 deg)
+    chosen by hand to give an understeering front/rear balance; not fitted to measured
+    or OEM tyre data.
+  data_class: synthetic
+  reference_load: 3000.0
+  valid_kappa: [-1.0, 1.0]
+  valid_alpha: [-0.35, 0.35]
+  limitations:
+    - Hand-chosen synthetic values (smaller rear peak slip angle -> stiffer rear axle); no calibration against real tyres
+    - No camber, pressure, relaxation length or aligning moment
