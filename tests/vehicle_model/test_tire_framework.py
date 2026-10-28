@@ -25,7 +25,7 @@ from vehicle_model.tire_model import (
 from vehicle_model.tire_model.framework import TyreProvenance
 
 
-@pytest.fixture(params=["linear_passenger_synthetic", "fiala_passenger_synthetic", "simplified_combined_synthetic", "pacejka_front_synthetic"])
+@pytest.fixture(params=["linear_passenger_synthetic", "fiala_passenger_synthetic", "simplified_combined_synthetic", "pacejka_front_synthetic", "magic_formula_passenger_synthetic"])
 def tyre_instance(request):
     return load_tyre(request.param)
 

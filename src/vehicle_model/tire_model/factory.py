@@ -12,6 +12,7 @@ from vehicle_model.config.loader import get_configs_root
 from .brush_models import FialaTyre, LinearTyre
 from .combined_slip import SimplifiedCombinedSlipParams, SimplifiedCombinedSlipTyre
 from .framework import TyreModel, TyreProvenance
+from .magic_formula import MagicFormulaTyre, magic_formula_params_from_dict
 from .pacejka import PacejkaTyre, PacejkaTyreParams
 
 _REQUIRED_PROVENANCE = ("formulation", "version", "source", "data_class", "reference_load")
@@ -57,6 +58,8 @@ def tyre_from_dict(data: dict[str, Any], origin: str = "<dict>") -> TyreModel:
         return FialaTyre(**params, provenance=provenance)
     if model == "simplified_combined":
         return SimplifiedCombinedSlipTyre(SimplifiedCombinedSlipParams(**params), provenance=provenance)
+    if model == "magic_formula":
+        return MagicFormulaTyre(magic_formula_params_from_dict(params), provenance=provenance)
     if model == "pacejka":
         return PacejkaTyre(PacejkaTyreParams(**params), provenance=provenance)
     raise ValueError(f"Unknown tyre model {model!r} in {origin}")
