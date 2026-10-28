@@ -45,6 +45,19 @@ _LT_MAX_ITER = 25
 _RK4_STABILITY = 2.0   # safety-reduced RK4 stability bound (exact: ~2.78) for lambda*dt
 
 
+def _vehicle_yaml(path: str | None) -> dict:
+    """Raw vehicle YAML (same path resolution as ``SevenDOFParams.from_yaml``)."""
+    from pathlib import Path
+
+    import yaml
+
+    from vehicle_model.config.loader import get_configs_root
+
+    p = Path(path) if path is not None else get_configs_root() / "vehicles" / "seven_dof_passenger.yaml"
+    with open(p, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
 class SevenDOFModel:
     """Nonlinear 7-DOF two-track vehicle model with exchangeable tyre models."""
 
@@ -72,16 +85,21 @@ class SevenDOFModel:
     def from_yaml(
         cls,
         vehicle_config: str | None = None,
-        tyre_name: str = "pacejka_front_synthetic",
+        tyre_name: str | None = None,
         road: RoadSurface | None = None,
-        tyre_rear_name: str | None = "pacejka_rear_synthetic",
+        tyre_rear_name: str | None = None,
     ) -> SevenDOFModel:
-        """Instantiate SevenDOFModel loaded from centralized YAML configuration files."""
+        """Instantiate SevenDOFModel loaded from centralized YAML configuration files.
+
+        Tyre selection per axle: explicit argument, else the vehicle YAML's
+        ``tyres: {front, rear}`` section, else ``pacejka_{front,rear}_synthetic``.
+        """
         from vehicle_model.tire_model import load_tyre
         p = SevenDOFParams.from_yaml(vehicle_config)
-        tyre_front = load_tyre(tyre_name)
-        tyre_rear = load_tyre(tyre_rear_name) if tyre_rear_name else tyre_front
-        return cls(params=p, tyre=tyre_front, tyre_rear=tyre_rear, road=road)
+        yaml_tyres = _vehicle_yaml(vehicle_config).get("tyres") or {}
+        front = tyre_name or yaml_tyres.get("front") or "pacejka_front_synthetic"
+        rear = tyre_rear_name or yaml_tyres.get("rear") or "pacejka_rear_synthetic"
+        return cls(params=p, tyre=load_tyre(front), tyre_rear=load_tyre(rear), road=road)
 
 
     # ------------------------------------------------------------------ geometry

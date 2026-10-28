@@ -1,0 +1,65 @@
+# Virtual reference vehicle (Plan.md, Abschnitt 4) – conventional front-steered passenger car,
+# symmetric left/right. Basis for M1+ analyses; variants (drive layout, 4WS, active chassis)
+# are derived from this set.
+id: reference_passenger_car
+version: "1.0"
+vehicle_type: passenger_car
+description: "Synthetic compact/mid-size passenger car, front steering, symmetric chassis"
+
+# data_class: analytical | synthetic | derived_from_assumptions | optimised_virtual
+provenance:
+  data_class: derived_from_assumptions
+  source: >-
+    Values chosen from general textbook ranges for compact/mid-size passenger cars
+    (Mitschke/Wallentowitz 2014; Heissing/Ersoy 2011; Gillespie 1992). Not taken from,
+    fitted to or validated against any real vehicle.
+  assumptions:
+    - "mass 1450 kg incl. driver; 60 % static front axle load (front-engine layout)"
+    - "yaw inertia from dynamic index Iz/(m lf lr) = 0.95 (textbook range 0.8-1.1)"
+    - "roll stiffness split 60/40 front/rear (understeer-oriented)"
+    - "static stability factor (min track/2)/hcog = 1.38 (passenger-car range 1.2-1.5)"
+
+# Tyre parameter sets per axle (configs/tyres/<name>.yaml)
+tyres:
+  front: fiala_passenger_synthetic
+  rear: fiala_passenger_synthetic
+
+# ---- Parameters used by the planar 7-DOF model (SevenDOFParams) ----
+mass: 1450.0             # [kg] total mass
+Iz: 2321.0               # [kg m^2] = 0.95 * m * lf * lr
+lf: 1.06                 # [m] CoG -> front axle  (lr/L = 0.60)
+lr: 1.59                 # [m] CoG -> rear axle   (wheelbase 2.65 m)
+wf: 1.54                 # [m] front track
+wr: 1.52                 # [m] rear track
+hcog: 0.55               # [m] CoG height
+k_roll_f: 0.60           # [-] front share of roll stiffness, = K_phi_f/(K_phi_f+K_phi_r)
+
+Iw: 1.0                  # [kg m^2] per wheel incl. tyre, rim, brake disc
+Reff: 0.31               # [m] effective rolling radius (205/55 R16 class)
+c_rr: 0.011              # [-] rolling resistance coefficient
+wheel_damping: 0.10      # [N m s/rad] bearing/viscous losses
+
+Cd: 0.30                 # [-] drag coefficient
+Af: 2.20                 # [m^2] frontal area
+rho: 1.225               # [kg/m^3] air density (ISA sea level)
+g: 9.81                  # [m/s^2]
+
+max_steer_f: 0.610865    # [rad] 35 deg road-wheel angle
+max_steer_r: 0.087266    # [rad]  5 deg (only used by 4WS variants)
+max_steer_rate: 1.047198 # [rad/s] 60 deg/s road-wheel rate
+max_drive_torque: 800.0  # [N m] per wheel
+max_brake_torque: 2500.0 # [N m] per wheel
+
+# ---- Extended chassis parameters (not used by the 7-DOF model; for M4/M8) ----
+chassis_extended:
+  sprung_mass: 1290.0            # [kg]
+  unsprung_mass_per_wheel: 40.0  # [kg]  (1290 + 4*40 = 1450)
+  Ix: 550.0                      # [kg m^2] roll inertia (sprung mass)
+  Iy: 2200.0                     # [kg m^2] pitch inertia (sprung mass)
+  roll_stiffness_front: 39000.0  # [N m/rad] incl. anti-roll bar
+  roll_stiffness_rear: 26000.0   # [N m/rad]
+  spring_rate_front: 30000.0     # [N/m] wheel rate
+  spring_rate_rear: 28000.0      # [N/m] wheel rate
+  damper_front: 3000.0           # [N s/m] linearised wheel damping
+  damper_rear: 2800.0            # [N s/m]
+  tyre_vertical_stiffness: 230000.0  # [N/m]

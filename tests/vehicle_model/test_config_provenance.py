@@ -44,3 +44,38 @@ def test_bundled_tyre_copies_match_configs(path):
     master = CONFIGS / "tyres" / path.name
     assert master.is_file(), f"{path.name} exists only as bundled copy"
     assert path.read_text(encoding="utf-8") == master.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("path", sorted((CONFIGS / "vehicles").glob("*.yaml")), ids=lambda p: p.stem)
+def test_vehicle_configs_pass_consistency_checks(path):
+    from vehicle_model.vehicle_models.consistency import check_vehicle_consistency
+
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert check_vehicle_consistency(SevenDOFParams.from_yaml(path), data.get("chassis_extended")) == []
+
+
+def test_consistency_check_reports_violations():
+    import dataclasses
+
+    from vehicle_model.vehicle_models.consistency import check_vehicle_consistency
+
+    p = SevenDOFParams.from_yaml(CONFIGS / "vehicles" / "reference_passenger_car.yaml")
+    assert any("dynamic_index" in i for i in check_vehicle_consistency(dataclasses.replace(p, Iz=5000.0)))
+    assert any("k_roll_f" in i for i in check_vehicle_consistency(p, {"roll_stiffness_front": 1.0, "roll_stiffness_rear": 1.0}))
+    assert any("unsprung" in i for i in check_vehicle_consistency(p, {"sprung_mass": 1000.0, "unsprung_mass_per_wheel": 10.0}))
+    assert check_vehicle_consistency(dataclasses.replace(p, mass=-1.0)) == ["mass must be positive (got -1.0)"]
+
+
+def test_seven_dof_tyre_selection_order():
+    from vehicle_model.vehicle_models import SevenDOFModel
+
+    ref = SevenDOFModel.from_yaml(str(CONFIGS / "vehicles" / "reference_passenger_car.yaml"))
+    assert ref.tyre_front.provenance.formulation.startswith("Fiala")  # from the YAML 'tyres' section
+    old = SevenDOFModel.from_yaml(str(CONFIGS / "vehicles" / "seven_dof_passenger.yaml"))
+    assert "Pacejka" in old.tyre_front.provenance.formulation  # unchanged default
+    explicit = SevenDOFModel.from_yaml(
+        str(CONFIGS / "vehicles" / "reference_passenger_car.yaml"),
+        tyre_name="linear_passenger_synthetic",
+        tyre_rear_name="linear_passenger_synthetic",
+    )
+    assert explicit.tyre_rear.provenance.formulation == "Linear"

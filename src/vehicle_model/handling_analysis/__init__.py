@@ -14,6 +14,7 @@ from .linear_single_track import (
     ModalProperties,
     StateSpace,
 )
+from .linearization import cornering_stiffness, linear_params_from_seven_dof
 from .response_metrics import StepResponseMetrics, step_response_metrics
 
 __all__ = (
@@ -24,5 +25,7 @@ __all__ = (
     "ModalProperties",
     "StateSpace",
     "StepResponseMetrics",
+    "cornering_stiffness",
+    "linear_params_from_seven_dof",
     "step_response_metrics",
 )
