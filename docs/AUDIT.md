@@ -88,6 +88,7 @@ Der Original-Code in `HEAD` hat SLSQP immerhin im Docstring offengelegt. Die Por
 - In `HANDLING_LIMITS.md` war der statische Vorderachslastanteil mit 52,5 % angegeben, korrekt ist l_r/L = 53,6 %. *(erledigt in M0)*
 - Die NMPC-Dokumentation enthielt Parameterwerte, Code-Ausschnitte und Benchmark-Zahlen, die nicht zum Code passten oder nicht belegt waren. *(korrigiert in M0)*
 - „Calibrated LUT“ bezeichnet in den 4WS-Szenarien eine synthetisch abgestimmte Tabelle. Die Bezeichnung ist missverständlich, aber nicht als reale Kalibrierung ausgewiesen. Offen.
+- `scipy` wurde in `controllers/nmpc.py`, `controllers/dynamic_two_track_nmpc.py`, `steering/lut.py` und `handling_analysis/linear_single_track.py` importiert, war aber weder in `pyproject.toml` noch in `requirements.txt` deklariert; eine frische Installation scheiterte beim Import. *(behoben in M5)*
 - Sehr große Szenario-Module (`split_mu_scenarios.py` 2612, `four_wheel_steering_scenarios.py` 2015, `validation_matrix.py` 1665 Zeilen) widersprechen dem Grundsatz „ein Modul, eine Verantwortung“.
 
 ### 4.5 Geradeausfahrt des dynamischen Einspurmodells (Abschnitt 15.1): hoch, *behoben in M1*
