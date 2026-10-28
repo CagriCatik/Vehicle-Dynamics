@@ -21,3 +21,9 @@ steering_angle_sensor:
   noise_std: 0.0017              # Steering angle noise standard deviation [rad] (~0.1 deg)
   quantization_rad: 0.001        # Digital CAN bus quantization step (~0.05 deg)
   lag_tau: 0.010                 # Sensor filtering lag time constant [s] (~10 ms)
+
+# Timing and availability of all channels (src/vehicle_model/estimation/sensors.py)
+timing:
+  sample_period: 0.0             # [s] 0: a new sample on every simulation step
+  latency: 0.0                   # [s] transport delay (e.g. CAN), all channels
+  dropout_probability: 0.0       # [-] per sample and channel; dropped values are held and flagged
