@@ -1,8 +1,16 @@
-"""Kinematic single-track bicycle model.
+"""Kinematic single-track bicycle model with optional rear-axle steering (model class V1).
 
-State: ``[x, y, yaw, v, steer]``
-Input: ``[ax, steer_rate]``
-All units are SI and angles are radians.
+State: ``[x, y, yaw, v, steer]``   (CoG position, heading, CoG speed, front steer angle)
+Input: ``[ax, steer_rate]``, or ``[ax, steer_rate, delta_r]`` with ``rear_steer=True``
+All units are SI and angles are radians (ISO 8855, positive = left / counter-clockwise).
+
+Kinematics (no tyre slip, CoG reference, wheelbase L = l_f + l_r):
+    beta    = atan((l_f tan(delta_r) + l_r tan(delta_f)) / L)
+    yaw'    = v cos(beta) (tan(delta_f) - tan(delta_r)) / L
+    x', y'  = v cos(yaw + beta), v sin(yaw + beta)
+Special cases: delta_r = 0 gives the classic front-steer model; delta_r = delta_f gives pure
+translation (yaw' = 0, beta = delta); negative v drives backwards on the same geometric path.
+The rear steer angle is a kinematic input (no actuator dynamics), clipped to the front steer limits.
 """
 
 from __future__ import annotations
@@ -17,8 +25,10 @@ class KinematicSingleTrack:
     n_states = 5
     n_inputs = 2
 
-    def __init__(self, params: VehicleParams | dict | None = None):
+    def __init__(self, params: VehicleParams | dict | None = None, rear_steer: bool = False):
         self.params = coerce_vehicle_params(params)
+        self.rear_steer = bool(rear_steer)
+        self.n_inputs = 3 if self.rear_steer else 2
         self._sync_model_attrs()
 
     def _sync_model_attrs(self) -> None:
@@ -40,12 +50,25 @@ class KinematicSingleTrack:
             raise ValueError(f"Kinematic input must have shape ({self.n_inputs},).")
         cmd[0] = np.clip(cmd[0], self.min_acc, self.max_acc)
         cmd[1] = np.clip(cmd[1], self.min_steer_vel, self.max_steer_vel)
+        if self.rear_steer:
+            cmd[2] = np.clip(cmd[2], self.min_steer, self.max_steer)
         return cmd
+
+    def turning_radius(self, delta_f: float, delta_r: float = 0.0) -> float:
+        """Radius of the CoG path [m]; ``inf`` for straight driving or pure translation."""
+        tf, tr = np.tan(delta_f), np.tan(delta_r)
+        if abs(tf - tr) < 1e-15:
+            return float("inf")
+        L = self.lf + self.lr
+        beta = np.arctan((self.lf * tr + self.lr * tf) / L)
+        return float(abs(L / (np.cos(beta) * (tf - tr))))
 
     def derivative_eqs(self, t, x, u):
         del t
         state = np.asarray(x, dtype=float)
-        ax, steer_rate = self._bounded_input(u)
+        cmd = self._bounded_input(u)
+        ax, steer_rate = cmd[0], cmd[1]
+        delta_r = cmd[2] if self.rear_steer else 0.0
         yaw = state[2]
         speed = np.clip(state[3], self.min_v, self.max_v)
         steer = np.clip(state[4], self.min_steer, self.max_steer)
@@ -55,11 +78,13 @@ class KinematicSingleTrack:
         ):
             steer_rate = 0.0
 
-        beta = np.arctan2(self.lr * np.tan(steer), self.lf + self.lr)
+        L = self.lf + self.lr
+        tf, tr = np.tan(steer), np.tan(delta_r)
+        beta = np.arctan2(self.lf * tr + self.lr * tf, L)
         dxdt = np.zeros(self.n_states)
         dxdt[0] = speed * np.cos(yaw + beta)
         dxdt[1] = speed * np.sin(yaw + beta)
-        dxdt[2] = speed * np.sin(beta) / max(self.lr, 1e-9)
+        dxdt[2] = speed * np.cos(beta) * (tf - tr) / L
         dxdt[3] = ax
         dxdt[4] = steer_rate
         return dxdt
