@@ -9,6 +9,10 @@ Equations of motion:
     m_s * ddz_s = -k_s * (z_s - z_u) - F_damper + F_act
     m_u * ddz_u =  k_s * (z_s - z_u) + F_damper - k_t * (z_u - z_r) - c_t * (dzu - dzr) - F_act
 
+All coordinates are deviations from static equilibrium. Tyre contact is
+unilateral: the contact force F_c = max(0, F_static - k_t (z_u - z_r) - c_t (dzu - dzr))
+enters the unsprung equation, so a lifted wheel feels no tyre force.
+
 Conforms to Milestone M7 (Plan.md §9, §19 M7).
 """
 
@@ -83,8 +87,9 @@ class QuarterCarOutputs:
     dzu: float
     ddzu: float  # Unsprung mass acceleration [m/s^2]
     suspension_deflection: float  # zs - zu [m] (rattle space)
-    dynamic_tyre_load: float  # Dynamic normal force variation [N]
-    total_tyre_load: float  # Total contact normal load [N] (clamped >= 0)
+    dynamic_tyre_load: float  # Contact force variation total_tyre_load - static load [N] (>= -static)
+    total_tyre_load: float  # Total contact normal load [N], >= 0
+    in_contact: bool  # False while the wheel is lifted off the road
     spring_force: float  # [N]
     damping_force: float  # [N]
     active_force: float  # [N]
@@ -181,14 +186,15 @@ class QuarterCarModel:
         # Tyre vertical force
         tyre_deflection = state.zu - road_z
         tyre_rel_vel = state.dzu - road_dz
-        dyn_tyre_load = cfg.tyre_stiffness * tyre_deflection + cfg.tyre_damping * tyre_rel_vel
+        # Unilateral contact: upward force on the wheel, never negative
+        total_tyre_load = max(0.0, self.static_tyre_load - cfg.tyre_stiffness * tyre_deflection
+                              - cfg.tyre_damping * tyre_rel_vel)
+        dyn_tyre_load = total_tyre_load - self.static_tyre_load
 
         # Equations of motion
         ddzs = -suspension_force / cfg.sprung_mass
-        ddzu = (suspension_force - dyn_tyre_load) / cfg.unsprung_mass
+        ddzu = (suspension_force + dyn_tyre_load) / cfg.unsprung_mass
 
-        # Normal tyre-road contact force (cannot be negative; wheel lift off occurs at 0)
-        total_tyre_load = max(0.0, self.static_tyre_load + dyn_tyre_load)
 
         derivatives = np.array([state.dzs, ddzs, state.dzu, ddzu], dtype=np.float64)
 
@@ -202,6 +208,7 @@ class QuarterCarModel:
             suspension_deflection=deflection,
             dynamic_tyre_load=dyn_tyre_load,
             total_tyre_load=total_tyre_load,
+            in_contact=total_tyre_load > 0.0,
             spring_force=spring_force,
             damping_force=damping_force,
             active_force=active_force,

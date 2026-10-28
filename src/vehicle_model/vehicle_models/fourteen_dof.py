@@ -184,7 +184,8 @@ class FourteenDOFState:
 class FourteenDOFTelemetry:
     """Detailed diagnostic telemetry from 14-DOF simulation step."""
 
-    Fz: np.ndarray  # Normal tyre forces [FL, FR, RL, RR] (N)
+    Fz: np.ndarray  # Normal tyre forces [FL, FR, RL, RR] (N), >= 0
+    in_contact: np.ndarray  # bool per wheel; False while lifted off the road
     Fx: np.ndarray  # Longitudinal tyre forces (N)
     Fy: np.ndarray  # Lateral tyre forces (N)
     alpha: np.ndarray  # Slip angles (rad)
@@ -288,8 +289,9 @@ class FourteenDOFModel:
         tyre_rel_vels = state.dzu - road_dz
 
         # Dynamic tyre normal variation (positive when tyre is compressed into ground)
-        F_tyre_dyn = -(k_t * tyre_deflections + c_t * tyre_rel_vels)
-        Fz = np.maximum(0.0, cfg.static_normal_loads + F_tyre_dyn)
+        # Unilateral contact: a lifted wheel carries no load and feels no tyre force
+        Fz = np.maximum(0.0, cfg.static_normal_loads - (k_t * tyre_deflections + c_t * tyre_rel_vels))
+        F_tyre_dyn = Fz - cfg.static_normal_loads
 
         # 3. Planar tyre forces from TyreModel
         # Wheel velocities in wheel heading frames
@@ -382,6 +384,7 @@ class FourteenDOFModel:
 
         telemetry = FourteenDOFTelemetry(
             Fz=Fz,
+            in_contact=Fz > 0.0,
             Fx=Fx_veh,
             Fy=Fy_veh,
             alpha=alpha,
