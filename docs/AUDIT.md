@@ -8,13 +8,15 @@
 
 ## 1. Git- und Working-Tree-Zustand
 
-| Befund | Bewertung |
+Stand bei Audit-Beginn: Eine große Umstrukturierung (`python/` → `src/vehicle_model/`, neue Verzeichnisse `configs/`, `docs/`, `examples/` und erweiterte Tests, ca. 20 000 Zeilen) lag uncommittet im Working Tree.
+
+| Befund | Erledigung |
 |---|---|
-| Im Working Tree liegt eine große uncommittete Umstrukturierung: `python/` → `src/vehicle_model/`, neue Verzeichnisse `configs/`, `docs/`, `examples/`, `tests/vehicle_model/*` (ca. 20 000 Zeilen Python). | **Hohes Risiko:** Diese Arbeit ist nicht versioniert. Ein Datenverlust wäre nicht wiederherstellbar. |
-| `matlab/` ist zum Löschen *gestaged* (10 `.m`-Dateien), und es gibt keinen Ersatz im Working Tree. | Widerspricht der Vorgabe, „die ursprüngliche Funktionalität zu erhalten“. Die Dateien sind nur noch über `HEAD` erreichbar. |
-| `python/cgmres_nmpc`, `python/vehicle_model` und `python/vehicle_visualization` sind gelöscht und wurden nach `src/vehicle_model/` portiert. | Die Portierung wirkt vollständig (Daten, Reifen-YAMLs und Racetracks liegen unter `src/`). |
-| `tests/cgmres_nmpc/test_controller.py` und `tests/vehicle_visualization/test_plan_view.py` sind gelöscht. Nachfolger: `tests/vehicle_model/test_nmpc_controller.py` und `test_plan_view.py`. | Ob die alten Testfälle 1:1 abgedeckt sind, wurde noch nicht geprüft. |
-| `Plan.md` (1610 Zeilen, „GEMINI – MASTER ENGINEERING INSTRUCTION“) ist ein Vorläufer dieses Plans und ebenfalls untracked. | Soll neben Plan V2.0 als historisches Dokument bestehen bleiben oder ersetzt werden? Das ist noch zu entscheiden. |
+| Uncommittete Umstrukturierung | Mit Commit `041f48c` auf `main` gesichert. Die Struktur unter `src/vehicle_model/` ist verbindlich (Plan.md, Abschnitt 18). |
+| `matlab/` gelöscht, kein Ersatz | Entfernung bewusst entschieden. Der Code ist über die Git-Historie (`4190954`) erreichbar. |
+| `python/cgmres_nmpc`, `python/vehicle_model`, `python/vehicle_visualization` | Nach `src/vehicle_model/` portiert, inklusive Daten, Reifen-YAMLs und Racetracks. |
+| `tests/cgmres_nmpc/test_controller.py`, `tests/vehicle_visualization/test_plan_view.py` gelöscht | Nachfolger: `tests/vehicle_model/test_nmpc_controller.py` und `test_plan_view.py`. Die 1:1-Abdeckung der alten Testfälle ist noch offen (M0). |
+| Altes `Plan.md` („GEMINI – MASTER ENGINEERING INSTRUCTION“) | Durch Master Engineering Plan V2.0 ersetzt. |
 
 ## 2. Testbaseline
 
@@ -74,16 +76,14 @@ Der Original-Code in `HEAD` hat SLSQP immerhin im Docstring offengelegt. Die Por
 - `pyproject.toml` deklariert `config/tyres/*.yaml` als Package-Data. Die Reifen-Configs liegen jedoch im Top-Level-Verzeichnis `configs/tyres/` und sind daher in einer installierten (nicht-editable) Variante nicht verfügbar.
 - Sehr große Szenario-Module (`split_mu_scenarios.py` 2612, `four_wheel_steering_scenarios.py` 2015, `validation_matrix.py` 1665 Zeilen) widersprechen dem Grundsatz „ein Modul, eine Verantwortung“.
 
-## 5. Inkrementeller Integrationsplan
+## 5. Zuordnung der Befunde zur Roadmap (Plan.md, Abschnitt 19)
 
-Jeder Meilenstein endet mit einer grünen Test-Suite. Interne Schnittstellenänderungen erhalten Deprecation-Aliase.
-
-| M | Inhalt | Abnahme |
+| Meilenstein | Offene Punkte aus diesem Audit | Abnahme |
 |---|---|---|
-| **M0 – Stand sichern** | Umstrukturierung auf einem Feature-Branch committen. Entscheiden, ob MATLAB unter `legacy/matlab/` erhalten bleibt (empfohlen) oder bewusst entfernt wird. | Working Tree sauber, kein Code nur noch in `HEAD` |
-| **M1 – Ehrliche Bezeichnungen** | `NMPCControllerCGMRES` umbenennen in `SLSQPPathTrackingNMPC` (der alte Name bleibt als `DeprecationWarning`-Alias). Docs, Examples und Config-Namen korrigieren. `oem`-Reifendaten umbenennen und mit `data_class: synthetic` kennzeichnen. Fahrzeug-YAML um `id/version/provenance` ergänzen. | `grep -ri "c/gmres"` findet nur noch Hinweise auf „nicht implementiert“ |
-| **M2 – Testinfrastruktur** | `pytest`-Marker `slow`/`e2e`. Schneller Default-Lauf (Ziel < 60 s), vollständiger Lauf in CI. Regressionstests für die Bestandsmodelle anlegen, bevor refaktoriert wird. | `pytest -m "not slow"` < 60 s |
-| **M3 – Analytische Referenz** | Lineares 2-DOF-Einspurmodell und Modul `handling_analysis` (Eigenwerte, Dämpfung, Eigenfrequenz, Gierverstärkung, Untersteuergradient, v_char/v_crit, Frequenzgang). Konsistenztest gegen das nichtlineare Einspurmodell im linearen Bereich. | Analytische und numerische Gierverstärkung < 1 % Abweichung bei kleinem a_y |
-| **M4 – V1 mit 4WS** | Hinterachslenkung im kinematischen Einspurmodell (Momentanpol-Geometrie, Grenzfall δ_f = δ_r). | Tests gemäß Prüfkriterien V1 |
-| **M5 – Kontaktverlust** | Explizite Radabhebe-Behandlung mit Ereignisflag in der Telemetrie. Momentenkonsistente Lastverteilung. | Invariantentest für Kräfte- und Momentenbilanz |
-| **M6+** | Transientes Reifenmodell, LQR/GS-LQR, eigenständige Control Allocation mit Machbarkeitsrückmeldung, Multi-Rate-Engine, Aufteilung der großen Szenario-Module | gemäß Plan V2.0, Abschnitte 7–15 |
+| **M0 – Repository Audit & Stabilization** | ~~Stand sichern~~ (erledigt, `041f48c`). Falsche C/GMRES-Bezeichnung korrigieren (`NMPCControllerCGMRES` → `SLSQPPathTrackingNMPC`, alter Name als `DeprecationWarning`-Alias, Docs, Examples und Config-Namen). Parameterherkunft korrigieren (`oem`-Reifendaten, Fahrzeug-YAML um `id/version/provenance`). Toten Doku-Verweis in `seven_dof.py` und Package-Data in `pyproject.toml` beheben. `pytest`-Marker `slow`/`e2e`. Regressionstests für die Bestandsmodelle. Abdeckung der portierten Alt-Tests prüfen. | `grep -ri "c/gmres"` findet nur noch Hinweise auf „nicht implementiert“; `pytest -m "not slow"` < 60 s; volle Suite grün |
+| **M1 – Virtual Reference Vehicle & Handling Fundamentals** | Referenzfahrzeug mit dokumentierter Herkunft. Lineares 2-DOF-Einspurmodell. Paket `handling_analysis` (Eigenwerte, Dämpfung, Eigenfrequenz, Gierverstärkung, Untersteuergradient, v_char/v_crit, Frequenzgang), aufbauend auf `simulation/handling_limits.py` statt parallel dazu. Hinterachs- bzw. 4WS-Geometrie im kinematischen Einspurmodell (Grenzfall δ_f = δ_r). | Analytische und numerische Gierverstärkung < 1 % Abweichung bei kleinem a_y; Prüfkriterien V1 |
+| **M2 – Nonlinear Four-Wheel Vehicle Dynamics** | Kontaktverlust explizit behandeln: Ereignisflag in der Telemetrie, momentenkonsistente Lastverteilung statt Clip-und-Renormierung in `SevenDOFModel.compute_normal_loads`. | Invariantentest für Kräfte- und Momentenbilanz |
+| **M3 – Advanced Tyre Physics** | Transientes Reifenmodell mit Relaxationslänge fehlt. | gemäß Plan |
+| **M5 – Actuators, ABS, TCS, ESC & Torque Vectoring** | Eigenständige Control Allocation mit Machbarkeitsrückmeldung (Paket `allocation/`) fehlt. | gemäß Plan |
+| **M6 – Advanced Vehicle Motion Control** | LQR und Gain-Scheduled LQR fehlen. | gemäß Plan |
+| **M9 – Virtual Engineering & Research Laboratory** | Große Szenario-Module aufteilen (`split_mu_scenarios.py`, `four_wheel_steering_scenarios.py`, `validation_matrix.py`). | gemäß Plan |
