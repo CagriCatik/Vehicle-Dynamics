@@ -207,7 +207,7 @@ class FourteenDOFModel:
         tyre_model: TyreModel | None = None,
     ) -> None:
         self.cfg = config or FourteenDOFConfig()
-        self.tyre_model = tyre_model or load_tyre("pacejka_front_synthetic")
+        self.tyre_model = tyre_model or load_tyre("magic_formula_passenger_synthetic")
 
         # Corner coordinates (x_i, y_i)
         # FL: (+a, +wf/2), FR: (+a, -wf/2), RL: (-b, +wr/2), RR: (-b, -wr/2)

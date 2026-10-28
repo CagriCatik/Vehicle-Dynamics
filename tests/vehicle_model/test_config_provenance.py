@@ -78,7 +78,8 @@ def test_seven_dof_tyre_selection_order():
     ref = SevenDOFModel.from_yaml(str(CONFIGS / "vehicles" / "reference_passenger_car.yaml"))
     assert ref.tyre_front.provenance.formulation.startswith("Fiala")  # from the YAML 'tyres' section
     old = SevenDOFModel.from_yaml(str(CONFIGS / "vehicles" / "seven_dof_passenger.yaml"))
-    assert "Pacejka" in old.tyre_front.provenance.formulation  # unchanged default
+    assert old.tyre_front.provenance.formulation.startswith("Magic Formula 5.2")  # YAML section (since M6)
+    assert SevenDOFModel().tyre_rear.provenance.formulation.startswith("Magic Formula 5.2")  # code default
     explicit = SevenDOFModel.from_yaml(
         str(CONFIGS / "vehicles" / "reference_passenger_car.yaml"),
         tyre_name="linear_passenger_synthetic",

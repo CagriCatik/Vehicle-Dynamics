@@ -54,7 +54,7 @@ Optional capabilities beyond the interface: only `MagicFormulaTyre` provides `fo
 | `magic_formula` | `MagicFormulaTyre` | MF 5.2 subset | MF 5.2 weighting (normalised) + ellipse limit | yes | $K$, $\mu$, $E$ | yes | `magic_formula_passenger_synthetic` |
 | `pacejka` | `PacejkaTyre` (legacy) | lateral MF, linear $F_x$ | friction circle | **hard clip, no peak** | via MF data | no | `pacejka_{front,rear}_synthetic` |
 
-Which vehicle uses which tyre: `seven_dof_passenger` (the default vehicle) uses `pacejka_*_synthetic`. `reference_passenger_car` uses `fiala_passenger_synthetic`.
+Which vehicle uses which tyre: `seven_dof_passenger` (the default vehicle) and the 14-DOF model use `magic_formula_passenger_synthetic` (since M6; before: `pacejka_*_synthetic`). `reference_passenger_car` uses `fiala_passenger_synthetic`.
 
 ### 3.1 Linear (`LinearTyre`, [brush_models.py](../src/vehicle_model/tire_model/brush_models.py))
 
@@ -127,7 +127,7 @@ The adapter evaluates the lateral MF from the YAML coefficient sets in `tire_mod
 - $\mu$ multiplies the whole lateral curve, so the cornering stiffness scales with $\mu$. This is physically wrong.
 - The combined slip uses a friction circle; a scalar loop runs over the wheels (slow).
 
-The adapter remains the default tyre of the existing scenarios. For new work, use `magic_formula_passenger_synthetic`.
+Until M6 the adapter was the default tyre. It also produced a lateral pull under longitudinal slip (fixed in M6 by keeping the part of $F_y$ that is odd in $\alpha$). Since M6 the default is `magic_formula_passenger_synthetic`; the adapter remains available.
 
 ---
 

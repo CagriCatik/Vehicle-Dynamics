@@ -15,6 +15,13 @@ provenance:
     - "mass 1200 kg is light for a D-segment car; the revised virtual reference vehicle follows in M1"
     - "static front axle load share lr/L = 1.50/2.80 = 53.6 %"
 
+# Tyre parameter sets per axle (configs/tyres/<name>.yaml). Until M6 this vehicle used the
+# legacy pacejka_{front,rear}_synthetic adapter (hard clip at ~2-3 deg, mu scales the
+# cornering stiffness; docs/TYRE_MODELS.md, 3.5).
+tyres:
+  front: magic_formula_passenger_synthetic
+  rear: magic_formula_passenger_synthetic
+
 # Inertial Properties
 mass: 1200.0             # Total vehicle curb mass [kg]
 Iz: 1800.0               # Yaw moment of inertia around CoG [kg*m^2]

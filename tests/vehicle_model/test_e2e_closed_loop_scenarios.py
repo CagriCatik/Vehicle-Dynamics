@@ -180,9 +180,14 @@ def test_e2e_dynamic_nmpc_trajectory_tracking_kamm_circle():
         Fz = telem.Fz
         Fx = telem.Fx_wheel
         Fy = telem.Fy_wheel
+        # Limit = the tyre's own peak friction (load-dependent for Magic Formula tyres), else mu Fz
         for i in range(4):
-            mu_fzi = max(100.0, mu_surface * Fz[i])
-            util = math.sqrt(Fx[i]**2 + Fy[i]**2) / mu_fzi
+            tyre = plant.tyre_front if i < 2 else plant.tyre_rear
+            if hasattr(tyre, "peak_friction"):
+                mu_peak = max(float(m) for m in tyre.peak_friction(Fz[i], mu_surface))
+            else:
+                mu_peak = mu_surface
+            util = math.sqrt(Fx[i]**2 + Fy[i]**2) / max(100.0, mu_peak * Fz[i])
             max_kamm_ratio = max(max_kamm_ratio, util)
 
     final_lateral_error = abs(state.Y - 3.5)

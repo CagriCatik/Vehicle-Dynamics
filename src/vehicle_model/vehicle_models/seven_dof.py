@@ -102,8 +102,8 @@ class SevenDOFModel:
             self._load_params = dataclasses.replace(
                 self.params, k_roll_f=chassis.front_lateral_transfer_share)
         from vehicle_model.tire_model import load_tyre
-        self.tyre_front: TyreModel = tyre or load_tyre("pacejka_front_synthetic")
-        self.tyre_rear: TyreModel = tyre_rear or load_tyre("pacejka_rear_synthetic")
+        self.tyre_front: TyreModel = tyre or load_tyre("magic_formula_passenger_synthetic")
+        self.tyre_rear: TyreModel = tyre_rear or load_tyre("magic_formula_passenger_synthetic")
         for t in (self.tyre_front, self.tyre_rear):
             if not isinstance(t, TyreModel):
                 raise TypeError(f"{type(t).__name__} does not implement the TyreModel protocol")
@@ -122,15 +122,15 @@ class SevenDOFModel:
         """Instantiate SevenDOFModel loaded from centralized YAML configuration files.
 
         Tyre selection per axle: explicit argument, else the vehicle YAML's
-        ``tyres: {front, rear}`` section, else ``pacejka_{front,rear}_synthetic``.
+        ``tyres: {front, rear}`` section, else ``magic_formula_passenger_synthetic``.
         ``kc_config``: optional K&C set (configs/suspension/kc_*.yaml); it needs the
         vehicle YAML's ``chassis_extended`` section. Without it the model has no K&C.
         """
         from vehicle_model.tire_model import load_tyre
         p = SevenDOFParams.from_yaml(vehicle_config)
         yaml_tyres = _vehicle_yaml(vehicle_config).get("tyres") or {}
-        front = tyre_name or yaml_tyres.get("front") or "pacejka_front_synthetic"
-        rear = tyre_rear_name or yaml_tyres.get("rear") or "pacejka_rear_synthetic"
+        front = tyre_name or yaml_tyres.get("front") or "magic_formula_passenger_synthetic"
+        rear = tyre_rear_name or yaml_tyres.get("rear") or "magic_formula_passenger_synthetic"
         chassis = None
         if kc_config is not None:
             from vehicle_model.suspension.kinematics import QuasiStaticChassis
