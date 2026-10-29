@@ -1,0 +1,14 @@
+type: equilibrium_analysis
+name: equilibrium_speed_stiffness
+description: >
+  Influence of speed and rear tyre cornering stiffness on the straight-ahead equilibrium (steer 0, mu 1.0).
+  Lower rear stiffness makes the vehicle oversteer; the lateral/yaw mode loses damping with speed and
+  becomes unstable above the critical speed. Tyre peak friction is unchanged (SlipStiffnessScaledTyre).
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+road: {type: uniform, mu: 1.0}
+operating_point: {steer_deg: 0.0}
+sweep: {parameter: speed_kph, values: [30, 60, 90, 120, 150, 180, 210, 240]}
+series: {parameter: cornering_scale_rear, values: [1.0, 0.6, 0.45]}
+search_all: false
+linear_check: main
+outputs: {directory: output/experiments/equilibrium_speed_stiffness}

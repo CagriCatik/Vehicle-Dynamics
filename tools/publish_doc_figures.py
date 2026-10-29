@@ -112,6 +112,35 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Lösungen erreichen teils Werte um 1. Quelle: "
          "`python -m vehicle_model.experiments run configs/experiments/dynamic_nmpc_solver_benchmark.yaml`."),
     ],
+    "NONLINEAR_STABILITY.md": [
+        ("experiments/equilibrium_steer_sweep/equilibria.png",
+         "Gleichgewichte über dem Vorderachslenkwinkel bei 90 km/h, µ = 1,0 und 0,6 (Linie: Hauptast, gefüllt: stabil, "
+         "offen: instabil). Bei µ = 0,6 sättigt a_y bei 5,85 m/s², die Dämpfung des Quer-/Giermodes fällt von 0,98 auf "
+         "0,14; ab 2° erscheinen auf der Schleuderseite ein Sattel und ein instabiler Fokus. Quelle: "
+         "`python -m vehicle_model.experiments run configs/experiments/equilibrium_steer_sweep.yaml`."),
+        ("experiments/equilibrium_steer_sweep/eigenvalues.png",
+         "Quer-/Gier-Eigenwerte entlang des Hauptastes (Beschriftung: Lenkwinkel in Grad): Mit dem Lenkwinkel wandern sie "
+         "zur imaginären Achse, bei µ = 0,6 deutlich schneller. Quelle: wie oben."),
+        ("experiments/equilibrium_speed_stiffness/equilibria.png",
+         "Geradeausfahrt über der Geschwindigkeit mit Hinterachs-Schräglaufsteifigkeit × 1,0 / 0,6 / 0,45: rechts unten "
+         "der größte Realteil, der bei der kritischen Geschwindigkeit (linear 108 bzw. 79 km/h) das Vorzeichen wechselt. "
+         "Quelle: `python -m vehicle_model.experiments run configs/experiments/equilibrium_speed_stiffness.yaml`."),
+        ("experiments/equilibrium_tv_4ws/equilibria.png",
+         "Konstantes TV-Giermoment und festes Hinterachslenkverhältnis bei 90 km/h, 1°, µ = 0,6: Mit positivem Moment "
+         "steigt a_y immer steiler bis zu einer Faltung (ab etwa 450 Nm ohne Hinterachslenkung kein Gleichgewicht, "
+         "Reibkreis der Hinterräder ausgeschöpft); gleichsinnige Hinterachslenkung verschiebt sie. Quelle: "
+         "`python -m vehicle_model.experiments run configs/experiments/equilibrium_tv_4ws.yaml`."),
+        ("experiments/stability_map_cornering/stability_maps.png",
+         "Numerische Rückführregionen bei 80 km/h, 1° gehaltenem Lenkwinkel, µ = 0,6, 15 × 15 Anfangszustände je "
+         "Regler. Kreuze: empfindliche Punkte (Klasse ändert sich mit halbem Zeitschritt oder doppelter Dauer); "
+         "gestrichelt: heuristische Phase-Plane-Grenze S = 1. Quelle: "
+         "`python -m vehicle_model.experiments run configs/experiments/stability_map_cornering.yaml`."),
+        ("experiments/stability_map_cornering/region_comparison.png",
+         "Anteil zurückgekehrter Anfangszustände je Regler mit Schranken aus Rand- und empfindlichen Punkten und dem "
+         "Anteil auf dem verfeinerten Gitter (Raute). Quelle: wie oben."),
+        ("experiments/stability_map_cornering/phase_portraits.png",
+         "Phasenporträts (β–r, β–β̇, r–ṙ) für passiv, TV und IVMC; Farbe = Klasse, Punkt = Start. Quelle: wie oben."),
+    ],
     "REAR_WHEEL_STEERING.md": [
         ("four_wheel_steering/parking/u_turn.gif",
          "Wenden auf schmaler Straße, 2WS (grau) gegen 4WS (türkis): unten die Radlenkwinkel über der Zeit. Die "
@@ -230,7 +259,10 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
 
 
 def asset_path(doc: str, src: str) -> Path:
-    return ASSETS / Path(doc).stem.lower() / Path(src).name
+    name = Path(src).name
+    if sum(Path(s).name == name for s, _ in FIGURES[doc]) > 1:   # same file name from several runs: prefix the run
+        name = f"{Path(src).parent.name}_{name}"
+    return ASSETS / Path(doc).stem.lower() / name
 
 
 def shrink(src: Path, dst: Path) -> None:

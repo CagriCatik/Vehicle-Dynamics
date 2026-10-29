@@ -27,8 +27,10 @@ Der Schlüssel `type` wählt den Experimenttyp; ohne ihn gilt `controller_compar
 |---|---|---|
 | `controller_comparison` | [`spec.py`](../src/vehicle_model/experiments/spec.py), [`runner.py`](../src/vehicle_model/experiments/runner.py) | Regler auf einem Manöver, optional Sweep (Abschnitte 2–3) |
 | `solver_benchmark` | [`solver_benchmark.py`](../src/vehicle_model/experiments/solver_benchmark.py) | Varianten des dynamischen NMPC auf einem Spurwechsel: Statusanteile, KKT-Residuen, Verbesserung ggü. Warmstart, Iterationen, Rechenzeit, Planzulässigkeit, Folgegüte (Abschnitt 2.1) |
+| `equilibrium_analysis` | [`equilibrium_analysis.py`](../src/vehicle_model/experiments/equilibrium_analysis.py) | Nichtlineare Gleichgewichte über einem Sweep (optional Kurvenschar): Residuen, Jacobi-Matrix mit Schrittweitenstudie, Eigenwerte, Moden, Vergleich linear/nichtlinear (Abschnitt 2.3, [NONLINEAR_STABILITY.md](NONLINEAR_STABILITY.md)) |
+| `stability_map` | [`stability_map.py`](../src/vehicle_model/experiments/stability_map.py) | Rückführregionen je Regler im (β, r)-Raum mit Klassifikationssicherheit, Gitter-, Schrittweiten- und Dauerstudie, Phasenporträts, Grenzfälle, heuristische Phase-Plane-Grenze als Vergleich (Abschnitt 2.4) |
 
-Schnittstelle eines Typs: `parse(data, source) -> spec` (unveränderlich, `spec.kind` = Typname), `run(spec, out_dir, verify) -> summary` (mindestens `experiment`, `source`, `provenance`, `verification`, `results`), `describe(spec)` für `list`. Ein unbekannter Typ ist ein Fehler. Die übrigen Typen aus §12 (`stability_map`, `monte_carlo`, …) kommen mit ihren Meilensteinen.
+Schnittstelle eines Typs: `parse(data, source) -> spec` (unveränderlich, `spec.kind` = Typname), `run(spec, out_dir, verify) -> summary` (mindestens `experiment`, `source`, `provenance`, `verification`, `results`), `describe(spec)` für `list`. Ein unbekannter Typ ist ein Fehler. Die übrigen Typen aus §12 (`monte_carlo`, …) kommen mit ihren Meilensteinen.
 
 ### 2.1 `solver_benchmark`
 
@@ -91,6 +93,47 @@ outputs: {directory: output/experiments/x, formats: [csv, json, png, md]}   # gi
 
 Die Validierung ist streng: Unbekannte Schlüssel, unbekannte Werte, fehlende Dateien und Werte außerhalb der Grenzen führen zu einem `ValueError` mit dem betroffenen Pfad. Ein Tippfehler fällt so nie still auf einen Standardwert zurück.
 
+### 2.3 `equilibrium_analysis`
+
+```yaml
+type: equilibrium_analysis
+name: equilibrium_steer_sweep
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+road: {type: uniform, mu: 1.0}
+operating_point: {speed_kph: 90}             # auch steer_deg, rear_steer_ratio, tv_yaw_moment_nm, drive_split, brake_torque_nm
+sweep: {parameter: steer_deg, values: [0, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5]}
+series: {parameter: mu, values: [1.0, 0.6]}  # optional: eine Kurve je Wert
+search_all: true                             # alle Gleichgewichte aus einem Startraster, sonst nur der Hauptast
+linear_check: main                           # main | all | none
+```
+
+Variierbar in `sweep` und `series`: `speed_kph`, `steer_deg`, `rear_steer_ratio`, `tv_yaw_moment_nm`, `mu`,
+`cornering_scale_front`, `cornering_scale_rear` (Schräglaufsteifigkeit, Reibungsmaximum bleibt) und `cog_shift_m`
+(Schwerpunkt nach vorn). `model: transient` analysiert das Modell mit Reifenrelaxation, `kc` die K&C-Achsen (nicht
+zusammen mit `cog_shift_m`). Ausgaben: `results.json`, `equilibria.csv`, `equilibria.png`, `eigenvalues.png`,
+`report.md` mit den Prüfungen der Analyse (Residuen, Konvergenz der Jacobi-Matrix, Übereinstimmung linear/nichtlinear;
+Punkte ohne Gleichgewicht als Information mit dem erreichten Residuum).
+
+### 2.4 `stability_map`
+
+```yaml
+type: stability_map
+name: stability_map_cornering
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+road: {type: uniform, mu: 0.6}
+operating_point: {speed_kph: 80, steer_deg: 1.0}
+grid: {beta_deg: [-20, 20, 15], r_degps: [-45, 45, 15]}      # [min, max, Punkte]
+simulation: {dt: 0.01, duration_s: 6.0}
+controllers: [passive, esc, 4ws, tv, ivmc, ivmc_no_phase_plane]
+portraits: {controllers: [passive, tv, ivmc], points: 5}
+```
+
+Optional: `criteria` (Zielbereich, Haltezeit, Verlustkriterium, Einschwinggrenzen), `uncertainty` (`dt_factor`,
+`duration_factor`, `refine`), `workers` (ohne Angabe: Kernzahl − 1, höchstens 8). Ausgaben: `results.json`,
+`map.csv` (je Regler und Anfangszustand Klasse, Sicherheit, Endzustand, heuristischer Index), `stability_maps.png`,
+`region_comparison.png`, `phase_portraits.png`, `limit_cases.png`, `report.md`. Klassen und Unsicherheitsmaße:
+[NONLINEAR_STABILITY.md](NONLINEAR_STABILITY.md), Abschnitt 3.
+
 ## 3. Ablauf und Ergebnisse
 
 1. **Modellverifikation** am konfigurierten Fahrzeug, mit seinen Reifen und K&C ([`verification.py`](../src/vehicle_model/experiments/verification.py)):
@@ -122,6 +165,10 @@ Die Validierung ist streng: Unbekannte Schlüssel, unbekannte Werte, fehlende Da
 | `split_mu_braking.yaml` | Vollbremsung auf Split-µ, passiv gegen PI und LQR |
 | `step_steer_speed_sweep.yaml` | Lenkwinkelsprung bei 50/80/110 km/h, TV gegen 4WS+TV |
 | `dynamic_nmpc_solver_benchmark.yaml` | Typ `solver_benchmark`: dynamisches NMPC, Iterationsgrenze und Horizont (Abschnitt 2.1) |
+| `equilibrium_steer_sweep.yaml` | Typ `equilibrium_analysis`: Gleichgewichte über dem Lenkwinkel, µ = 1,0 und 0,6, alle Äste |
+| `equilibrium_speed_stiffness.yaml` | Typ `equilibrium_analysis`: Geschwindigkeit und Hinterachs-Schräglaufsteifigkeit, kritische Geschwindigkeit |
+| `equilibrium_tv_4ws.yaml` | Typ `equilibrium_analysis`: TV-Giermoment und Hinterachslenkverhältnis, Faltung des Hauptastes |
+| `stability_map_cornering.yaml` | Typ `stability_map`: sechs Reglerkonfigurationen bei 80 km/h, 1°, µ = 0,6 |
 
 Ergebnis des ersten Beispiels: Verifikation **PASS** (6/6, lineare Referenz 0,05 %). Gierratenverhältnis nach 1,0 s: passiv 0,98 (dreht sich ein), PI 0,006, GS-LQR (4WS+TV) 0,002, LTV-MPC mit Beobachter 0,027.
 

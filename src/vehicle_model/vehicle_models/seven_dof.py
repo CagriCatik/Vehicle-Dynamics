@@ -84,6 +84,10 @@ class SevenDOFModel:
     n_states = 10
     n_inputs = 10  # steer_f, steer_r, 4x T_drive, 4x T_brake
     state_type = SevenDOFState
+    # Load-transfer fixed point: tolerance [m/s^2] and iteration cap. Tighter values make the
+    # derivative reproducible to rounding error (finite-difference Jacobians, equilibria).
+    load_transfer_tol = _LT_TOL
+    load_transfer_max_iter = _LT_MAX_ITER
 
     def __init__(
         self,
@@ -222,7 +226,7 @@ class SevenDOFModel:
         ax, ay = self._accel_guess
         Fy_axle = (p.mass * p.lr / p.wheelbase * ay, p.mass * p.lf / p.wheelbase * ay)  # first guess
         converged = False
-        for _ in range(_LT_MAX_ITER):
+        for _ in range(self.load_transfer_max_iter):
             if chassis is not None:
                 # K&C steer depends on (ax, ay) and the axle lateral forces: part of the fixed point
                 steer = steer_geo + chassis.steer_change(ax, ay, *Fy_axle)
@@ -235,10 +239,11 @@ class SevenDOFModel:
             Fy_b = Fx_w * sin_d + Fy_w * cos_d
             ax_new = (Fx_b.sum() - F_aero - F_roll) / p.mass
             ay_new = Fy_b.sum() / p.mass
-            converged = abs(ax_new - ax) < _LT_TOL and abs(ay_new - ay) < _LT_TOL
+            tol = self.load_transfer_tol
+            converged = abs(ax_new - ax) < tol and abs(ay_new - ay) < tol
             if chassis is not None:
                 Fy_new = (Fy_w[:2].sum(), Fy_w[2:].sum())
-                converged = converged and max(abs(Fy_new[0] - Fy_axle[0]), abs(Fy_new[1] - Fy_axle[1])) < _LT_TOL * p.mass
+                converged = converged and max(abs(Fy_new[0] - Fy_axle[0]), abs(Fy_new[1] - Fy_axle[1])) < tol * p.mass
                 Fy_axle = Fy_new
             ax, ay = ax_new, ay_new
             if converged:

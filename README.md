@@ -2,7 +2,7 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Standards](https://img.shields.io/badge/standards-ISO%208855%20%7C%20ISO%203888--2%20%7C%20FMVSS%20126-orange.svg)](docs/ARCHITECTURE.md)
-[![Test Suite](https://img.shields.io/badge/tests-517%20passed-brightgreen.svg)](tests/)
+[![Test Suite](https://img.shields.io/badge/tests-572%20passed-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 A modular, physically consistent Python research and engineering platform for non-linear vehicle dynamics, interchangeable tyre models, physical actuator dynamics, four-wheel steering (4WS), torque vectoring, and integrated vehicle motion control (ABS, TCS, ESC, IVMC).
@@ -247,6 +247,15 @@ python -m vehicle_model.scenario_book run --category parking
 ```
 
 Each YAML experiment run checks the configured model first (parameter consistency, static loads, tyre symmetry, linear reference, mirror symmetry, determinism) and writes `results.json`, `kpis.csv`, time histories, figures and an engineering report (`report.md`) to `output/experiments/<name>/`. See [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
+
+Nonlinear stability (M11): steady-state equilibria of the 7-DOF model with residuals, eigenvalues and a check against the nonlinear dynamics, and numerically determined recovery regions per controller in the (sideslip, yaw rate) plane with their numerical uncertainty. Both are experiment types:
+
+```bash
+python -m vehicle_model.experiments run configs/experiments/equilibrium_steer_sweep.yaml
+python -m vehicle_model.experiments run configs/experiments/stability_map_cornering.yaml   # ~7 min, parallel
+```
+
+See [docs/NONLINEAR_STABILITY.md](docs/NONLINEAR_STABILITY.md). The recovery regions are numerical results for the grid, step and duration used, not proven regions of attraction.
 
 ### 3. Running Flagship Demonstrations
 

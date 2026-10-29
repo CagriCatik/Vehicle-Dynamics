@@ -10,6 +10,8 @@ existing specifications stay valid.
     controller_comparison  :mod:`.spec`, :mod:`.runner`             controllers on a manoeuvre, optional sweep
     solver_benchmark       :mod:`.solver_benchmark`                 NMPC solver variants: status, KKT, warm start,
                                                                     computation time, tracking
+    equilibrium_analysis   :mod:`.equilibrium_analysis`             nonlinear equilibria, Jacobians, modes over a sweep
+    stability_map          :mod:`.stability_map`                    recovery regions per controller with uncertainty
 
 Interface of a type (:class:`ExperimentType`):
 
@@ -44,12 +46,15 @@ class ExperimentType:
 
 def _registry() -> dict[str, ExperimentType]:
     # imported here: the type modules import the shared helpers of this module
-    from . import runner, solver_benchmark, spec
+    from . import equilibrium_analysis, runner, solver_benchmark, spec, stability_map
 
     types = (
         ExperimentType(DEFAULT_TYPE, spec.parse_controller_comparison, runner.run_controller_comparison,
                        runner.describe_controller_comparison),
         ExperimentType("solver_benchmark", solver_benchmark.parse, solver_benchmark.run, solver_benchmark.describe),
+        ExperimentType("equilibrium_analysis", equilibrium_analysis.parse, equilibrium_analysis.run,
+                       equilibrium_analysis.describe),
+        ExperimentType("stability_map", stability_map.parse, stability_map.run, stability_map.describe),
     )
     return {t.name: t for t in types}
 

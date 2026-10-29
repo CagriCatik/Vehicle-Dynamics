@@ -152,3 +152,88 @@ def test_cli_lists_the_type(capsys):
     assert cli(["list"]) == 0
     out = capsys.readouterr().out
     assert "[solver_benchmark]" in out and "[controller_comparison]" in out
+
+
+def _eq(**over):
+    d = {"type": "equilibrium_analysis", "name": "tiny_eq", "vehicle": "configs/vehicles/seven_dof_passenger.yaml",
+         "road": {"type": "uniform", "mu": 0.6}, "operating_point": {"speed_kph": 90},
+         "sweep": {"parameter": "steer_deg", "values": [0.0, 1.0]}, "linear_check": "main", "verification": False}
+    d.update(over)
+    return d
+
+
+@pytest.mark.parametrize("override, message", [
+    ({"sweep": {"parameter": "camber", "values": [1]}}, "parameter must be one of"),
+    ({"sweep": {"parameter": "steer_deg", "values": []}}, "non-empty"),
+    ({"sweep": {"parameter": "steer_deg", "values": [90]}}, "must lie in"),
+    ({"series": {"parameter": "steer_deg", "values": [1]}}, "differ from the sweep"),
+    ({"road": {"type": "split_mu", "mu": 1.0}}, "uniform"),
+    ({"operating_point": {"drive_split": [1, 1, 0, 0]}}, "sum to 1"),
+    ({"operating_point": {"camber_deg": 1}}, "unknown key"),
+    ({"model": "fourteen_dof"}, "model must be"),
+    ({"linear_check": "some"}, "linear_check"),
+    ({"kc": "configs/suspension/kc_reference_passenger_car.yaml", "operating_point": {"cog_shift_m": 0.1}}, "cog_shift_m"),
+])
+def test_equilibrium_analysis_schema(override, message):
+    with pytest.raises(ValueError, match=message):
+        parse_experiment(_eq(**override))
+
+
+def test_equilibrium_analysis_runs_with_checks_and_outputs(tmp_path):
+    spec = parse_experiment(_eq(series={"parameter": "cornering_scale_rear", "values": [1.0, 0.8]}), "tiny_eq.yaml")
+    s = run_experiment(spec, tmp_path)
+    assert len(s["results"]) == 4 and all(r["main_accepted"] for r in s["results"])
+    assert all(c["passed"] in (True, None) for c in s["checks"])
+    e = s["results"][1]["equilibria"][0]
+    assert e["branch"] == "main" and e["linear_check"] and e["linearisation"]["stability"] == "stable"
+    # softer rear tyres: slower decay of the lateral/yaw modes (the damping ratio alone is no margin: the
+    # modes can turn real, zeta = 1, and still decay more slowly)
+    decay = lambda r: max(m["re"] for m in r["equilibria"][0]["linearisation"]["modes"] if m["group"] == "lateral_yaw")
+    assert decay(s["results"][1]) < decay(s["results"][3]) < 0.0
+    for f in ("results.json", "equilibria.csv", "equilibria.png", "eigenvalues.png", "report.md"):
+        assert (tmp_path / f).is_file(), f
+    assert "Checks of the analysis" in (tmp_path / "report.md").read_text()
+
+
+def _map(**over):
+    d = {"type": "stability_map", "name": "tiny_map", "vehicle": "configs/vehicles/seven_dof_passenger.yaml",
+         "road": {"type": "uniform", "mu": 0.6}, "operating_point": {"speed_kph": 80, "steer_deg": 1.0},
+         "grid": {"beta_deg": [-20, 20, 2], "r_degps": [-40, 40, 2]}, "simulation": {"duration_s": 1.0},
+         "controllers": ["passive"], "uncertainty": {"refine": False}, "portraits": {"points": 2}, "workers": 1,
+         "verification": False}
+    d.update(over)
+    return d
+
+
+@pytest.mark.parametrize("override, message", [
+    ({"controllers": ["passive", "magic"]}, "unknown"),
+    ({"controllers": ["passive", "passive"]}, "unique"),
+    ({"grid": {"beta_deg": [10, -10, 5], "r_degps": [-40, 40, 5]}}, "min must be below max"),
+    ({"grid": {"beta_deg": [-10, 10, 1], "r_degps": [-40, 40, 5]}}, r"integer in \[2, 101\]"),
+    ({"simulation": {"dt": 0.1}}, "simulation.dt"),
+    ({"criteria": {"loss_beta_deg": -5}}, "positive"),
+    ({"uncertainty": {"dt_factor": 2.0}}, "dt_factor"),
+    ({"portraits": {"controllers": ["tv"]}}, "portraits.controllers"),
+    ({"workers": 0}, "workers"),
+])
+def test_stability_map_schema(override, message):
+    with pytest.raises(ValueError, match=message):
+        parse_experiment(_map(**override))
+
+
+@pytest.mark.slow
+def test_stability_map_runs_and_writes_every_output(tmp_path):
+    s = run_experiment(parse_experiment(_map(), "tiny_map.yaml"), tmp_path)
+    r = s["results"][0]
+    assert r["points"] == 4 and sum(r["counts"].values()) == 4
+    assert set(r["heuristic_comparison"]) >= {"agreement", "inside_not_returned", "outside_and_returned"}
+    assert s["open_loop_equilibria"] and s["open_loop_equilibria"][0]["stability"] == "stable"
+    for f in ("results.json", "map.csv", "stability_maps.png", "region_comparison.png", "phase_portraits.png", "report.md"):
+        assert (tmp_path / f).is_file(), f
+    assert "not a proven region of attraction" in (tmp_path / "report.md").read_text()
+
+
+def test_cli_lists_the_m11_types(capsys):
+    assert cli(["list"]) == 0
+    out = capsys.readouterr().out
+    assert "[equilibrium_analysis]" in out and "[stability_map]" in out

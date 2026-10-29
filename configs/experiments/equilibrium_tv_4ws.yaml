@@ -1,0 +1,16 @@
+type: equilibrium_analysis
+name: equilibrium_tv_4ws
+description: >
+  Influence of a constant torque-vectoring yaw moment and of a fixed rear/front steer ratio on the
+  cornering equilibrium at 90 km/h, front steer 1.0 deg, mu 0.6: lateral acceleration, sideslip and
+  damping of the lateral/yaw mode, and the fold beyond which a positive moment has no steady state
+  (rear friction circle used up). Open-loop actuator settings; closed-loop effects are in the
+  stability_map experiments.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+road: {type: uniform, mu: 0.6}
+operating_point: {speed_kph: 90, steer_deg: 1.0}
+sweep: {parameter: tv_yaw_moment_nm, values: [-1500, -1000, -500, -250, 0, 250, 500, 750, 1000]}
+series: {parameter: rear_steer_ratio, values: [-0.2, 0.0, 0.2]}
+search_all: false
+linear_check: main
+outputs: {directory: output/experiments/equilibrium_tv_4ws}

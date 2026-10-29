@@ -55,6 +55,15 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 |---|---|---|---|---|
 | `exp_dynamic_nmpc_solver_benchmark` | **Solver benchmark dynamic_nmpc_solver_benchmark** – Runs configs/experiments/dynamic_nmpc_solver_benchmark.yaml (edit the YAML to change the NMPC variants, manoeuvre, road). | – | ~2 min | report.md, kpis.csv, results.json, histories, plot |
 
+## nonlinear_stability
+
+| name | scenario | parameters (defaults) | runtime | outputs |
+|---|---|---|---|---|
+| `exp_equilibrium_speed_stiffness` | **Equilibrium analysis equilibrium_speed_stiffness** – Runs configs/experiments/equilibrium_speed_stiffness.yaml (edit the YAML to change sweep, series, vehicle, tyres, road). | – | ~1-3 min | report.md, equilibria.csv, results.json, equilibria and eigenvalue plots |
+| `exp_equilibrium_steer_sweep` | **Equilibrium analysis equilibrium_steer_sweep** – Runs configs/experiments/equilibrium_steer_sweep.yaml (edit the YAML to change sweep, series, vehicle, tyres, road). | – | ~1-3 min | report.md, equilibria.csv, results.json, equilibria and eigenvalue plots |
+| `exp_equilibrium_tv_4ws` | **Equilibrium analysis equilibrium_tv_4ws** – Runs configs/experiments/equilibrium_tv_4ws.yaml (edit the YAML to change sweep, series, vehicle, tyres, road). | – | ~1-3 min | report.md, equilibria.csv, results.json, equilibria and eigenvalue plots |
+| `exp_stability_map_cornering` | **Stability map stability_map_cornering** – Runs configs/experiments/stability_map_cornering.yaml (edit the YAML to change grid, operating point, controllers). | – | ~10-20 min (parallel) | report.md, map.csv, results.json, maps, portraits, limit cases |
+
 ## validation
 
 | name | scenario | parameters (defaults) | runtime | outputs |

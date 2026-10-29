@@ -11,6 +11,7 @@ Categories:
     split_mu              split-friction braking and launch scenarios
     yaw_stability         YAML experiments: controllers on step steer, sine with dwell, split-mu braking
     solver                YAML solver benchmarks: NMPC status, KKT residuals, computation time
+    nonlinear_stability   YAML equilibrium analyses and recovery maps (equilibria, eigenvalues, stability regions)
     validation            the validation matrix (configs/validation/matrix.yaml), one scenario at a time
 """
 
@@ -21,7 +22,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
-CATEGORIES = ("parking", "four_wheel_steering", "split_mu", "yaw_stability", "solver", "validation")
+CATEGORIES = ("parking", "four_wheel_steering", "split_mu", "yaw_stability", "solver", "nonlinear_stability",
+              "validation")
 VEHICLE = "configs/vehicles/seven_dof_passenger.yaml"
 
 
@@ -203,6 +205,18 @@ def _build() -> dict[str, ScenarioEntry]:
             entries.append(E(f"exp_{path.stem}", "solver", f"Solver benchmark {path.stem}",
                              f"Runs {path} (edit the YAML to change the NMPC variants, manoeuvre, road).",
                              _experiment(str(path)), {}, "~2 min", "report.md, kpis.csv, results.json, histories, plot"))
+            continue
+        if kind == "equilibrium_analysis":
+            entries.append(E(f"exp_{path.stem}", "nonlinear_stability", f"Equilibrium analysis {path.stem}",
+                             f"Runs {path} (edit the YAML to change sweep, series, vehicle, tyres, road).",
+                             _experiment(str(path)), {}, "~1-3 min",
+                             "report.md, equilibria.csv, results.json, equilibria and eigenvalue plots"))
+            continue
+        if kind == "stability_map":
+            entries.append(E(f"exp_{path.stem}", "nonlinear_stability", f"Stability map {path.stem}",
+                             f"Runs {path} (edit the YAML to change grid, operating point, controllers).",
+                             _experiment(str(path)), {}, "~10-20 min (parallel)",
+                             "report.md, map.csv, results.json, maps, portraits, limit cases"))
             continue
         entries.append(E(f"exp_{path.stem}", "yaw_stability", f"YAML experiment {path.stem}",
                          f"Runs {path} (edit the YAML to change vehicle, manoeuvre, controllers, sweep).",

@@ -168,8 +168,8 @@ def test_rk4_temporal_convergence_order(ref_model, monkeypatch):
     The load-transfer tolerance is tightened so that the algebraic-loop residual
     (production tolerance: noise floor ~1e-8) does not mask the truncation error.
     """
-    monkeypatch.setattr(seven_dof_module, "_LT_TOL", 1e-12)
-    monkeypatch.setattr(seven_dof_module, "_LT_MAX_ITER", 60)
+    monkeypatch.setattr(ref_model, "load_transfer_tol", 1e-12)
+    monkeypatch.setattr(ref_model, "load_transfer_max_iter", 60)
     p = ref_model.params
     u = SevenDOFControlInput(steer_f=0.03, T_drive=np.full(4, 60.0), T_brake=np.array([0.0, 0.0, 80.0, 0.0]))
 

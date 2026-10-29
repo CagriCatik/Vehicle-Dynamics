@@ -12,7 +12,7 @@ Grundsatz des Plans: „Niemals annehmen, dass eine Funktion fehlt, nur weil sie
 |---|---|---|---|
 | **G01** NMPC-Zulässigkeit | Statusklassen vorhanden; harte Zustands- und Stellratengrenzen fehlen; das dynamische NMPC hat weiche Reibkreisstrafen und eine eigene Radmomentenaufteilung | bestätigt: `dynamic_two_track_nmpc.py` hat nur Box-Grenzen auf den Stellgrößen, Kamm-Strafe ab 0,90 im Kostenterm, eigene Momentenaufteilung (seit M6 wird das erzeugte Giermoment ehrlich gemeldet); `nmpc.py` hat Stellgrößenklemmen im Vorhersagemodell | erledigt: `controllers/constraints.py` (hard/soft/penalty/advisory/plant), Zulässigkeit getrennt vom Solverstatus für LTV-MPC und dynamisches NMPC; harte Lenkratengrenze im dynamischen NMPC; Zulässigkeitsprüfung auch im kinematischen NMPC; beide NMPCs über die `ActuationLayer` (§5.3), Ausnahmen dokumentiert (`MOTION_CONTROL.md` 1.1); IVMC standardmäßig über die `ActuationLayer` (legacy wählbar); KKT-Residuen, Kostenverbesserung und Warmstartgüte in allen drei Optimierern (`MOTION_CONTROL.md` 3.2) |
 | **G02** Sensorik | `EstimatedStateFeedback` reicht Reifen-, Radlast- und Reibwerttelemetrie an Allokation und Schlupfregelung weiter | bestätigt (dokumentiert in `information`). Zusätzlich lesen `motion_control.py`, `slip_control.py`, `abs.py`, `tcs.py`, `integrated_controller.py` Telemetrie (Fz, µ, F_y, κ). **Neu:** `estimation/sensor_friction.py` schätzt µ nur aus Sensoren und Stellbefehlen (Grundlage für Mode C) | erledigt (strukturell): Mode C `EstimatedStateFeedback(mode="C")`, Sensor-Telemetrie aus `SensorFrictionEstimator.as_telemetry`, YAML `feedback: sensor_constrained`; Kosten und Schätzfehler in ESTIMATION_ROBUSTNESS.md 2.1 |
-| **G03** Stabilitätsgrenzen | Phase-Plane-Grenzen heuristisch | bestätigt: `phase_plane.py` berechnet β- und β̇-Grenzen aus Fahrbahn und Geschwindigkeit nach Formeln, nicht aus der Dynamik des Fahrzeugmodells | offen (M11) |
+| **G03** Stabilitätsgrenzen | Phase-Plane-Grenzen heuristisch | bestätigt: `phase_plane.py` berechnet β- und β̇-Grenzen aus Fahrbahn und Geschwindigkeit nach Formeln, nicht aus der Dynamik des Fahrzeugmodells | erledigt (M11): modellbasierte Gleichgewichte, Eigenwerte und Rückführregionen; die Heuristik bleibt als Vergleichsbasis ([NONLINEAR_STABILITY.md](NONLINEAR_STABILITY.md)) |
 | **G04** Szenariozugriff | YAML-Experimente nur für Gierstabilität und fünf Regler | bestätigt (`experiments/spec.py`: drei Manöver, `passive/pi/lqr/gs_lqr/ltv_mpc`); NMPC-Pfadfolge, 4WS-, Split-µ- und Validierungsszenarien nur über Python | offen (M10/M12) |
 | **G05** 4WS-Split-µ | Fall als `xfail` dokumentiert | bestätigt (Audit 4.7): Das Fahrzeug dreht sich in allen Varianten ein, auch ohne Regler und mit ABS-Option | erledigt: Konfigurationsmatrix `four_wheel_steering/split_mu_matrix.py`, Grenzabbildung als bestandene Tests, kein `xfail` mehr |
 | **G06** Große Szenariomodule | sehr umfangreiche Dateien | **erledigt (strukturell):** Die drei Module (2612/2015/1665 Zeilen) sind Pakete mit Teilmodulen nach Verantwortung, das größte hat 836 Zeilen; alte Importpfade über Kompatibilitätsfassaden. Offen: Innerhalb der einzelnen Szenariofunktionen sind Manöverdefinition, Fahrer, Ausführung und Kennzahlen noch nicht getrennt | teilweise |
@@ -77,4 +77,32 @@ Stand: 2026-10-29. Bewertung je Kriterium mit Nachweis; „erfüllt mit Einschr�
 - Mode C: Gyro-Offset dreht das Fahrzeug bei Geradeausbremsung um ≈ 5°, Reibwert auf Eis überschätzt (0,3–0,47 statt 0,2), Geschwindigkeitsreferenz driftet bei Allradbremsung um bis zu 2,7 m/s, Blockieren unter ≈ 14 km/h (IVMC) (`ESTIMATION_ROBUSTNESS.md` 2.1). Gehört zu M12 (robuste Regelung).
 - IVMC mit geschwindigkeitsgeführter Gewichtung: Split-µ-Bremsung bis zum Stand endet bei 6,6° Gierwinkel (`MOTION_CONTROL.md` 1.2).
 - `soft`-Grenzen mit Schlupfvariablen nutzt kein Regler.
-- Stabilitätsgrenzen sind Faustregeln (advisory); modellbasierte Grenzen folgen in M11.
+- ~~Stabilitätsgrenzen sind Faustregeln (advisory); modellbasierte Grenzen folgen in M11.~~ Mit M11 gibt es modellbasierte Gleichgewichte und Rückführregionen; die Heuristik ist als Vergleich bewertet (Abschnitt 7).
+
+## 7. Abnahme M11 (Plan §6.5)
+
+Stand: 2026-10-29. Grundlage: [NONLINEAR_STABILITY.md](NONLINEAR_STABILITY.md), Experimente `equilibrium_steer_sweep`,
+`equilibrium_speed_stiffness`, `equilibrium_tv_4ws`, `stability_map_cornering`, Tests `test_nonlinear_stability.py` und
+`test_experiments.py`.
+
+| # | Kriterium | Bewertung | Nachweis |
+|---|---|---|---|
+| 1 | Gleichgewichtszustände besitzen überprüfbare Residuen | erfüllt | Residuen je Zustandsgruppe in SI-Einheiten mit dokumentierten Toleranzen (`RESIDUAL_TOL`), dazu Konvergenz der Lastverlagerung und Kontaktzustand; erreicht 1e-14 m/s², größtes Residuum/Toleranz 7,5e-7 in allen mitgelieferten Experimenten. Probe: `a_y = r v_x`, `a_x = −r v_y` auf 1e-6 (Test). Punkte ohne Gleichgewicht (TV-Faltung) werden mit erreichtem Residuum ausgewiesen, nicht angenommen |
+| 2 | Lokale Stabilitätsaussagen stimmen mit der linearisierten Dynamik überein | erfüllt | Schrittweitenstudie der Jacobi-Matrix (Plateau 1e-8, Konvergenz in allen Punkten); nichtlineare Simulation nach kleiner Störung gegen `expm(A t)`: Abweichung ≤ 2,3 % bis 4° Lenkwinkel, 4,6 % bei 95 % Reibwertausnutzung, Auf-/Abklingen überall gleich, auch für Sattel und instabilen Fokus. Unabhängig: Quermoden auf 1–3 % gleich dem linearen Einspurmodell; Stabilitätswechsel bei der linearen kritischen Geschwindigkeit (30 m/s stabil, 40 m/s instabil bei v_krit = 30,08 m/s) |
+| 3 | Stabilitätsregionen reproduzierbar berechnet | erfüllt | Läufe deterministisch; seriell und mit Prozess-Pool identische Karten, Sicherheiten und Verfeinerung (Test); Spezifikation, Commit und Versionen im Ergebnis |
+| 4 | Numerische Unsicherheit separat ausgewiesen | erfüllt | Je Punkt Sicherheit (innen, Rand, empfindlich); Nachrechnung mit halbem Zeitschritt und doppelter Dauer mit gezählten Änderungen; Schranken des Anteils; eine Gitterverfeinerung (Abweichung ≤ 1,6 Prozentpunkte). Einschränkung: Mittelpunkte zwischen Nachbarn gleicher Klasse werden geerbt, nicht simuliert (ausgewiesen) |
+| 5 | Wechsel von Reifen- oder Fahrzeugmodell über vorhandene Schnittstellen | erfüllt | Analyse auf jedem Modell der `SevenDOFModel`-Familie mit jedem `TyreModel`: getestet mit Magic Formula, Fiala, skalierter Steifigkeit (`SlipStiffnessScaledTyre`), Reifenrelaxation (15 Zustände, gleiches Gleichgewicht), K&C-Fahrwerk und verschobenem Schwerpunkt; im YAML über `vehicle`, `tyres`, `kc`, `model`, `cornering_scale_*`, `cog_shift_m` |
+| 6 | Heuristische Phase-Plane-Regelung bleibt erhalten und dient als Vergleichsbasis | erfüllt | `phase_plane.py` unverändert, aktiv in IVMC; jede Karte vergleicht den Index `S < 1` mit „zurückgekehrt" und rechnet IVMC mit und ohne Hülle. Ergebnis: Die Hülle vergrößert die Region (96 % gegen 89 %); als Grenze der Rückführbarkeit ist die Heuristik stark konservativ (Übereinstimmung 32 % passiv) und an einem Punkt zu optimistisch |
+
+**Offene Punkte aus M11:**
+
+- Robuste Regler (Plan 6.4) werden nach M12 in die Kartenregler aufgenommen.
+- Gleichgewichte nur mit gehaltener Geschwindigkeit; die Suche nach weiteren Gleichgewichten ist ein Startraster, kein
+  Vollständigkeitsbeweis. Auf der Schleuderseite bei kleinem Lenkwinkel wurde keines gefunden (Existenz hängt an Effekten
+  zweiter Ordnung).
+- Wirkung von 4WS und TV auf die lokale Stabilität nur als feste Stellgrößen; Regelkreise nur über die Rückführregionen.
+- Eine Karte (15 × 15, sechs Regler) braucht etwa 7 min auf 7 Prozessen; feinere oder weitere Betriebspunkte
+  (Geradeausfahrt, Eis, hohe Geschwindigkeit) sind mit derselben Spezifikation möglich, aber noch nicht gerechnet.
+- Beobachtet, nicht behoben: ESC und TV klassifizieren identisch (Totband wirkt nur nahe dem Ziel); das 4WS-Kennfeld
+  vergrößert die Region nicht.
+

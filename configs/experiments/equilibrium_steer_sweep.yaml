@@ -1,0 +1,15 @@
+type: equilibrium_analysis
+name: equilibrium_steer_sweep
+description: >
+  Equilibria of the 7-DOF model over the front steer angle at 90 km/h on dry (mu 1.0) and wet (mu 0.6)
+  road. Main branch by continuation plus all further equilibria from a seed grid: shows the saturation of
+  the lateral acceleration, the loss of yaw damping towards the limit and the saddle / unstable focus
+  pair that appears on the spin side.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+road: {type: uniform, mu: 1.0}
+operating_point: {speed_kph: 90}
+sweep: {parameter: steer_deg, values: [0, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5]}
+series: {parameter: mu, values: [1.0, 0.6]}
+search_all: true
+linear_check: main
+outputs: {directory: output/experiments/equilibrium_steer_sweep}

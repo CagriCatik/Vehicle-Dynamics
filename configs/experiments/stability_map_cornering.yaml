@@ -1,0 +1,15 @@
+type: stability_map
+name: stability_map_cornering
+description: >
+  Numerical recovery regions in the (beta, r) plane for six controller configurations while the driver
+  holds 1 deg front steer at 80 km/h on a wet road (mu 0.6). Each controller is judged against its own
+  closed-loop steady state. Includes the heuristic phase-plane boundary as comparison basis, and the
+  integrated controller with and without its phase-plane envelope.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+road: {type: uniform, mu: 0.6}
+operating_point: {speed_kph: 80, steer_deg: 1.0}
+grid: {beta_deg: [-20, 20, 15], r_degps: [-45, 45, 15]}
+simulation: {dt: 0.01, duration_s: 6.0}
+controllers: [passive, esc, 4ws, tv, ivmc, ivmc_no_phase_plane]
+portraits: {controllers: [passive, tv, ivmc], points: 5}
+outputs: {directory: output/experiments/stability_map_cornering}
