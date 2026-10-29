@@ -32,8 +32,20 @@ Features:
    limits. The report is ``diagnostics["feasibility"]``; the output status remains the
    solver status, so a converged solve with an unrealisable plan stays visible.
 6. Solver outcome classified by :mod:`.solver_diagnostics` (nominal / suboptimal /
-   fallback / degraded) and reported as the output status; ``allocated_yaw_moment``
-   is the moment produced by the (clipped) wheel-torque split, not the demand.
+   fallback / degraded). Output status as in :class:`.motion_control.MotionController`:
+   the solver status if it is not nominal, otherwise the allocation status.
+8. Actuation through the shared :class:`.motion_control.ActuationLayer` (Plan V3.0 M10
+   5.3): the first planned ``(m a_x, M_z)`` goes to the bounded wheel-force allocation
+   and ABS/TCS, like every other controller. ``allocated_yaw_moment`` is the moment of
+   the issued wheel torques. ``diagnostics["actuation"]`` separates the demand, what
+   the allocation can achieve, the issued actuator request (after slip control) and
+   the tyre forces the plant realised in the previous step (from telemetry). The
+   prediction splits forces equally per axle and side; the allocation distributes by
+   grip, so prediction and actuation differ on purpose (reported, not hidden).
+
+Information access (``information``): state, ``target.mu_estimated`` for the
+prediction; with telemetry the allocation and slip control use wheel loads, lateral
+forces, slips and road friction (idealised, as in the M6 benchmark).
 
 Conforms to Plan.md §4.3, §5, §10.2, §19.
 """
@@ -65,9 +77,11 @@ from vehicle_model.controllers.constraints import (
     FeasibilityMonitor,
     stability_limits,
 )
-from vehicle_model.controllers.solver_diagnostics import SolverMonitor
+from vehicle_model.allocation import ActuatorHealth
+from vehicle_model.controllers.motion_control import INFORMATION_FULL_STATE, ActuationConfig, ActuationLayer
+from vehicle_model.controllers.solver_diagnostics import NOMINAL, SolverMonitor
 from vehicle_model.core.types import FL, FR, RL, RR, SevenDOFParams, SevenDOFState, WheelTelemetry
-from vehicle_model.vehicle_models.normal_loads import wheel_contact_positions
+from vehicle_model.vehicle_models.normal_loads import quasi_static_normal_loads
 
 
 @dataclass
@@ -149,13 +163,18 @@ class DynamicNMPCConfig:
 class DynamicTwoTrackNMPC(VehicleController):
     """Dynamic Two-Track Nonlinear Model Predictive Controller."""
 
+    information = INFORMATION_FULL_STATE
+
     def __init__(
         self,
         params: Optional[SevenDOFParams] = None,
         config: Optional[DynamicNMPCConfig] = None,
+        actuation: Optional[ActuationConfig] = None,
+        health: Optional[ActuatorHealth] = None,
     ):
         self.params = params or SevenDOFParams.from_yaml()
         self.config = config or DynamicNMPCConfig()
+        self.actuation = ActuationLayer(self.params, actuation, health)
 
         # Input dimension: 4 per step [delta_f, delta_r, Mz, ax]
         self.n_inputs = 4
@@ -177,6 +196,7 @@ class DynamicTwoTrackNMPC(VehicleController):
         self.last_u.fill(0.0)
         self.monitor.reset()
         self.feasibility.reset()
+        self.actuation.reset()
 
     def constraints(self, mu: float, vx: float) -> ConstraintSet:
         """Declared limits and their kinds (see :mod:`.constraints`)."""
@@ -506,31 +526,40 @@ class DynamicTwoTrackNMPC(VehicleController):
         Mz_tv_cmd = float(u_0[2])
         ax_req_cmd = float(u_0[3])
 
-        # Allocate wheel torques from Mz_tv and ax_req
-        total_wheel_torque = (self.params.mass * ax_req_cmd * self.params.Reff)
-        T_drive = np.zeros(4)
-        T_brake = np.zeros(4)
-
-        if total_wheel_torque >= 0.0:
-            base_drive = 0.25 * total_wheel_torque
-            diff_drive = (Mz_tv_cmd / (self.params.wf)) * self.params.Reff * 0.5
-            T_drive[FL] = max(0.0, base_drive - diff_drive)
-            T_drive[FR] = max(0.0, base_drive + diff_drive)
-            T_drive[RL] = max(0.0, base_drive - diff_drive)
-            T_drive[RR] = max(0.0, base_drive + diff_drive)
+        # Shared actuation chain: bounded wheel-force allocation, then ABS/TCS (Plan V3.0 M10 5.3)
+        p = self.params
+        if telemetry is not None:
+            Fz, mu_w, Fy, wheel_steer = telemetry.Fz, telemetry.mu, telemetry.Fy_wheel, telemetry.steer_angles
         else:
-            base_brake = 0.25 * abs(total_wheel_torque)
-            diff_brake = (Mz_tv_cmd / (self.params.wf)) * self.params.Reff * 0.5
-            T_brake[FL] = max(0.0, base_brake + diff_brake)
-            T_brake[FR] = max(0.0, base_brake - diff_brake)
-            T_brake[RL] = max(0.0, base_brake + diff_brake)
-            T_brake[RR] = max(0.0, base_brake - diff_brake)
-
-        # Yaw moment actually produced by the clipped torque split (not the demand)
-        pos = wheel_contact_positions(self.params)
-        steer = np.array([delta_f_cmd, delta_f_cmd, delta_r_cmd, delta_r_cmd])
-        F = (T_drive - T_brake) / self.params.Reff
-        Mz_achieved = float(np.sum((pos[:, 0] * np.sin(steer) - pos[:, 1] * np.cos(steer)) * F))
+            Fz = quasi_static_normal_loads(p, 0.0, 0.0).Fz
+            mu_w, Fy = np.full(4, max(mu_cur, 0.05)), np.zeros(4)
+            wheel_steer = np.array([delta_f_cmd, delta_f_cmd, delta_r_cmd, delta_r_cmd])
+        Fx_des = p.mass * ax_req_cmd
+        T_drive, T_brake, alloc, Mz_achieved, slip_active = self.actuation.actuate(
+            Fx_des, Mz_tv_cmd, wheel_steer, Fz, mu_w, Fy, telemetry, state.vx, dt)
+        F_issued = (T_drive - T_brake) / p.Reff
+        Fx_issued = float(self.actuation.allocator.effectiveness(wheel_steer)[0] @ F_issued)   # body frame, as the demand
+        actuation = {
+            "demand": {"Fx": Fx_des, "Mz": Mz_tv_cmd},
+            "allocation_achievable": {"Fx": float(alloc.achieved[0]), "Mz": float(alloc.achieved[1])},
+            "allocation_status": alloc.status, "allocation_residual": alloc.residual.tolist(),
+            "at_bound": alloc.at_bound.tolist(), "grip_limited": alloc.grip_limited.tolist(),
+            "issued": {"Fx": Fx_issued, "Mz": Mz_achieved, "slip_control_active": slip_active},
+            "realised_previous_step": None,
+        }
+        if telemetry is not None:  # tyre forces the plant produced in the last step, about the CoG
+            pos = self.actuation.allocator.positions
+            c, sn = np.cos(telemetry.steer_angles), np.sin(telemetry.steer_angles)
+            Fxw, Fyw = telemetry.Fx_wheel, telemetry.Fy_wheel
+            mz_long = float(np.sum((pos[:, 0] * sn - pos[:, 1] * c) * Fxw))   # comparable to the issued M_z
+            mz_lat = float(np.sum((pos[:, 0] * c + pos[:, 1] * sn) * Fyw))
+            actuation["realised_previous_step"] = {"Fx": float(np.sum(c * Fxw - sn * Fyw)),
+                                                   "Mz_longitudinal": mz_long, "Mz_total": mz_long + mz_lat}
+        status = alloc.status
+        if status != "infeasible" and slip_active:
+            status = "saturated"
+        if report.status != NOMINAL:
+            status = report.status
 
         t_elapsed = (time.perf_counter() - t0) * 1000.0
         _, kamm_0 = self.rk4_step(x0, u_0, dt_p, mu_cur)
@@ -541,7 +570,7 @@ class DynamicTwoTrackNMPC(VehicleController):
             T_brake=T_brake,
             desired_yaw_moment=Mz_tv_cmd,
             allocated_yaw_moment=Mz_achieved,
-            status=report.status,
+            status=status,
             computation_time_ms=t_elapsed,
             diagnostics={
                 "kamm_utilization": kamm_0,
@@ -550,6 +579,8 @@ class DynamicTwoTrackNMPC(VehicleController):
                 "solver": report.as_dict(),
                 "solver_counts": dict(self.monitor.counts),
                 "feasibility": feas.as_dict(),
+                "actuation": actuation,
+                "information": self.information,
                 "feasibility_summary": self.feasibility.summary(),
             },
         )

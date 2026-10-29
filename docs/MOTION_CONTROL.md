@@ -26,6 +26,23 @@ Die Kette trennt die Ebenen nach Plan.md, Abschnitt 10:
 
 Alle Gesetze laufen über dieselbe Referenz und dieselbe Stellebene. Das ist die Voraussetzung für einen fairen Vergleich. Jedes Gesetz deklariert seinen Informationszugriff. Alle mitgelieferten Gesetze nutzen Zustand und Telemetrie einschließlich Fahrbahnreibwert, also `full_state_ideal` (Plan.md, Abschnitt 10.2: idealisierter Full-State-Feedback-Modus, ausdrücklich gekennzeichnet). Der M5-Regler `AllocatedStabilityController` ist jetzt diese Kette mit dem PI-Gesetz, mit unverändertem Verhalten.
 
+### 1.1 Stellgrößenkette je Regler (V3.0 M10 §5.3, Abnahmekriterium 1)
+
+Gemeinsame Stellebene: `ActuationLayer` = `WheelForceAllocator` (beschränkte Radkraftaufteilung mit Haft- und Aktuatorgrenzen, Ausfallmeldung) + ABS/TCS (`WheelSlipController`).
+
+| Regler | Stellgrößenkette | Bemerkung |
+|---|---|---|
+| `MotionController` mit PI, LQR, GS-LQR, LTV-MPC; `AllocatedStabilityController` | `ActuationLayer` | seit M6 |
+| `DynamicTwoTrackNMPC` | `ActuationLayer` (**neu**) | erste geplante Stellgröße $(m a_x, M_z)$ an die Allokation; vorher eigene Aufteilung (gleiche Anteile, negative Werte abgeschnitten, kein ABS/TCS) |
+| `NMPCPathTrackingController` (kinematisch) | `ActuationLayer` (**neu**), $M_z = 0$ | vorher feste Aufteilung (Antrieb gleich, Bremse 60/40), kein ABS/TCS |
+| `IntegratedChassisController` (IVMC) | **Ausnahme:** eigene Kette | TV addiert Moment auf die Fahrerpedale (`TorqueVectoringController.allocate_torques`), Alt-ABS/-TCS (`abs.py`, `tcs.py`), Giermomentbegrenzer. Diese additive Kette ist der Grund, warum IVMC die Split-µ-Bremsung nicht stabilisiert (Matrix in Abschnitt 4): Sie kann Bremsmoment nur hinzufügen, nicht auf der Hoch-µ-Seite reduzieren. Umstellung auf die `ActuationLayer` ist der nächste Schritt; sie ändert das Verhalten der Bestandsszenarien und braucht neue Referenzwerte. |
+| `FourWheelSteeringController` | **Ausnahme:** reiner Lenkregler | reicht die Fahrerpedale mit fester Aufteilung (Antrieb gleich, Bremse 60/40) durch, optionale einfache ABS-Dämpfung; dient als Referenz „nur Hinterachslenkung“ |
+| `PassiveBaselineController` | **Ausnahme:** passive Referenz | feste Aufteilung ohne Regelung, absichtlich |
+
+Die Diagnosedaten beider NMPCs trennen (`diagnostics["actuation"]`): Soll-Längskraft und Soll-Giermoment (`demand`), durch die Allokation erreichbare Werte (`allocation_achievable`, `allocation_status`, `at_bound`, `grip_limited`), die ausgegebene Aktuatoranforderung nach ABS/TCS (`issued`, Fahrzeugkoordinaten) und die von der Strecke im letzten Schritt tatsächlich erzeugten Reifenkräfte (`realised_previous_step`: $F_x$, Giermoment der Längskräfte, gesamtes Reifengiermoment; nur mit Telemetrie). Ausgabestatus wie beim `MotionController`: Solverstatus, wenn nicht nominal, sonst Allokationsstatus.
+
+**Befund E2E-Spurwechsel (90 km/h, µ = 0,75, mit Telemetrie):** Die Allokation meldet in 19 von 40 Schritten `infeasible`. Ursache: Die kurveninneren Reifen sind durch Seitenkraft voll ausgenutzt ($F_y > \mu F_z$ nach dem einfachen Reibkreis); bei gefordertem $M_z = 0$ können nur die Außenräder symmetrisch Längskraft liefern, und das NMPC fordert bis zu 1,2 kN Antrieb zum Halten der Geschwindigkeit. Das ist eine ehrliche Meldung, kein Fehler. Gegenüber der eigenen Momentenaufteilung (Abschnitt 3.1, ohne Telemetrie): Querabweichung nach 2 s 0,36 m statt 0,41 m, `degraded` in 22 % statt 15 % der Schritte. Das NMPC nutzt das Giermoment praktisch nicht (`r_yaw_moment = 1e-4` macht 1 kN m so teuer wie 3,5 m Querfehler); eine Abstimmung ist offen.
+
 ## 2. Regelgesetze
 
 **Entwurfsmodell**, unabhängig von der Strecke: lineares Einspurmodell aus `handling_analysis` mit Zuständen $[v_y, r]$ und Eingängen $[\delta_f, \delta_r, M_z]$. Es wird um das Integral des Gierratenfehlers erweitert, damit eine Modellabweichung keinen bleibenden Fehler hinterlässt. Im Benchmark ist das Entwurfsmodell das linearisierte Referenzfahrzeug **ohne** K&C, die Strecke hat K&C. Die Abweichung ist gewollt.

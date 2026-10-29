@@ -30,7 +30,13 @@ Known limitations (fixed constants, not configurable yet):
   * obstacle barrier weight 80, minimum horizon step 0.05 s
 
 Solver outcome: every solve is classified by :mod:`.solver_diagnostics`
-(nominal / suboptimal / fallback / degraded) and reported as the output status.
+(nominal / suboptimal / fallback / degraded). Separately, the wrapper
+:class:`NMPCPathTrackingController` checks the plan against its hard input bounds
+(:mod:`.constraints`) and acts through the shared
+:class:`.motion_control.ActuationLayer` (allocation of ``m a_x`` with ``M_z = 0``, then
+ABS/TCS; Plan V3.0 M10 5.3). Output status as in
+:class:`.motion_control.MotionController`: solver status if not nominal, otherwise the
+allocation status.
 """
 
 from __future__ import annotations
@@ -51,9 +57,13 @@ from vehicle_model.controllers.framework import (
     ControlTarget,
     VehicleController,
 )
-from vehicle_model.controllers.solver_diagnostics import SolverMonitor
+from vehicle_model.allocation import ActuatorHealth
+from vehicle_model.controllers.constraints import HARD, Constraint, ConstraintSet, FeasibilityMonitor
+from vehicle_model.controllers.motion_control import INFORMATION_FULL_STATE, ActuationConfig, ActuationLayer
+from vehicle_model.controllers.solver_diagnostics import NOMINAL, SolverMonitor
 from vehicle_model.core.types import SevenDOFParams, SevenDOFState, WheelTelemetry
 from vehicle_model.steering.lut import LookupTable, load_lookup_table
+from vehicle_model.vehicle_models.normal_loads import quasi_static_normal_loads
 
 
 @dataclass
@@ -422,9 +432,17 @@ class NMPCPathTrackingController:
         config: NMPCConfig | None = None,
         params: SevenDOFParams | None = None,
         steering_lut: LookupTable | None = None,
+        actuation: ActuationConfig | None = None,
+        health: ActuatorHealth | None = None,
     ):
         self.config = config or NMPCConfig()
         self.params = params or SevenDOFParams()
+        self.actuation = ActuationLayer(self.params, actuation, health)
+        self.feasibility = FeasibilityMonitor()
+        self.constraints = ConstraintSet([
+            Constraint("accel", HARD, self.config.max_accel, unit="m/s^2", note="SLSQP bounds"),
+            Constraint("steer_front", HARD, self.config.max_steer_front_rad, unit="rad", note="SLSQP bounds"),
+        ])
         self.controller = SLSQPPathTrackingNMPC(
             init_x=0.0,
             config=self.config,
@@ -441,8 +459,12 @@ class NMPCPathTrackingController:
     def name(self) -> str:
         return "NMPC Path Tracking Controller (SLSQP)"
 
+    information = INFORMATION_FULL_STATE
+
     def reset(self) -> None:
         self.controller.reset()
+        self.actuation.reset()
+        self.feasibility.reset()
         self._current_time = 0.0
 
     def compute_control(
@@ -476,22 +498,23 @@ class NMPCPathTrackingController:
         else:
             cmd_steer_r = 0.0
 
-        # Map desired longitudinal acceleration to drive/brake wheel torques
-        m = self.params.mass
-        r_eff = self.params.Reff
-        f_long_req = m * cmd_ax
+        feas = self.feasibility.record(self.constraints.check({"accel": u1s, "steer_front": u2s}))
 
-        if f_long_req >= 0.0:
-            t_total = f_long_req * r_eff
-            t_per_wheel = min(t_total / 4.0, self.params.max_drive_torque)
-            t_drive = np.full(4, t_per_wheel, dtype=float)
-            t_brake = np.zeros(4, dtype=float)
+        # Shared actuation chain: allocation of m a_x (no yaw moment), then ABS/TCS
+        p = self.params
+        if telemetry is not None:
+            Fz, mu, Fy, wheel_steer = telemetry.Fz, telemetry.mu, telemetry.Fy_wheel, telemetry.steer_angles
         else:
-            t_total = -f_long_req * r_eff
-            t_front = min(0.60 * t_total / 2.0, self.params.max_brake_torque)
-            t_rear = min(0.40 * t_total / 2.0, self.params.max_brake_torque)
-            t_drive = np.zeros(4, dtype=float)
-            t_brake = np.array([t_front, t_front, t_rear, t_rear], dtype=float)
+            Fz = quasi_static_normal_loads(p, 0.0, 0.0).Fz
+            mu, Fy = np.full(4, max(target.mu_estimated, 0.05)), np.zeros(4)
+            wheel_steer = np.array([cmd_steer_f, cmd_steer_f, cmd_steer_r, cmd_steer_r])
+        Fx_des = p.mass * cmd_ax
+        t_drive, t_brake, alloc, mz_issued, slip_active = self.actuation.actuate(
+            Fx_des, 0.0, wheel_steer, Fz, mu, Fy, telemetry, state.vx, dt)
+        report = self.controller.last_report
+        status = "saturated" if (alloc.status != "infeasible" and slip_active) else alloc.status
+        if report.status != NOMINAL:
+            status = report.status
 
         t_elapsed = (time.perf_counter() - t0) * 1000.0
         return ControlOutput(
@@ -500,13 +523,21 @@ class NMPCPathTrackingController:
             T_drive=t_drive,
             T_brake=t_brake,
             desired_yaw_moment=0.0,
-            allocated_yaw_moment=0.0,
-            status=self.controller.last_report.status,
+            allocated_yaw_moment=mz_issued,
+            status=status,
             computation_time_ms=t_elapsed,
             diagnostics={
                 "cmd_ax": cmd_ax,
                 "history_f": self.controller.history_f[-1] if self.controller.history_f else 0.0,
-                "solver": self.controller.last_report.as_dict(),
+                "solver": report.as_dict(),
+                "feasibility": feas.as_dict(),
+                "actuation": {"demand": {"Fx": Fx_des, "Mz": 0.0},
+                              "allocation_achievable": {"Fx": float(alloc.achieved[0]), "Mz": float(alloc.achieved[1])},
+                              "allocation_status": alloc.status,
+                              "issued": {"Fx": float(self.actuation.allocator.effectiveness(wheel_steer)[0] @ ((t_drive - t_brake) / p.Reff)),
+                                         "Mz": mz_issued,
+                                         "slip_control_active": slip_active}},
+                "information": self.information,
             },
         )
 

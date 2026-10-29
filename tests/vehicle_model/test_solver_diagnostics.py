@@ -67,3 +67,49 @@ def test_dynamic_nmpc_reports_the_yaw_moment_actually_produced():
     F = (out.T_drive - out.T_brake) / p.Reff
     assert out.allocated_yaw_moment == pytest.approx(np.sum((pos[:, 0] * np.sin(steer) - pos[:, 1] * np.cos(steer)) * F))
     assert out.diagnostics["solver"]["status"] == out.status
+
+
+def test_dynamic_nmpc_acts_through_the_shared_actuation_layer():
+    """Plan V3.0 M10 5.3: demand, achievable, issued and realised are reported separately."""
+    from vehicle_model.allocation import ActuatorHealth
+    from vehicle_model.vehicle_models import SevenDOFModel
+    from vehicle_model.core.types import SevenDOFControlInput
+
+    model = SevenDOFModel.from_yaml()
+    ctrl = DynamicTwoTrackNMPC(model.params, DynamicNMPCConfig(N=4))
+    state = SevenDOFState(vx=20.0, omega=np.full(4, 20.0 / model.params.Reff))
+    target = ControlTarget(target_vx=12.0)                                  # demands braking
+    out = ctrl.compute_control(state, target, dt=0.02)
+    a = out.diagnostics["actuation"]
+    assert set(a) >= {"demand", "allocation_achievable", "issued", "realised_previous_step", "allocation_status"}
+    assert a["demand"]["Fx"] < 0 and a["realised_previous_step"] is None   # no telemetry yet
+    steer = np.array([out.steer_f, out.steer_f, out.steer_r, out.steer_r])
+    F = (out.T_drive - out.T_brake) / model.params.Reff
+    assert a["issued"]["Fx"] == pytest.approx(np.sum(np.cos(steer) * F))     # body frame, like the demand
+    assert out.allocated_yaw_moment == pytest.approx(a["issued"]["Mz"])
+    assert out.diagnostics["information"] == ctrl.information
+
+    _, tel = model.step(state, SevenDOFControlInput(steer_f=out.steer_f, steer_r=out.steer_r,
+                                                    T_drive=out.T_drive, T_brake=out.T_brake), 0.02)
+    a2 = ctrl.compute_control(state, target, tel, dt=0.02).diagnostics["actuation"]
+    assert a2["realised_previous_step"]["Fx"] < 0                          # the plant braked
+
+    # failed brakes on the left: the allocation reports it, no torque at the failed wheels
+    failed = DynamicTwoTrackNMPC(model.params, DynamicNMPCConfig(N=4),
+                                 health=ActuatorHealth(brake_ok=(False, True, False, True)))
+    out_f = failed.compute_control(state, target, dt=0.02)
+    assert out_f.T_brake[0] == 0.0 and out_f.T_brake[2] == 0.0
+    assert out_f.diagnostics["actuation"]["allocation_status"] in ("saturated", "infeasible")
+
+
+def test_kinematic_path_nmpc_acts_through_the_shared_actuation_layer():
+    from vehicle_model.controllers.nmpc import NMPCPathTrackingController
+
+    ctrl = NMPCPathTrackingController()
+    out = ctrl.compute_control(SevenDOFState(vx=2.0), ControlTarget(target_vx=2.5), dt=0.05)
+    a = out.diagnostics["actuation"]
+    assert out.diagnostics["feasibility"]["feasible"]                      # SLSQP bounds hold on the plan
+    assert a["allocation_status"] == "nominal" and a["demand"]["Mz"] == 0.0
+    assert a["issued"]["Fx"] == pytest.approx(a["demand"]["Fx"], rel=1e-3)  # accelerating, within all limits
+    assert abs(out.allocated_yaw_moment) < 1.0
+    assert out.status == NOMINAL or out.status == out.diagnostics["solver"]["status"]
