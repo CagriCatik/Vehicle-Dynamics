@@ -1,0 +1,12 @@
+# Drift plan D2: stationary drift equilibria of the 7-DOF plant over speed x sideslip x friction, both directions.
+# Rear-wheel drive with equal rear torques (open differential), front steer only. The radius is a result.
+name: drift_equilibrium_sweep
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+powertrain: {layout: rwd}
+sweep:
+  speed_mps: [8, 10, 13, 16, 20]
+  beta_deg: [5, 10, 15, 20, 25, 30, 35]     # magnitude; the sign follows the direction
+  mu: [0.9, 0.6]
+directions: [left, right]
+outputs: {directory: output/drift/equilibrium_sweep}

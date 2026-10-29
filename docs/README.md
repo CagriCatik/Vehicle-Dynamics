@@ -38,3 +38,5 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **23** | Nichtlineare Stabilität: Gleichgewichte, Eigenwerte, Rückführregionen (M11) | [NONLINEAR_STABILITY.md](NONLINEAR_STABILITY.md) |
 | **24** | Robuste und adaptive Regelung, Überwachung, Robustheitsbenchmark (M12) | [ROBUST_CONTROL.md](ROBUST_CONTROL.md) |
 | **25** | Drift-Regler: Modellgültigkeit, Konventionen, Reifenaudit, deterministische Auswertung (Drift-Plan D0/D1) | [DRIFT_MODEL_VALIDITY.md](DRIFT_MODEL_VALIDITY.md) |
+| **26** | Drift-Regler: Verfahren (Gleichgewichte, Linearisierung, LQR, Halten) | [DRIFT_CONTROLLER.md](DRIFT_CONTROLLER.md) |
+| **27** | Drift-Regler: Ergebnisse und Gate-Abnahme | [DRIFT_RESULTS.md](DRIFT_RESULTS.md) |

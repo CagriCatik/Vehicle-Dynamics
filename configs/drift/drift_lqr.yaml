@@ -1,0 +1,27 @@
+# Drift plan D3: local stabilisation of a computed drift equilibrium with LQR (scenarios S01-S03).
+# Initial state exactly on the equilibrium (hold) or with a defined perturbation; open loop (constant u*) vs LQR.
+name: drift_lqr_hold
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+powertrain: {layout: rwd}
+reference: {speed_mps: 13.0, beta_deg: 20.0, mu: 0.9}       # |beta|; the sign follows the direction
+directions: [left, right]
+controller:
+  type: equilibrium_lqr
+  information_mode: ideal_full_state
+  steer_rate_design: true          # steer as state, steer rate as input (see drift/lqr.py)
+  rate_limit: true                 # vehicle max_steer_rate applied to the command
+  q_scaled: [8.0, 10.0, 25.0, 0.2, 0.2, 1.0, 1.0]
+  r_scaled: [5.0, 1.0]
+  q_steer: 1.0
+simulation: {dt_s: 0.005, duration_s: 6.0, settle_s: 2.0}
+perturbations:                     # added to the equilibrium state (sign mirrored for right drifts)
+  - {name: hold}
+  - {name: beta_plus_3deg, beta_deg: 3.0}
+  - {name: beta_minus_3deg, beta_deg: -3.0}
+  - {name: yaw_plus_0.1, r_radps: 0.1}
+  - {name: yaw_minus_0.1, r_radps: -0.1}
+  - {name: speed_minus_1, speed_mps: -1.0}
+  - {name: speed_plus_1, speed_mps: 1.0}
+  - {name: inner_wheel_minus_10, omega_inner_radps: -10.0}
+outputs: {directory: output/drift/lqr_hold}
