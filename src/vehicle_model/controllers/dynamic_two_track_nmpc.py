@@ -43,6 +43,26 @@ Features:
    prediction splits forces equally per axle and side; the allocation distributes by
    grip, so prediction and actuation differ on purpose (reported, not hidden).
 
+9. Constraint-aware options (Plan V3.0 M12 7.2 E, both off by default so earlier results
+   stay reproducible):
+   ``soft_stability_constraints``: the advisory sideslip and yaw-rate limits become soft
+   constraints with slack variables ``s >= 0`` (exact-penalty reformulation):
+
+       min J(u) + w1 sum s + w2 sum s^2   s.t.  |beta_k(u)| <= beta_max + s_beta,k,
+                                                |r_k(u)|    <= r_max + s_r,k.
+
+   ``beta_k(u)``, ``r_k(u)`` are linearised around the shifted warm start (forward
+   differences, one rollout per decision variable), so the constraints are linear
+   inequalities for SLSQP. For ``w1`` above the largest Lagrange multiplier of the
+   unrelaxed problem the slack is zero whenever that problem is feasible (exact
+   penalty); otherwise the violation is minimised instead of making the solve fail.
+   The nonlinear prediction is still checked afterwards, so linearisation errors stay
+   visible in ``diagnostics["feasibility"]``.
+   ``project_inputs``: the applied first input is projected onto the hard set (amplitude
+   and steering rate against the last applied command), so SLSQP's constraint tolerance
+   or a failed solve can never produce an inadmissible command; the projection distance
+   is reported (``diagnostics["input_projection"]``).
+
 Information access (``information``): state, ``target.mu_estimated`` for the
 prediction; with telemetry the allocation and slip control use wheel loads, lateral
 forces, slips and road friction (idealised, as in the M6 benchmark).
@@ -122,6 +142,10 @@ class DynamicNMPCConfig:
     max_iter: int = 25                   # Max optimizer iterations
     tolerance: float = 1e-3              # Solver tolerance
     max_consecutive_failures: int = 5    # non-nominal solves in a row before status "degraded"
+    soft_stability_constraints: bool = False  # sideslip / yaw-rate limits as soft constraints (slack)
+    w_slack_l1: float = 2.0e3            # linear slack weight (exact penalty)
+    w_slack_l2: float = 2.0e4            # quadratic slack weight
+    project_inputs: bool = False         # project the applied input onto the hard amplitude and rate set
     time_budget_ms: Optional[float] = None  # reported if exceeded (SLSQP cannot be interrupted)
 
     @classmethod
@@ -253,6 +277,45 @@ class DynamicTwoTrackNMPC(VehicleController):
         G = np.vstack([-D, D])
         return {"type": "ineq", "fun": lambda u: np.r_[lim - (D @ u - off), lim + (D @ u - off)],
                 "jac": lambda u: G}
+
+    def _soft_constraints(self, x0: np.ndarray, u_ws: np.ndarray, mu: float, vx: float) -> dict:
+        """Linearised soft sideslip / yaw-rate constraints around ``u_ws`` (SLSQP form, slack appended)."""
+        N, nd = self.config.N, self.n_dec
+
+        def outputs(u):
+            xs, _ = self.predict(x0, u, mu)
+            return np.r_[np.arctan2(xs[:, 4], np.maximum(1.5, np.abs(xs[:, 3]))), xs[:, 5]]
+
+        y0 = outputs(u_ws)
+        J = np.empty((2 * N, nd))
+        for i in range(nd):
+            h = 1e-6 * max(1.0, abs(u_ws[i]))
+            up = u_ws.copy()
+            up[i] += h
+            J[:, i] = (outputs(up) - y0) / h
+        beta_max, r_max = stability_limits(mu, vx)
+        ymax = np.r_[np.full(N, beta_max), np.full(N, r_max)]
+        # ymax + s - (y0 + J du) >= 0 and ymax + s + (y0 + J du) >= 0
+        I = np.eye(2 * N)
+        G = np.vstack([np.hstack([-J, I]), np.hstack([J, I])])
+        c0 = np.r_[ymax - y0 + J @ u_ws, ymax + y0 - J @ u_ws]
+        slack0 = np.maximum(np.abs(y0) - ymax, 0.0)
+        return {"type": "ineq", "fun": lambda xx: c0 + G @ xx, "jac": lambda xx: G, "slack0": slack0,
+                "beta_max": float(beta_max), "r_max": float(r_max)}
+
+    def _project(self, u0: np.ndarray, u_last: np.ndarray, dt: float):
+        """Euclidean projection of the first input onto the box ∩ rate set (separable: per channel clip)."""
+        c = self.config
+        lo = np.array([-c.max_steer_front_rad, -c.max_steer_rear_rad, -c.max_yaw_moment_nm, -c.max_decel_mps2])
+        hi = np.array([c.max_steer_front_rad, c.max_steer_rear_rad, c.max_yaw_moment_nm, c.max_accel_mps2])
+        if c.enforce_steer_rate:
+            step = c.max_steer_rate_radps * dt
+            lo[:2] = np.maximum(lo[:2], u_last[:2] - step)
+            hi[:2] = np.minimum(hi[:2], u_last[:2] + step)
+        u_in = np.where(np.isfinite(u0), u0, u_last)
+        u_p = np.clip(u_in, lo, hi)
+        return u_p, {"distance": float(np.linalg.norm(np.where(np.isfinite(u0), u0 - u_p, np.inf))),
+                     "projected": bool(np.any(u_p != u0))}
 
     def continuous_dynamics(
         self,
@@ -485,15 +548,51 @@ class DynamicTwoTrackNMPC(VehicleController):
 
         # Solve nonlinear OCP
         rate = self._rate_constraint(self.last_u, dt) if cfg.enforce_steer_rate else None
+        nd = self.n_dec
+        soft = None
         t_solve = time.perf_counter()
-        res = minimize(
-            fun=cost_function,
-            x0=u_init,
-            method="SLSQP",
-            bounds=bounds,
-            constraints=[rate] if rate is not None else (),
-            options={"maxiter": cfg.max_iter, "ftol": cfg.tolerance, "disp": False},
-        )
+        if cfg.soft_stability_constraints:
+            soft = self._soft_constraints(x0, u_init, mu_cur, state.vx)
+            nx = nd + 2 * N
+            w1, w2 = cfg.w_slack_l1, cfg.w_slack_l2
+            fd_h = 1.49e-8
+
+            def total(xx):
+                sl = xx[nd:]
+                return cost_function(xx[:nd]) + w1 * float(np.sum(sl)) + w2 * float(np.sum(sl * sl))
+
+            def total_grad(xx):
+                u = xx[:nd]
+                f0 = cost_function(u)
+                g = np.empty(nd)
+                for i in range(nd):
+                    h = fd_h * max(1.0, abs(u[i]))
+                    up = u.copy()
+                    up[i] += h
+                    g[i] = (cost_function(up) - f0) / h
+                return np.r_[g, w1 + 2.0 * w2 * xx[nd:]]
+
+            cons = [soft]
+            if rate is not None:
+                Dr = rate["jac"](u_init)
+                cons.append({"type": "ineq", "fun": lambda xx, r=rate: r["fun"](xx[:nd]),
+                             "jac": lambda xx, Dr=Dr: np.hstack([Dr, np.zeros((Dr.shape[0], 2 * N))])})
+            res = minimize(fun=total, x0=np.r_[u_init, soft["slack0"]], jac=total_grad, method="SLSQP",
+                           bounds=bounds + [(0.0, None)] * (2 * N), constraints=cons,
+                           options={"maxiter": cfg.max_iter, "ftol": cfg.tolerance, "disp": False})
+            slack = res.x[nd:].copy() if np.all(np.isfinite(res.x)) else np.full(2 * N, np.nan)
+            res.x = res.x[:nd]
+            if getattr(res, "jac", None) is not None:
+                res.jac = res.jac[:nd]
+        else:
+            res = minimize(
+                fun=cost_function,
+                x0=u_init,
+                method="SLSQP",
+                bounds=bounds,
+                constraints=[rate] if rate is not None else (),
+                options={"maxiter": cfg.max_iter, "ftol": cfg.tolerance, "disp": False},
+            )
         solve_ms = (time.perf_counter() - t_solve) * 1e3
 
         # Use the solution if it converged or at least improves on the warm start (see solver_diagnostics)
@@ -522,7 +621,10 @@ class DynamicTwoTrackNMPC(VehicleController):
         }))
 
         # First control action: [delta_f, delta_r, Mz_tv, ax_req]
-        u_0 = u_opt[:4]
+        u_0 = u_opt[:4].copy()
+        projection = None
+        if cfg.project_inputs:
+            u_0, projection = self._project(u_0, u_last_applied, dt)
         self.last_u = u_0.copy()
 
         delta_f_cmd = float(u_0[0])
@@ -587,5 +689,9 @@ class DynamicTwoTrackNMPC(VehicleController):
                 "actuation": actuation,
                 "information": self.information,
                 "feasibility_summary": self.feasibility.summary(),
+                "input_projection": projection,
+                "soft_constraints": None if soft is None else {
+                    "max_slack_beta": float(np.nanmax(slack[:N])), "max_slack_r": float(np.nanmax(slack[N:])),
+                    "beta_max": soft["beta_max"], "r_max": soft["r_max"]},
             },
         )

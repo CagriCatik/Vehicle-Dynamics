@@ -63,6 +63,14 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 | `exp_equilibrium_steer_sweep` | **Equilibrium analysis equilibrium_steer_sweep** – Runs configs/experiments/equilibrium_steer_sweep.yaml (edit the YAML to change sweep, series, vehicle, tyres, road). | – | ~1-3 min | report.md, equilibria.csv, results.json, equilibria and eigenvalue plots |
 | `exp_equilibrium_tv_4ws` | **Equilibrium analysis equilibrium_tv_4ws** – Runs configs/experiments/equilibrium_tv_4ws.yaml (edit the YAML to change sweep, series, vehicle, tyres, road). | – | ~1-3 min | report.md, equilibria.csv, results.json, equilibria and eigenvalue plots |
 | `exp_stability_map_cornering` | **Stability map stability_map_cornering** – Runs configs/experiments/stability_map_cornering.yaml (edit the YAML to change grid, operating point, controllers). | – | ~10-20 min (parallel) | report.md, map.csv, results.json, maps, portraits, limit cases |
+| `exp_stability_map_rear_steer` | **Stability map stability_map_rear_steer** – Runs configs/experiments/stability_map_rear_steer.yaml (edit the YAML to change grid, operating point, controllers). | – | ~10-20 min (parallel) | report.md, map.csv, results.json, maps, portraits, limit cases |
+| `exp_stability_map_robust` | **Stability map stability_map_robust** – Runs configs/experiments/stability_map_robust.yaml (edit the YAML to change grid, operating point, controllers). | – | ~10-20 min (parallel) | report.md, map.csv, results.json, maps, portraits, limit cases |
+
+## robust_control
+
+| name | scenario | parameters (defaults) | runtime | outputs |
+|---|---|---|---|---|
+| `exp_robust_benchmark_sine_with_dwell` | **Robust benchmark robust_benchmark_sine_with_dwell** – Runs configs/experiments/robust_benchmark_sine_with_dwell.yaml (edit the YAML to change controllers, feedback modes, uncertainty cases). | – | ~3-5 min (parallel) | report.md, kpis.csv, results.json, KPI matrices, yaw-rate histories |
 
 ## validation
 

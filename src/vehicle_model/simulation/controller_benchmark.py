@@ -188,7 +188,7 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
     tel = None
     keys = ("t", "X", "Y", "psi", "vx", "r", "beta", "r_ref", "steer_f", "steer_r", "Mz_demand",
             "Mz_allocated", "computation_ms", "status", "T_brake_total", "max_abs_slip", "Mz_tyre_longitudinal",
-            "Mz_tyre_lateral", "speed", "feasibility", "solver")
+            "Mz_tyre_lateral", "speed", "feasibility", "solver", "tyre_utilisation", "supervisor_mode")
     pos = model.wheel_positions
     h = {k: [] for k in keys}
     t = 0.0
@@ -206,6 +206,10 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
         c, sn = np.cos(tel.steer_angles), np.sin(tel.steer_angles)
         mz_long = float(np.sum((pos[:, 0] * sn - pos[:, 1] * c) * tel.Fx_wheel))
         mz_lat = float(np.sum((pos[:, 0] * c + pos[:, 1] * sn) * tel.Fy_wheel))
+        loaded = tel.Fz > 1.0
+        util = np.hypot(tel.Fx_wheel, tel.Fy_wheel)[loaded] / np.maximum(tel.mu * tel.Fz, 1e-9)[loaded]
+        h["tyre_utilisation"].append(float(np.max(util)) if util.size else float("nan"))
+        h["supervisor_mode"].append((out.diagnostics or {}).get("supervisor_mode"))
         for k, v in (("T_brake_total", float(np.sum(out.T_brake))), ("max_abs_slip", float(np.max(np.abs(tel.kappa)))),
                      ("Mz_tyre_longitudinal", mz_long), ("Mz_tyre_lateral", mz_lat), ("speed", math.hypot(s.vx, s.vy))):
             h[k].append(v)
@@ -216,7 +220,7 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
                      ("status", out.status), ("feasibility", (out.diagnostics or {}).get("feasibility")),
                      ("solver", _solver_report(out.diagnostics or {}))):
             h[k].append(v)
-    h = {k: (np.array(v, dtype=object) if k in ("status", "feasibility", "solver") else np.array(v))
+    h = {k: (np.array(v, dtype=object) if k in ("status", "feasibility", "solver", "supervisor_mode") else np.array(v))
          for k, v in h.items()}
     name = getattr(ctrl, "name", type(ctrl).__name__)
     return RunResult(sc.name, "passive" if controller_factory is None else name, h, compute_kpis(h, sc))

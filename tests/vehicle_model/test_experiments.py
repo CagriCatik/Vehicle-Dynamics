@@ -237,3 +237,46 @@ def test_cli_lists_the_m11_types(capsys):
     assert cli(["list"]) == 0
     out = capsys.readouterr().out
     assert "[equilibrium_analysis]" in out and "[stability_map]" in out
+
+
+def _rb(**over):
+    d = {"type": "robust_benchmark", "name": "tiny_rb", "vehicle": "configs/vehicles/seven_dof_passenger.yaml",
+         "road": {"type": "uniform", "mu": 1.0},
+         "manoeuvre": {"type": "step_steer", "speed_kph": 72, "steer_deg": 1.5, "duration_s": 0.4},
+         "controllers": [{"name": "base", "law": "pi", "baseline": True},
+                         {"name": "rlqr", "law": "robust_lqr", "inputs": "4ws_tv", "alpha": 3,
+                          "supervisor": {"fallback": "pi"}}],
+         "feedback": ["ideal", "sensor_constrained"],
+         "uncertainty": [{"name": "nominal"}, {"name": "soft", "cornering_scale_rear": 0.8, "actuator_delay_s": 0.02}],
+         "workers": 1, "verification": False}
+    d.update(over)
+    return d
+
+
+@pytest.mark.parametrize("override, message", [
+    ({"controllers": [{"name": "a", "law": "h_infinity"}]}, "law must be one of"),
+    ({"controllers": [{"name": "a", "law": "pi", "inputs": "4ws_tv"}]}, "yaw-moment input only"),
+    ({"controllers": [{"name": "a", "law": "pi"}, {"name": "a", "law": "lqr"}]}, "unique"),
+    ({"controllers": [{"name": "a", "law": "pi", "supervisor": {"fallback": "nmpc"}}]}, "fallback must be"),
+    ({"feedback": ["ideal", "telepathic"]}, "feedback must be"),
+    ({"uncertainty": [{"name": "x", "mass": 1.2}]}, "unknown uncertainty keys"),
+    ({"uncertainty": [{"name": "x", "mass_factor": -1}]}, "positive"),
+    ({"manoeuvre": {"type": "split_mu_braking", "speed_kph": 80}}, "manoeuvre.type"),
+])
+def test_robust_benchmark_schema(override, message):
+    with pytest.raises(ValueError, match=message):
+        parse_experiment(_rb(**override))
+
+
+@pytest.mark.slow
+def test_robust_benchmark_runs_matrix_with_baseline_comparison(tmp_path):
+    s = run_experiment(parse_experiment(_rb(), "tiny_rb.yaml"), tmp_path)
+    assert len(s["results"]) == 2 * 2 * 2 and not any(r["error"] for r in s["results"])
+    assert {r["feedback"] for r in s["results"]} == {"ideal", "sensor_constrained"}
+    assert len(s["comparison"]) == 4 and all(c["baseline"] == "base" for c in s["comparison"])
+    assert "rlqr" in s["linear_robustness"] and s["parameter_box"] == {"C_r": (0.8, 1.0)}
+    k = s["results"][0]["kpis"]
+    assert {"yaw_rate_rms_error_degps", "max_tyre_utilisation", "fallback_rate", "degraded_share"} <= set(k)
+    for f in ("results.json", "kpis.csv", "report.md", "matrix_max_sideslip_deg.png", "yaw_rate_histories.png"):
+        assert (tmp_path / f).is_file(), f
+    assert "Relative to the V2.0 baseline" in (tmp_path / "report.md").read_text()

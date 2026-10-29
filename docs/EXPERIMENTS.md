@@ -29,6 +29,7 @@ Der Schlüssel `type` wählt den Experimenttyp; ohne ihn gilt `controller_compar
 | `solver_benchmark` | [`solver_benchmark.py`](../src/vehicle_model/experiments/solver_benchmark.py) | Varianten des dynamischen NMPC auf einem Spurwechsel: Statusanteile, KKT-Residuen, Verbesserung ggü. Warmstart, Iterationen, Rechenzeit, Planzulässigkeit, Folgegüte (Abschnitt 2.1) |
 | `equilibrium_analysis` | [`equilibrium_analysis.py`](../src/vehicle_model/experiments/equilibrium_analysis.py) | Nichtlineare Gleichgewichte über einem Sweep (optional Kurvenschar): Residuen, Jacobi-Matrix mit Schrittweitenstudie, Eigenwerte, Moden, Vergleich linear/nichtlinear (Abschnitt 2.3, [NONLINEAR_STABILITY.md](NONLINEAR_STABILITY.md)) |
 | `stability_map` | [`stability_map.py`](../src/vehicle_model/experiments/stability_map.py) | Rückführregionen je Regler im (β, r)-Raum mit Klassifikationssicherheit, Gitter-, Schrittweiten- und Dauerstudie, Phasenporträts, Grenzfälle, heuristische Phase-Plane-Grenze als Vergleich (Abschnitt 2.4) |
+| `robust_benchmark` | [`robust_benchmark.py`](../src/vehicle_model/experiments/robust_benchmark.py) | Regler × Rückführmodus × Unsicherheitsfall gegen die V2.0-Baseline, Pflichtkennzahlen aus Plan 7.4, lineare Robustheitsanalyse (Abschnitt 2.5, [ROBUST_CONTROL.md](ROBUST_CONTROL.md)) |
 
 Schnittstelle eines Typs: `parse(data, source) -> spec` (unveränderlich, `spec.kind` = Typname), `run(spec, out_dir, verify) -> summary` (mindestens `experiment`, `source`, `provenance`, `verification`, `results`), `describe(spec)` für `list`. Ein unbekannter Typ ist ein Fehler. Die übrigen Typen aus §12 (`monte_carlo`, …) kommen mit ihren Meilensteinen.
 
@@ -46,6 +47,7 @@ variants:
   - {name: "max_iter 15"}
   - {name: "max_iter 100", max_iter: 100}
   - {name: "N 6, max_iter 15", N: 6}
+  - {name: "constraint-aware, max_iter 15", soft_stability_constraints: true, project_inputs: true}
 ```
 
 Schlüssel in `base` und `variants` sind Felder von `DynamicNMPCConfig`; Winkel auch in Grad (`_deg`, `_degps`). Unbekannte Felder, falsche Typen und doppelte Angaben (Grad und Bogenmaß) werden abgewiesen. Ausgaben: `results.json`, `kpis.csv`, `histories/<variante>.csv` (je Schritt Status, Iterationen, Rechenzeit, KKT, Verbesserung, Zulässigkeit), `solver_benchmark.png`, `report.md`.
@@ -57,8 +59,9 @@ Ergebnis des Beispiels (Spurwechsel 3,5 m, 90 km/h, µ = 0,75, 40 Schritte):
 | `max_iter` 15 | 42 / 35 / 22 % | 0,08 / 1,3 | 0,62 / 0,80 s | 0,36 m | 0,57 m |
 | `max_iter` 100 | 100 / 0 / 0 % | 0,05 / 1,1 | 0,70 / 1,6 s | 0,31 m | 0,53 m |
 | N 6, `max_iter` 15 | 80 / 20 / 0 % | 0,03 / 1,3 | 0,18 / 0,33 s | 1,09 m | 1,16 m |
+| constraint-aware (M12), `max_iter` 15 | 75 / 22,5 / 0 % (2,5 % fallback) | 0,13 / 1,2 | 0,52 / 0,90 s | 0,30 m | 0,53 m |
 
-Lesart: Mehr Iterationen machen alle Lösungen `nominal`, ändern aber Folgegüte und KKT-Residuen kaum (Abbruch über die relative Kostenänderung, MOTION_CONTROL.md 3.2). Der kürzere Horizont rechnet 3,5-mal schneller und ist ebenso „gut gelöst“, regelt aber deutlich schlechter (1,2 m Überschwingen): Lösungsgüte des Optimierers und Güte der Regelung sind getrennte Aussagen. Alle Varianten überschwingen um mindestens 0,5 m. Rechenzeiten sind Wanduhrzeiten dieses Rechners; alles andere ist reproduzierbar (Test).
+Lesart: Mehr Iterationen machen alle Lösungen `nominal`, ändern aber Folgegüte und KKT-Residuen kaum (Abbruch über die relative Kostenänderung, MOTION_CONTROL.md 3.2). Der kürzere Horizont rechnet 3,5-mal schneller und ist ebenso „gut gelöst“, regelt aber deutlich schlechter (1,2 m Überschwingen): Lösungsgüte des Optimierers und Güte der Regelung sind getrennte Aussagen. Die constraint-aware Variante aus M12 (weiche Stabilitätsgrenzen mit Schlupfvariablen, Projektion der angewendeten Stellgröße, ROBUST_CONTROL.md 2 E) erreicht mit 15 Iterationen die Folgegüte von 100 Iterationen bei kürzerer Rechenzeit und ohne `degraded`; ihr medianes KKT-Residuum ist höher (das Problem hat mehr Variablen und linearisierte Nebenbedingungen). Alle Varianten überschwingen um mindestens 0,5 m. Rechenzeiten sind Wanduhrzeiten dieses Rechners; alles andere ist reproduzierbar (Test).
 
 ### 2.2 `controller_comparison`
 
@@ -134,6 +137,32 @@ Optional: `criteria` (Zielbereich, Haltezeit, Verlustkriterium, Einschwinggrenze
 `region_comparison.png`, `phase_portraits.png`, `limit_cases.png`, `report.md`. Klassen und Unsicherheitsmaße:
 [NONLINEAR_STABILITY.md](NONLINEAR_STABILITY.md), Abschnitt 3.
 
+### 2.5 `robust_benchmark`
+
+```yaml
+type: robust_benchmark
+name: robust_benchmark_sine_with_dwell
+vehicle: configs/vehicles/seven_dof_passenger.yaml      # nominales Fahrzeug = Entwurf aller Regler
+road: {type: uniform, mu: 1.0}
+manoeuvre: {type: sine_with_dwell, speed_kph: 80, amplitude_deg: 6}   # oder step_steer
+controllers:
+  - {name: V2.0 PI, law: pi, baseline: true}
+  - {name: Robust LQR, law: robust_lqr, inputs: 4ws_tv, alpha: 3}
+  - {name: Supervised Tightening MPC, law: tightening_mpc, inputs: 4ws_tv, supervisor: {fallback: pi}}
+feedback: [ideal, estimated, sensor_constrained]
+uncertainty:
+  - {name: nominal}
+  - {name: worn_rear_tyres, cornering_scale_rear: 0.7}
+  - {name: actuator_delay, actuator_delay_s: 0.04, actuator_tau_s: 0.03, control_latency_s: 0.01}
+```
+
+Gesetze: `passive`, `pi`, `lqr`, `gs_lqr`, `ltv_mpc`, `robust_lqr` (`alpha`), `gs_lqr_dob` (`bandwidth`),
+`tightening_mpc` (`w_max_vy`, `w_max_r`), `adaptive_lqr`; optional `supervisor: {fallback: pi | passive}`.
+Unsicherheitsfelder: `simulation/uncertainty.py` (`FIELDS`). Die Läufe sind unabhängig und laufen parallel
+(`workers`). Ausgaben: `results.json`, `kpis.csv`, `matrix_<kennzahl>.png`, `yaw_rate_histories.png`, `report.md`
+mit Abweichungen je Fall, Reglertabelle, Kennzahlen je Rückführmodus, Vergleich mit der Baseline (inklusive
+Verschlechterungen) und linearer Robustheitsanalyse.
+
 ## 3. Ablauf und Ergebnisse
 
 1. **Modellverifikation** am konfigurierten Fahrzeug, mit seinen Reifen und K&C ([`verification.py`](../src/vehicle_model/experiments/verification.py)):
@@ -169,6 +198,9 @@ Optional: `criteria` (Zielbereich, Haltezeit, Verlustkriterium, Einschwinggrenze
 | `equilibrium_speed_stiffness.yaml` | Typ `equilibrium_analysis`: Geschwindigkeit und Hinterachs-Schräglaufsteifigkeit, kritische Geschwindigkeit |
 | `equilibrium_tv_4ws.yaml` | Typ `equilibrium_analysis`: TV-Giermoment und Hinterachslenkverhältnis, Faltung des Hauptastes |
 | `stability_map_cornering.yaml` | Typ `stability_map`: sechs Reglerkonfigurationen bei 80 km/h, 1°, µ = 0,6 |
+| `robust_benchmark_sine_with_dwell.yaml` | Typ `robust_benchmark`: neun Regler × drei Rückführmodi × sechs Unsicherheitsfälle |
+| `stability_map_robust.yaml` | Typ `stability_map`: Regler aus M12 neben passiv und TV (NONLINEAR_STABILITY.md 4.5) |
+| `stability_map_rear_steer.yaml` | Typ `stability_map`: V2.0 GS-LQR mit und ohne Hinterachslenkung, Robust LQR nur mit Giermoment |
 
 Ergebnis des ersten Beispiels: Verifikation **PASS** (6/6, lineare Referenz 0,05 %). Gierratenverhältnis nach 1,0 s: passiv 0,98 (dreht sich ein), PI 0,006, GS-LQR (4WS+TV) 0,002, LTV-MPC mit Beobachter 0,027.
 
@@ -204,6 +236,6 @@ Installation in der CI: `pip install -e ".[test]"`; pytest ist das optionale Ext
 
 ![solver_benchmark](assets/experiments/solver_benchmark.png)
 
-*Experimenttyp `solver_benchmark`: dynamisches NMPC im Spurwechsel (90 km/h, 3,5 m, µ = 0,75) mit drei Varianten. Links Querposition (alle überschwingen, N = 6 um 1,2 m), Mitte Rechenzeit je Lösung (Wanduhr), rechts KKT-Stationarität relativ zu den Kosten (logarithmisch): auch als `nominal` gemeldete Lösungen erreichen teils Werte um 1. Quelle: `python -m vehicle_model.experiments run configs/experiments/dynamic_nmpc_solver_benchmark.yaml`.*
+*Experimenttyp `solver_benchmark`: dynamisches NMPC im Spurwechsel (90 km/h, 3,5 m, µ = 0,75) mit vier Varianten (die vierte: constraint-aware aus M12). Links Querposition (alle überschwingen, N = 6 um 1,2 m), Mitte Rechenzeit je Lösung (Wanduhr), rechts KKT-Stationarität relativ zu den Kosten (logarithmisch): auch als `nominal` gemeldete Lösungen erreichen teils Werte um 1. Quelle: `python -m vehicle_model.experiments run configs/experiments/dynamic_nmpc_solver_benchmark.yaml`.*
 
 <!-- figures:end -->

@@ -12,6 +12,7 @@ Categories:
     yaw_stability         YAML experiments: controllers on step steer, sine with dwell, split-mu braking
     solver                YAML solver benchmarks: NMPC status, KKT residuals, computation time
     nonlinear_stability   YAML equilibrium analyses and recovery maps (equilibria, eigenvalues, stability regions)
+    robust_control        YAML robust benchmarks: controllers x feedback modes x uncertainty cases
     validation            the validation matrix (configs/validation/matrix.yaml), one scenario at a time
 """
 
@@ -23,7 +24,7 @@ from pathlib import Path
 from typing import Callable
 
 CATEGORIES = ("parking", "four_wheel_steering", "split_mu", "yaw_stability", "solver", "nonlinear_stability",
-              "validation")
+              "robust_control", "validation")
 VEHICLE = "configs/vehicles/seven_dof_passenger.yaml"
 
 
@@ -211,6 +212,12 @@ def _build() -> dict[str, ScenarioEntry]:
                              f"Runs {path} (edit the YAML to change sweep, series, vehicle, tyres, road).",
                              _experiment(str(path)), {}, "~1-3 min",
                              "report.md, equilibria.csv, results.json, equilibria and eigenvalue plots"))
+            continue
+        if kind == "robust_benchmark":
+            entries.append(E(f"exp_{path.stem}", "robust_control", f"Robust benchmark {path.stem}",
+                             f"Runs {path} (edit the YAML to change controllers, feedback modes, uncertainty cases).",
+                             _experiment(str(path)), {}, "~3-5 min (parallel)",
+                             "report.md, kpis.csv, results.json, KPI matrices, yaw-rate histories"))
             continue
         if kind == "stability_map":
             entries.append(E(f"exp_{path.stem}", "nonlinear_stability", f"Stability map {path.stem}",

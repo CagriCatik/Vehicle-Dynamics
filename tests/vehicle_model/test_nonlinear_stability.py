@@ -264,3 +264,13 @@ def test_map_is_reproducible_serial_and_parallel_with_separate_uncertainty():
 def test_heuristic_boundary_is_small_at_the_equilibrium_and_large_far_away():
     S = sr.heuristic_boundary(PROBLEM, np.radians([-0.4, 15.0]), np.radians([7.6, -40.0]))
     assert S[0, 0] < 0.5 and S[1, 1] > 1.0
+
+
+@pytest.mark.parametrize("controller", ["robust_lqr", "gs_lqr_dob", "tightening_mpc", "adaptive_lqr"])
+def test_m12_laws_are_available_in_recovery_maps(controller):
+    """Plan 6.4: the robust controllers of M12 are mapped like the others (designed from the nominal vehicle)."""
+    prob = sr.RecoveryProblem(controller, speed=80 / 3.6, steer=math.radians(1.0), mu=0.6, duration=1.5)
+    ref = sr.reference_state(prob)
+    run = sr.simulate(prob, ref["beta"] + math.radians(2.0), ref["r"], (ref["beta"], ref["r"]))
+    assert run.outcome in sr.OUTCOMES and run.outcome != "numerical_failure", run.error
+    assert controller in sr.CONTROLLER_DESCRIPTIONS

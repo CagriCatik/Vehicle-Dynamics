@@ -60,10 +60,39 @@ def _controllers():
         "tv": lambda p: AllocatedStabilityController(p),
         "ivmc": lambda p: IntegratedChassisController(p),
         "ivmc_no_phase_plane": lambda p: IntegratedChassisController(p, enable_phase_plane=False),
+        # M12 laws (4WS + TV), designed from the linear single track of the nominal vehicle (``design``)
+        "robust_lqr": lambda p, d=None: _motion(p, "robust_lqr", d),
+        "gs_lqr_dob": lambda p, d=None: _motion(p, "gs_lqr_dob", d),
+        "tightening_mpc": lambda p, d=None: _motion(p, "tightening_mpc", d),
+        "adaptive_lqr": lambda p, d=None: _motion(p, "adaptive_lqr", d),
+        # references for the rear-steer question: the unchanged V2.0 GS-LQR (4WS+TV) and yaw-moment-only variants
+        "v2_gs_lqr": lambda p, d=None: _motion(p, "v2_gs_lqr", d),
+        "gs_lqr_tv": lambda p, d=None: _motion(p, "gs_lqr_tv", d),
+        "robust_lqr_tv": lambda p, d=None: _motion(p, "robust_lqr_tv", d),
     }
 
 
-CONTROLLERS = ("passive", "esc", "4ws", "tv", "ivmc", "ivmc_no_phase_plane")
+def _motion(params, law: str, design):
+    from vehicle_model.controllers.motion_control import MotionController
+    from vehicle_model.controllers.robust_laws import (DEFAULT_SPEEDS, AdaptiveLQRYawLaw, DisturbanceObserverLaw,
+                                                       RobustLQRYawLaw, TighteningMPCYawLaw)
+    from vehicle_model.controllers.yaw_laws import INPUTS_4WS_TV, INPUTS_TV, LQRYawLaw
+    if design is None:
+        raise ValueError(f"controller {law!r} needs the nominal design model")
+    laws = {"robust_lqr": lambda: RobustLQRYawLaw(design, INPUTS_4WS_TV, alpha=3.0),
+            "gs_lqr_dob": lambda: DisturbanceObserverLaw(LQRYawLaw(design, INPUTS_4WS_TV, design_speed=None,
+                                                                   schedule_speeds=DEFAULT_SPEEDS), design),
+            "tightening_mpc": lambda: TighteningMPCYawLaw(design, INPUTS_4WS_TV),
+            "adaptive_lqr": lambda: AdaptiveLQRYawLaw(design, INPUTS_4WS_TV),
+            "v2_gs_lqr": lambda: LQRYawLaw(design, INPUTS_4WS_TV, design_speed=None, schedule_speeds=DEFAULT_SPEEDS),
+            "gs_lqr_tv": lambda: LQRYawLaw(design, INPUTS_TV, design_speed=None, schedule_speeds=DEFAULT_SPEEDS),
+            "robust_lqr_tv": lambda: RobustLQRYawLaw(design, INPUTS_TV, alpha=3.0)}
+    return MotionController(params, laws[law]())
+
+
+CONTROLLERS = ("passive", "esc", "4ws", "tv", "ivmc", "ivmc_no_phase_plane", "robust_lqr", "gs_lqr_dob",
+               "tightening_mpc", "adaptive_lqr", "v2_gs_lqr", "gs_lqr_tv", "robust_lqr_tv")
+_NEEDS_DESIGN = ("robust_lqr", "gs_lqr_dob", "tightening_mpc", "adaptive_lqr", "v2_gs_lqr", "gs_lqr_tv", "robust_lqr_tv")
 CONTROLLER_DESCRIPTIONS = {
     "passive": "driver steer, open differential, no control",
     "esc": "front steer by the driver, yaw-rate PI through brake/drive allocation, deadband 2 deg/s",
@@ -71,6 +100,13 @@ CONTROLLER_DESCRIPTIONS = {
     "tv": "torque vectoring: yaw-rate PI through the allocation, no deadband",
     "ivmc": "integrated control (4WS, TV, ABS/TCS, heuristic phase-plane envelope)",
     "ivmc_no_phase_plane": "integrated control without the heuristic phase-plane envelope",
+    "robust_lqr": "M12 A: GS-LQR with prescribed degree of stability alpha = 3 (4WS+TV)",
+    "gs_lqr_dob": "M12 B: GS-LQR (4WS+TV) with yaw disturbance observer",
+    "tightening_mpc": "M12 C: constraint-tightening MPC (4WS+TV)",
+    "adaptive_lqr": "M12 D: adaptive LQR, RLS cornering-stiffness factor (4WS+TV)",
+    "v2_gs_lqr": "V2.0 GS-LQR (4WS+TV) as of M6, unchanged",
+    "gs_lqr_tv": "GS-LQR with yaw moment only (TV)",
+    "robust_lqr_tv": "M12 A with yaw moment only (TV), alpha = 3",
 }
 
 
@@ -167,7 +203,12 @@ def _setup(problem: RecoveryProblem):
         raise ValueError(f"no equilibrium at {problem.speed:.1f} m/s, steer {math.degrees(problem.steer):.2f} deg, "
                          f"mu {problem.mu}: the operating point is beyond the steady-state limit")
     pedal0 = eq.drive_total / (4.0 * m.params.max_drive_torque)
-    return model, _controllers()[problem.controller], eq, pedal0
+    from vehicle_model.handling_analysis import linear_params_from_seven_dof
+    design = linear_params_from_seven_dof(m.params, m.tyre_front, m.tyre_rear)
+    make = _controllers()[problem.controller]
+    if problem.controller in _NEEDS_DESIGN:
+        make = lambda p, make=make: make(p, design)
+    return model, make, eq, pedal0
 
 
 def equilibrium(problem: RecoveryProblem):

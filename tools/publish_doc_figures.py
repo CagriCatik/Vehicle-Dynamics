@@ -106,8 +106,8 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "GS-LQR (4WS+TV) und LTV-MPC mit Beobachter. Quelle: "
          "`python -m vehicle_model.experiments run configs/experiments/sine_with_dwell_comparison.yaml`."),
         ("experiments/dynamic_nmpc_solver_benchmark/solver_benchmark.png",
-         "Experimenttyp `solver_benchmark`: dynamisches NMPC im Spurwechsel (90 km/h, 3,5 m, µ = 0,75) mit drei "
-         "Varianten. Links Querposition (alle überschwingen, N = 6 um 1,2 m), Mitte Rechenzeit je Lösung "
+         "Experimenttyp `solver_benchmark`: dynamisches NMPC im Spurwechsel (90 km/h, 3,5 m, µ = 0,75) mit vier "
+         "Varianten (die vierte: constraint-aware aus M12). Links Querposition (alle überschwingen, N = 6 um 1,2 m), Mitte Rechenzeit je Lösung "
          "(Wanduhr), rechts KKT-Stationarität relativ zu den Kosten (logarithmisch): auch als `nominal` gemeldete "
          "Lösungen erreichen teils Werte um 1. Quelle: "
          "`python -m vehicle_model.experiments run configs/experiments/dynamic_nmpc_solver_benchmark.yaml`."),
@@ -138,8 +138,31 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
         ("experiments/stability_map_cornering/region_comparison.png",
          "Anteil zurückgekehrter Anfangszustände je Regler mit Schranken aus Rand- und empfindlichen Punkten und dem "
          "Anteil auf dem verfeinerten Gitter (Raute). Quelle: wie oben."),
+        ("experiments/stability_map_robust/stability_maps.png",
+         "Rückführregionen der Regler aus M12 (alle mit Hinterachslenkung und Giermoment) neben passiv und TV, gleicher "
+         "Betriebspunkt: Die Regionen schrumpfen auf ein Band um β0 = 0. Quelle: "
+         "`python -m vehicle_model.experiments run configs/experiments/stability_map_robust.yaml`."),
+        ("experiments/stability_map_rear_steer/stability_maps.png",
+         "Ursache: der unveränderte V2.0 GS-LQR mit Hinterachslenkung (33 %) gegen GS-LQR und Robust LQR nur mit "
+         "Giermoment (je 94 %). Quelle: "
+         "`python -m vehicle_model.experiments run configs/experiments/stability_map_rear_steer.yaml`."),
         ("experiments/stability_map_cornering/phase_portraits.png",
          "Phasenporträts (β–r, β–β̇, r–ṙ) für passiv, TV und IVMC; Farbe = Klasse, Punkt = Start. Quelle: wie oben."),
+    ],
+    "ROBUST_CONTROL.md": [
+        ("experiments/robust_benchmark_sine_with_dwell/matrix_max_sideslip_deg.png",
+         "Maximaler Schwimmwinkel je Regler und Unsicherheitsfall in den drei Rückführmodi (logarithmische Farbskala; "
+         "≈ 90° = Kontrollverlust). Die Aktuatorverzögerung destabilisiert alle Gesetze mit hoher Verstärkung; der "
+         "V2.0-PI, die Tightening MPC und die überwachte Variante bleiben beherrschbar. Quelle: "
+         "`python -m vehicle_model.experiments run configs/experiments/robust_benchmark_sine_with_dwell.yaml`."),
+        ("experiments/robust_benchmark_sine_with_dwell/matrix_yaw_rate_rms_error_degps.png",
+         "Gierratenfehler (RMS) gegen die gemeinsame Referenz, gleiche Anordnung. Quelle: wie oben."),
+        ("experiments/robust_benchmark_sine_with_dwell/yaw_rate_histories.png",
+         "Gierrate über der Zeit bei idealer Rückführung, ein Feld je Unsicherheitsfall. Quelle: wie oben."),
+        ("experiments/dynamic_nmpc_solver_benchmark/solver_benchmark.png",
+         "Dynamisches NMPC im Spurwechsel mit der constraint-aware Variante (weiche Stabilitätsgrenzen, Projektion "
+         "der Stellgröße). Quelle: "
+         "`python -m vehicle_model.experiments run configs/experiments/dynamic_nmpc_solver_benchmark.yaml`."),
     ],
     "REAR_WHEEL_STEERING.md": [
         ("four_wheel_steering/parking/u_turn.gif",

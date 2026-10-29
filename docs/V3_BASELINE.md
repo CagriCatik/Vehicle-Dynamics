@@ -106,3 +106,33 @@ Stand: 2026-10-29. Grundlage: [NONLINEAR_STABILITY.md](NONLINEAR_STABILITY.md), 
 - Beobachtet, nicht behoben: ESC und TV klassifizieren identisch (Totband wirkt nur nahe dem Ziel); das 4WS-Kennfeld
   vergrößert die Region nicht.
 
+## 8. Abnahme M12 (Plan §7.5)
+
+Stand: 2026-10-29. Grundlage: [ROBUST_CONTROL.md](ROBUST_CONTROL.md), Experimente `robust_benchmark_sine_with_dwell`
+und `dynamic_nmpc_solver_benchmark`, Tests `test_robust_control.py` und `test_experiments.py`.
+
+| # | Kriterium | Bewertung | Nachweis |
+|---|---|---|---|
+| 1 | Jeder Regler besitzt eine dokumentierte mathematische Formulierung | erfüllt | A–E mit Herleitung im Moduldocstring und in ROBUST_CONTROL.md 2 (Lyapunov-Argument für α, Fehlerdynamik des Beobachters, Tightening-Margen, RLS mit Gültigkeitsbedingungen, exakte Strafe der weichen NMPC-Grenzen); jede Herleitung durch einen Test gegen ihre Aussage geprüft (Eigenwerte ≤ −α, Beobachterzeitkonstante, wachsende und konvergierende Margen, RLS-Konvergenz) |
+| 2 | Der Regler bleibt austauschbar | erfüllt | A–D sind `MotionLaw`s derselben Kette (Referenz, Allokation, ABS/TCS); E ist eine Option des NMPC; die Überwachung umschließt jeden `VehicleController`; im Benchmark per YAML wählbar |
+| 3 | Unabhängige nichtlineare Strecke | erfüllt | 7-DOF-Zweispurmodell mit MF-Reifen; die Gesetze nutzen das lineare Einspurmodell; die Strecke weicht je Fall zusätzlich ab, der Regler bekommt nur die nominalen Parameter |
+| 4 | Keine automatische Neuoptimierung vor jedem Versuch | erfüllt | Entwurf einmal aus dem nominalen Fahrzeug; die Fabrik verwirft die Streckenparameter. Die adaptive Regelung passt zur Laufzeit an (Plan D), aus einer vorab entworfenen Tabelle, ohne Optimierung |
+| 5 | Verbesserungen gegenüber fester V2.0-Baseline nachgewiesen | erfüllt mit Einschränkung | Baseline: PI und GS-LQR aus M6, unverändert. Nachgewiesen: GS-LQR + DOB bei Parameterabweichungen (worn_rear_tyres 2,0 gegen 3,7 °/s), Tightening MPC bei µ = 0,5 (1,6 gegen 2,1 °/s) und ohne Kontrollverlust, constraint-aware NMPC (75 % gegen 42 % `nominal`, 0 % `degraded`). Einschränkung: keine neue Methode ist über alle Fälle besser; 120 von 144 Vergleichen mit dem PI sind auf mindestens einer Folgekennzahl schlechter |
+| 6 | Solver- und Constraint-Fehler bleiben sichtbar | erfüllt | Solverstatus, Zulässigkeitsbericht, Infeasibility Rate, Fallback Rate und Degraded-Anteil je Lauf; die relaxierte Lösung der Tightening MPC wird als unzulässiger Plan gezählt (bis 40 % der Schritte), nicht versteckt; NMPC-Projektion mit Abstand protokolliert; Überwachung mit Modus, Grund und unterdrückten Ausgaben |
+| 7 | Berichte enthalten Fälle, in denen ein fortgeschrittener Regler schlechter abschneidet | erfüllt | Bericht vergleicht jeden Regler mit der Baseline und listet Verschlechterungen; dokumentiert u. a.: Rückführregionen der Gesetze A–D kleiner als die des passiven Fahrzeugs (Hinterachslenkung),  Robust LQR verliert bei µ = 0,5 trotz linearer Reserve die Kontrolle, alle Gesetze hoher Verstärkung bei 80 ms Aktuatorverzögerung, DOB und adaptiver LQR bei gestörten Sensoren im Modus C; dazu die Entwurfsbefunde (DOB mit linearem Modell 14,9°, adaptive Schätzung ohne Gültigkeitsbedingungen 89°) |
+
+**Offene Punkte aus M12:**
+
+- Aktuatorverzögerung ist ungelöst: Ein verzögerungsbewusster Entwurf (Prädiktion über die Totzeit, Smith-Prädiktor
+  oder MPC mit Verzögerungszuständen) fehlt; nur der PI und die Tightening MPC bleiben dort beherrschbar.
+- Lineare Robustheitsnachweise (A, C) decken Sättigung, Reibwert und Verzögerung nicht ab; der Benchmark zeigt die Lücke.
+- Mode-C-Schwächen aus M10 (Gyro-Offset, Reibwertschätzung auf Eis) wirken weiter; DOB und adaptive Schätzung leiden
+  unter Gyro-Bias. Eine Bias-Schätzung im Beobachter wäre der nächste Schritt.
+- ~~Die Robust-Regler sind noch nicht in die Rückführregionen von M11 aufgenommen (Plan 6.4).~~ Aufgenommen
+  (`stability_map_robust`, `stability_map_rear_steer`, NONLINEAR_STABILITY.md 4.5). Befund: Alle Gesetze mit
+  Hinterachslenkung aus dem linearen Entwurf, auch der unveränderte V2.0 GS-LQR, verkleinern die Rückführregion auf
+  23–44 % (passiv 74 %); mit Giermoment allein 94 %. Eine Begrenzung der Hinterachslenkung außerhalb des linearen
+  Bereichs fehlt.
+- Benchmark nur mit Sine with Dwell; weitere Manöver (Lenkwinkelsprung, Split-µ) sind mit derselben Spezifikation
+  möglich, aber noch nicht gerechnet.
+

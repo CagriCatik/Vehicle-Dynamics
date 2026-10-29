@@ -215,6 +215,37 @@ Heuristik also zu optimistisch. Außerhalb kehren 153 Zustände zurück (passiv)
 Rückführbarkeit ist die Heuristik stark konservativ (Übereinstimmung 32 % passiv, 11 % IVMC). Sie bewertet den Abstand
 zur Haftgrenze, nicht die Rückführbarkeit, und taugt in dieser Form nicht als Schätzung der Region.
 
+### 4.5 Rückführregionen der Regler aus M12 und die Rolle der Hinterachslenkung
+
+Plan 6.4 verlangt auch die robusten Regler aus M12. Gleicher Betriebspunkt und gleiches Gitter wie 4.4
+(`stability_map_robust.yaml`, `stability_map_rear_steer.yaml`); alle Regler sind einmal aus dem nominalen Fahrzeug
+entworfen ([ROBUST_CONTROL.md](ROBUST_CONTROL.md)).
+
+| Regler | Stellgrößen | zurückgekehrt | Schranken | Verlust |
+|---|---|---|---|---|
+| passiv | – | 74 % | 64–83 % | 57 |
+| TV (Allokations-PI, 4.4) | Giermoment | 94 % | 89–97 % | 14 |
+| Robust LQR (α = 3) | Hinterachslenkung + Giermoment | 23 % | 9–37 % | 174 |
+| GS-LQR + DOB | Hinterachslenkung + Giermoment | 34 % | 24–45 % | 148 |
+| Tightening MPC | Hinterachslenkung + Giermoment | 44 % | 28–61 % | 123 |
+| Adaptive LQR | Hinterachslenkung + Giermoment | 33 % | 22–44 % | 151 |
+| **V2.0 GS-LQR, unverändert** | Hinterachslenkung + Giermoment | **33 %** | 22–44 % | 151 |
+| GS-LQR, nur Giermoment | Giermoment | 94 % | 89–97 % | 14 |
+| Robust LQR, nur Giermoment | Giermoment | 94 % | 89–97 % | 14 |
+
+Alle Regler mit Hinterachslenkung aus dem linearen Entwurf verkleinern die Region gegenüber dem passiven Fahrzeug
+deutlich; dieselben Gesetze nur mit Giermoment erreichen die 94 % der TV. Ursache ist also nicht das jeweilige
+Verfahren aus M12, sondern die Hinterachslenkung des linearen Entwurfs, und sie betrifft auch die unveränderte
+V2.0-Baseline: Der Entwurf gewichtet den Schwimmwinkel (`q_vy = 20`) und lenkt hinten, um ihn auf null zu bringen. Im
+linearen Bereich (|β0| ≲ 5°) gelingt das; jenseits davon, bei gesättigten Hinterreifen, nimmt die Hinterachslenkung der
+Achse die verbleibende Seitenkraft, und das Fahrzeug dreht sich. Die Regionen zeigen genau dieses Band um β0 = 0.
+
+Für den Gierratenbenchmark (Sine with Dwell aus Geradeausfahrt, [ROBUST_CONTROL.md](ROBUST_CONTROL.md) 5) bleibt das
+unsichtbar, weil dort der Schwimmwinkel klein bleibt: Ein Regler kann im Manöverbenchmark gut und in der
+Rückführregion schlecht sein. Folgerung: Hinterachslenkung aus einem linearen Entwurf braucht eine Begrenzung oder
+Abschaltung außerhalb des linearen Bereichs (z. B. abhängig vom geschätzten Schwimmwinkel oder der Reifenausnutzung);
+sie ist nicht umgesetzt.
+
 ## 5. Grenzen
 
 - Gleichgewichte nur auf gleichmäßiger Fahrbahn; Geschwindigkeit gehalten durch das Antriebsmoment (kein
@@ -251,13 +282,21 @@ zur Haftgrenze, nicht die Rückführbarkeit, und taugt in dieser Form nicht als 
 
 *Konstantes TV-Giermoment und festes Hinterachslenkverhältnis bei 90 km/h, 1°, µ = 0,6: Mit positivem Moment steigt a_y immer steiler bis zu einer Faltung (ab etwa 450 Nm ohne Hinterachslenkung kein Gleichgewicht, Reibkreis der Hinterräder ausgeschöpft); gleichsinnige Hinterachslenkung verschiebt sie. Quelle: `python -m vehicle_model.experiments run configs/experiments/equilibrium_tv_4ws.yaml`.*
 
-![stability_maps](assets/nonlinear_stability/stability_maps.png)
+![stability_maps](assets/nonlinear_stability/stability_map_cornering_stability_maps.png)
 
 *Numerische Rückführregionen bei 80 km/h, 1° gehaltenem Lenkwinkel, µ = 0,6, 15 × 15 Anfangszustände je Regler. Kreuze: empfindliche Punkte (Klasse ändert sich mit halbem Zeitschritt oder doppelter Dauer); gestrichelt: heuristische Phase-Plane-Grenze S = 1. Quelle: `python -m vehicle_model.experiments run configs/experiments/stability_map_cornering.yaml`.*
 
 ![region_comparison](assets/nonlinear_stability/region_comparison.png)
 
 *Anteil zurückgekehrter Anfangszustände je Regler mit Schranken aus Rand- und empfindlichen Punkten und dem Anteil auf dem verfeinerten Gitter (Raute). Quelle: wie oben.*
+
+![stability_maps](assets/nonlinear_stability/stability_map_robust_stability_maps.png)
+
+*Rückführregionen der Regler aus M12 (alle mit Hinterachslenkung und Giermoment) neben passiv und TV, gleicher Betriebspunkt: Die Regionen schrumpfen auf ein Band um β0 = 0. Quelle: `python -m vehicle_model.experiments run configs/experiments/stability_map_robust.yaml`.*
+
+![stability_maps](assets/nonlinear_stability/stability_map_rear_steer_stability_maps.png)
+
+*Ursache: der unveränderte V2.0 GS-LQR mit Hinterachslenkung (33 %) gegen GS-LQR und Robust LQR nur mit Giermoment (je 94 %). Quelle: `python -m vehicle_model.experiments run configs/experiments/stability_map_rear_steer.yaml`.*
 
 ![phase_portraits](assets/nonlinear_stability/phase_portraits.png)
 
