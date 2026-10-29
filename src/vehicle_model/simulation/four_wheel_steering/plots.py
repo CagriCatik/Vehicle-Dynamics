@@ -25,7 +25,8 @@ def plot_4ws_six_scenario_dashboard(
     out_path = Path(output_file)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    v_params = VehicleParams(wheelbase=2.80, width=1.80, length=4.50, tire_radius=0.32, tire_width=0.22, wheel_track=1.60)
+    v_params = VehicleParams(wheelbase=2.80, width=1.80, length=4.50, tire_radius=0.32, tire_width=0.22, wheel_track=1.60,
+                             rear_overhang=0.91, front_overhang=0.79, cog_to_rear_axle=1.5)   # CoG positions, l_r = 1.5 m
 
     fig = plt.figure(figsize=(24, 18), dpi=180, facecolor="#0b1120")
     gs = fig.add_gridspec(3, 2, hspace=0.34, wspace=0.22)
@@ -260,7 +261,8 @@ def plot_4ws_nine_scenario_dashboard(
     out_path = Path(output_file)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    v_params = VehicleParams(wheelbase=2.80, width=1.80, length=4.50, tire_radius=0.32, tire_width=0.22, wheel_track=1.60)
+    v_params = VehicleParams(wheelbase=2.80, width=1.80, length=4.50, tire_radius=0.32, tire_width=0.22, wheel_track=1.60,
+                             rear_overhang=0.91, front_overhang=0.79, cog_to_rear_axle=1.5)   # CoG positions, l_r = 1.5 m
 
     fig = plt.figure(figsize=(26, 22), dpi=180, facecolor="#0b1120")
     gs = fig.add_gridspec(3, 3, hspace=0.36, wspace=0.24)

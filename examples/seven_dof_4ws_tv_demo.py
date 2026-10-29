@@ -211,6 +211,7 @@ def plot_results(
         wheel_track=params.wf,
         rear_overhang=0.9,
         front_overhang=0.9,
+        cog_to_rear_axle=params.lr,   # trajectories are CoG positions
     )
     draw_vehicle_trajectory(
         ax=ax1,

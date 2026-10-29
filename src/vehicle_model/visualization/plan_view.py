@@ -23,11 +23,14 @@ class VehicleParams:
     wheel_track: float | None = None
     rear_overhang: float | None = None
     front_overhang: float | None = None
+    # Reference point of (x, y): None = rear axle centre (default); a distance [m] = (x, y) is the
+    # centre of gravity, this far ahead of the rear axle (l_r). Simulation results give the CoG.
+    cog_to_rear_axle: float | None = None
 
     def __post_init__(self) -> None:
         defaults = _default_vehicle_params()
         for item in fields(self):
-            if getattr(self, item.name) is None:
+            if item.name != "cog_to_rear_axle" and getattr(self, item.name) is None:
                 object.__setattr__(self, item.name, defaults[item.name])
 
     @property
@@ -60,7 +63,7 @@ class VehicleParams:
 
     @classmethod
     def from_seven_dof_params(cls, p: SevenDOFParams) -> VehicleParams:
-        """Create visual representation matching physical SevenDOFParams."""
+        """Create visual representation matching physical SevenDOFParams; (x, y) is the CoG (simulation states)."""
         return cls(
             wheelbase=p.wheelbase,
             width=p.wf + 0.30,
@@ -69,6 +72,7 @@ class VehicleParams:
             tire_width=0.225,
             rear_overhang=p.lr * 0.5,
             front_overhang=p.lf * 0.5,
+            cog_to_rear_axle=p.lr,
         )
 
 
@@ -179,8 +183,17 @@ def vehicle_polygons(
     params: VehicleParams,
     steer_rear: float = 0.0,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Return body, front-right, front-left, rear-right, rear-left polygons."""
+    """Return body, front-right, front-left, rear-right, rear-left polygons (reference point: see VehicleParams)."""
+    x, y = _rear_axle_point(x, y, yaw, params)
     return tuple(_translate_all(_vehicle_parts(params, yaw, steer_front, steer_rear), x, y))
+
+
+def _rear_axle_point(x: float, y: float, yaw: float, p: VehicleParams) -> tuple[float, float]:
+    """Rear axle centre from the given reference point (CoG if ``p.cog_to_rear_axle`` is set)."""
+    d = p.cog_to_rear_axle
+    if not d:
+        return x, y
+    return x - d * math.cos(yaw), y - d * math.sin(yaw)
 
 
 
@@ -265,11 +278,13 @@ def draw_vehicle(
             wheel_track=params.wheel_track * scale,
             rear_overhang=params.rear_overhang * scale,
             front_overhang=params.front_overhang * scale,
+            cog_to_rear_axle=None if params.cog_to_rear_axle is None else params.cog_to_rear_axle * scale,
         )
     else:
         p = params
 
     body, fr, fl, rr, rl = vehicle_polygons(x, y, yaw, steer_front, p, steer_rear=steer_rear)
+    x, y = _rear_axle_point(x, y, yaw, p)   # axles, centre line and arrow below are drawn from the rear axle
 
     if fill:
         body_fill = color or outline_color or colors["outline"]

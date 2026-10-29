@@ -107,3 +107,13 @@ def test_draw_vehicle_trajectory_renders_snapshots() -> None:
         assert len(ax.lines) > 20
     finally:
         plt.close(fig)
+
+
+def test_cog_reference_point_shifts_the_vehicle_back_by_lr() -> None:
+    """Simulation results give the CoG; with cog_to_rear_axle set the body is drawn around it."""
+    rear = VehicleParams()
+    cog = VehicleParams(cog_to_rear_axle=1.5)
+    yaw = 0.4
+    body_rear = vehicle_polygons(0.0, 0.0, yaw, 0.0, rear)[0]
+    body_cog = vehicle_polygons(1.5 * math.cos(yaw), 1.5 * math.sin(yaw), yaw, 0.0, cog)[0]
+    np.testing.assert_allclose(body_cog, body_rear, atol=1e-12)

@@ -174,6 +174,7 @@ def plot_comparison(histories: dict[str, SimulationHistory], output_path: Path) 
         wheel_track=1.60,
         rear_overhang=0.9,
         front_overhang=0.9,
+        cog_to_rear_axle=1.5,   # trajectories are CoG positions (l_r of configs/vehicles/seven_dof_passenger.yaml)
     )
     ax1.axhline(0.0, color=TEXT_MUTED, linestyle=":", alpha=0.5)
     ax1.fill_between([-5, 115], -3.0, 5.0, color=ROAD_COLOR, zorder=0)
