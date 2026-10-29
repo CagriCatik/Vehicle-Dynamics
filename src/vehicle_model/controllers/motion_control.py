@@ -16,7 +16,9 @@ full-state-feedback setting and is declared as such in ``information``.
 
 Output status: the law's solver status if it is not nominal (see
 solver_diagnostics), otherwise the allocation status (nominal / saturated /
-infeasible); both are in the diagnostics.
+infeasible); both are in the diagnostics. A law that checks its plan against declared
+limits (:mod:`.constraints`) reports it as ``diagnostics["feasibility"]``, kept
+separate from both statuses.
 """
 
 from __future__ import annotations
@@ -212,6 +214,7 @@ class MotionController:
                 "at_bound": alloc.at_bound, "grip_limited": alloc.grip_limited,
                 "abs_active": self.actuation.abs.active.copy(), "tcs_active": self.actuation.tcs.active.copy(),
                 "information": self.law.information,
+                "feasibility": req.diagnostics.get("feasibility"),
             },
         )
 

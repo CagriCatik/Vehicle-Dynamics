@@ -276,11 +276,12 @@ def _report(spec: ExperimentSpec, summary: dict) -> str:
     L += ["## Results", ""]
     for point in dict.fromkeys(r["point"] for r in summary["results"]):
         rows = [r for r in summary["results"] if r["point"] == point]
-        keys = [k for k in rows[0]["kpis"] if not isinstance(rows[0]["kpis"][k], dict) and not k.startswith("computation")]
+        keys = [k for k in dict.fromkeys(k for r in rows for k in r["kpis"])
+                if not isinstance(rows[0]["kpis"].get(k), dict) and not k.startswith("computation")]
         L += [f"### {point}", "", "| controller | " + " | ".join(keys) + " | status counts |", "|---" * (len(keys) + 2) + "|"]
         for r in rows:
             st = ", ".join(f"{k}: {v}" for k, v in r["kpis"]["status_counts"].items())
-            L.append(f"| {r['controller']} | " + " | ".join(_fmt(r["kpis"][k]) for k in keys) + f" | {st} |")
+            L.append(f"| {r['controller']} | " + " | ".join(_fmt(r["kpis"].get(k, float("nan"))) for k in keys) + f" | {st} |")
         L.append("")
     L += ["## Information access and limits", "",
           "- Controllers use the vehicle state and the telemetry (wheel loads, lateral forces, road friction): idealised",

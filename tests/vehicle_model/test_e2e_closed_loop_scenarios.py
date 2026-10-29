@@ -159,6 +159,8 @@ def test_e2e_dynamic_nmpc_trajectory_tracking_kamm_circle():
     steps = 40  # 2.0 seconds
     max_kamm_ratio = 0.0
     final_lateral_error = 0.0
+    max_steer_rate = 0.0
+    steer_prev = 0.0
 
     for step_i in range(steps):
         t = step_i * dt_step
@@ -166,7 +168,9 @@ def test_e2e_dynamic_nmpc_trajectory_tracking_kamm_circle():
         y_ref = 3.5 if t >= 0.2 else 0.0
         target = ControlTarget(target_y=y_ref, target_psi=0.0, target_vx=v0, mu_estimated=mu_surface)
 
-        out = nmpc.compute_control(state, target)
+        out = nmpc.compute_control(state, target, dt=dt_step)
+        max_steer_rate = max(max_steer_rate, abs(out.steer_f - steer_prev) / dt_step)
+        steer_prev = out.steer_f
         u_step = SevenDOFControlInput(
             steer_f=out.steer_f,
             steer_r=out.steer_r,
@@ -199,6 +203,12 @@ def test_e2e_dynamic_nmpc_trajectory_tracking_kamm_circle():
     # 3. Output diagnostics should be populated
     assert "kamm_utilization" in out.diagnostics
     assert "peak_kamm" in out.diagnostics
+    # 4. The steering-rate limit is a hard constraint (Plan V3.0 M10 5.1): the applied command respects it,
+    #    and the feasibility of each plan is reported separately from the solver status
+    assert max_steer_rate <= nmpc_cfg.max_steer_rate_radps * (1.0 + nmpc_cfg.tolerance)
+    summary = nmpc.feasibility.summary()
+    assert summary["steps"] == steps and summary["infeasible_steps"] == 0
+    assert out.diagnostics["feasibility"]["feasible"]
 
 
 # ---------------------------------------------------------------------------

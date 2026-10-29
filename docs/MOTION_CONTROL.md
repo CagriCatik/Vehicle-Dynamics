@@ -4,6 +4,7 @@ Module:
 - [`controllers/motion_control.py`](../src/vehicle_model/controllers/motion_control.py): einheitliche Regelkette.
 - [`controllers/yaw_laws.py`](../src/vehicle_model/controllers/yaw_laws.py): PI, LQR, GS-LQR, LTV-MPC.
 - [`controllers/solver_diagnostics.py`](../src/vehicle_model/controllers/solver_diagnostics.py): Solverdiagnostik und Degraded Mode.
+- [`controllers/constraints.py`](../src/vehicle_model/controllers/constraints.py): Constraint-Semantik und Zulässigkeitsprüfung, getrennt vom Solverstatus (V3.0 M10).
 - [`simulation/controller_benchmark.py`](../src/vehicle_model/simulation/controller_benchmark.py): Benchmark.
 
 **M6-Abnahme:** Unterschiedliche Regler werden mit derselben virtuellen Strecke, identischen Szenarien und definierten Kennzahlen verglichen. Siehe Abschnitt 4.
@@ -63,6 +64,35 @@ Jede Lösung wird klassifiziert, für NMPC und LTV-MPC gleich:
 | `degraded` | N aufeinanderfolgende nicht-nominale Lösungen (Vorgabe 5) | wie `fallback`/`suboptimal`; als unzuverlässig gekennzeichnet |
 
 Ein Zeitbudget kann gesetzt werden. SciPy-Solver lassen sich nicht unterbrechen; eine Überschreitung wird deshalb gemeldet (`over_budget`), nicht verhindert. Tests injizieren Solverfehler: erst `fallback` mit verschobenem Plan, dann `degraded`.
+
+### 3.1 Constraint-Semantik und Zulässigkeit (V3.0 M10 §5.1/§5.2)
+
+Ein konvergierter Solver hat seine Kosten im *eigenen* Modell minimiert; ob der Plan die maßgeblichen Grenzen einhält, sagt das nicht. Jeder Regler deklariert seine Grenzen deshalb mit einer eindeutigen Art und prüft den tatsächlich verwendeten Plan nach jeder Lösung dagegen. Der `FeasibilityReport` steht neben dem `SolverReport` in den Diagnosedaten (`diagnostics["feasibility"]`); der Ausgabestatus bleibt der Solverstatus.
+
+| Art | Bedeutung | Folge einer Überschreitung |
+|---|---|---|
+| `hard` | vom Optimierer erzwungen (Schranken, Ungleichungen) | Plan **unzulässig** (`feasible = False`): Defekt oder gescheiterter Fallback |
+| `soft` | darf gegen Kosten (Schlupfvariable) überschritten werden | gemeldet mit Betrag |
+| `penalty` | nur Kostenterm oberhalb einer Schwelle, keine Grenze behauptet | gemeldet als Information |
+| `advisory` | überwacht, ohne Einfluss auf die Optimierung | gemeldet |
+| `plant` | von der Physik der Strecke erzwungen (Reifensättigung) | Plan **nicht realisierbar** (`realisable = False`): er setzt Kräfte voraus, die das Fahrzeug nicht aufbringen kann |
+
+Ein fehlender oder unbekannter Wert ist ein Fehler, kein stilles Bestehen. Ein nicht endlicher Plan ist unzulässig.
+
+| Regler | hard | penalty | plant | advisory |
+|---|---|---|---|---|
+| LTV-MPC | Stellamplituden (BVLS-Schranken) | Stellraten nur über S, ohne Grenze | – | vorhergesagter Schwimmwinkel, Gierrate |
+| Dynamisches NMPC | Lenkwinkel vorn/hinten, Giermoment, Beschleunigung; **Lenkraten** (neu) | Reibkreisausnutzung > 0,90 | Reibkreisausnutzung ≤ 1 | vorhergesagter Schwimmwinkel, Gierrate |
+
+Stabilitätsgrenzen (advisory): $r_\max = \mu g / v$, $\beta_\max = \arctan(0{,}02\,\mu g)$ (≈ 11° bei µ = 1, 2° bei µ = 0,2). Faustregel, nicht aus der Fahrzeugdynamik abgeleitet; modellbasierte Grenzen folgen in M11 (G03).
+
+**Befund Lenkrate (G01):** Das dynamische NMPC hatte eine konfigurierte Lenkratengrenze (`max_steer_rate_radps`, 60°/s), die nur über den Kostenterm wirkte. Im E2E-Spurwechsel (90 km/h, µ = 0,75) betrug die angewendete Vorderachslenkrate bis zu **196°/s**. Die Grenze ist jetzt eine harte lineare Ungleichung; der erste Schritt wird gegen den zuletzt angewendeten Befehl über die Regelperiode gemessen, die übrigen über den Prädiktionsschritt. Folge: angewendete Rate ≤ 60°/s, Querabweichung nach 2 s 0,40 m statt 0,20 m, Rechenzeit unverändert. Toleranz der Prüfung: die SLSQP-Toleranz (`ftol`), weil SLSQP Ungleichungen nur bis dahin erfüllt. `enforce_steer_rate=False` stellt das alte Verhalten her; die Grenze wird dann als `advisory` geprüft und ihre Überschreitung gemeldet.
+
+**Befund Reibkreis:** Die Prädiktion des dynamischen NMPC begrenzt die Längskraft nicht auf $\mu F_z$. Ein Plan kann also Kräfte voraussetzen, die die Reifen nicht übertragen; die Prüfung `friction_utilisation` (plant) meldet das. Im E2E-Spurwechsel tritt es nicht auf (Ausnutzung bis 1,00, Strafterm in 36 von 40 Schritten aktiv).
+
+**Drei getrennte Aussagen im Benchmark:** Solverstatus (`status_counts`), Zulässigkeit des Plans (`plan_infeasible_steps`, `plan_unrealisable_steps`, `plan_advisory_steps`) und Erfüllbarkeit durch die Allokation (Status `infeasible`/`saturated`). Beispiel Sine with Dwell 80 km/h, LTV-MPC (TV): Plan in allen Schritten zulässig, vorhergesagte Gierrate in 289 von 986 Schritten über $\mu g/v$, Allokation in 253 Schritten nicht erfüllbar. Bei der Split-µ-Bremsung ist der Plan stets zulässig, die Allokation aber durchgehend nicht erfüllbar (Select-low-Grenze).
+
+Offen: KKT-Residuen, Kostenverbesserung und Warmstartgüte als Kennzahlen (§5.2); Prüfung für das kinematische NMPC (`nmpc.py`); `soft`-Grenzen mit Schlupfvariablen kommen in keinem Regler vor.
 
 ## 4. Benchmark
 
@@ -125,7 +155,7 @@ Alle Regler halten die Grenzwerte in allen drei Varianten deutlich ein.
 - **LTV-MPC (4WS+TV)** erzeugt im Sine with Dwell nach dem Ende des Lenkeingriffs eine Gierratenspitze von etwa +0,33 rad/s (bei ~2,75 s). Die Gierratenverhältnisse erfassen sie nicht, weil sie erst 1,0 s bzw. 1,75 s nach Lenkende gemessen werden. Eine Kennzahl für den Rückschwinger fehlt noch im Kennzahlensatz.
 - Die Regler arbeiten mit idealer Zustandsinformation, einschließlich Fahrbahnreibwert. Sensor- und Schätzerschicht folgen in M7.
 - **LTV-MPC:** LTI-Modell über den Horizont; nur Box-Grenzen auf den Stellgrößen, keine Zustandsgrenzen; keine formale Stabilitätsgarantie (kein Endkostenterm aus der Riccati-Lösung).
-- **NMPC (Pfadfolge):** Die neue Diagnostik zeigt, dass das dynamische NMPC im anspruchsvollen Spurwechsel des E2E-Tests (90 km/h, µ = 0,75, 15 Iterationen) in 25–48 % der Schritte `degraded` ist. Es erreicht den Zielversatz trotzdem (Y = 3,7–3,9 m bei Soll 3,5 m). Mehr Iterationen oder ein besserer Warmstart sind offen. Das Zeitbudget wird nur gemeldet. Die NMPCs sind nicht im Benchmark, weil sie eine andere Aufgabe lösen (Pfadfolge statt Gierstabilisierung bei Fahrervorgabe).
+- **NMPC (Pfadfolge):** Die neue Diagnostik zeigt, dass das dynamische NMPC im anspruchsvollen Spurwechsel des E2E-Tests (90 km/h, µ = 0,75, 15 Iterationen) in 25–48 % der Schritte `degraded` ist (mit harter Lenkratengrenze und der Regelperiode als `dt`: 20 %, Abschnitt 3.1). Es erreicht den Zielversatz trotzdem (Y = 3,7–3,9 m bei Soll 3,5 m). Mehr Iterationen oder ein besserer Warmstart sind offen. Das Zeitbudget wird nur gemeldet. Die NMPCs sind nicht im Benchmark, weil sie eine andere Aufgabe lösen (Pfadfolge statt Gierstabilisierung bei Fahrervorgabe).
 - Nicht umgesetzt: ein separates Gierraten-PID mit D-Anteil (das PI-Gesetz deckt die Referenz ab).
 - **4WS-Split-µ-Szenario:** in V3.0 (M10 §5.5) als Konfigurationsmatrix aufgelöst, siehe Abschnitt „Split-µ-Konfigurationsmatrix“.
 
@@ -134,5 +164,6 @@ Alle Regler halten die Grenzwerte in allen drei Varianten deutlich ein.
 | Test | Prüfung |
 |---|---|
 | [test_yaw_laws.py](../tests/vehicle_model/test_yaw_laws.py) | Gleichgewicht ist stationärer Punkt; Riccati-Residuum; geschlossener Kreis Hurwitz (alle Geschwindigkeiten); Interpolation und Klemmung der Verstärkungen; LQR und MPC folgen auf ihrem Entwurfsmodell exakt (4WS: Schwimmwinkel 0); Stellgrenzen im ganzen MPC-Plan; Solverausfall → `fallback` → `degraded`; Protokolle; PI-Kette = M5-Regler |
+| [test_constraints.py](../tests/vehicle_model/test_constraints.py) | nur `hard` entscheidet die Zulässigkeit, `plant` die Realisierbarkeit; alle Überschreitungen mit Betrag; fehlende/unbekannte Werte und nicht endliche Pläne; Toleranz; Stabilitätsgrenzen; LTV-MPC meldet Zulässigkeit neben dem Solverstatus; NMPC: harte Lenkrate auf dem angewendeten Befehl (abschaltbar: dann advisory und gemeldet); Bremsplan auf µ = 0,1 als nicht realisierbar erkannt |
 | [test_solver_diagnostics.py](../tests/vehicle_model/test_solver_diagnostics.py) | Klassifikation, Zeitbudget, Erholung; injizierter NMPC-Ausfall nutzt den verschobenen Plan; gemeldetes Giermoment = erzeugtes Moment |
 | [test_controller_benchmark.py](../tests/vehicle_model/test_controller_benchmark.py) | Sine-with-Dwell-Signal; Kennzahlen an einer synthetischen Historie; Reproduzierbarkeit und Unabhängigkeit der Läufe; Abnahme: passiv dreht sich ein, PI und GS-LQR halten die Grenzwerte (Marker `slow`) |

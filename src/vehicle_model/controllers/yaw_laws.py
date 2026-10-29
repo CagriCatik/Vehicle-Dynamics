@@ -23,7 +23,10 @@ LTV-MPC:  the model at the current speed, discretised with zero-order hold, is h
           ``sum q (x - x_ss)^2 + q_z z^2 + (u - u_ss)'R(u - u_ss) + du'S du`` and box
           limits on the inputs, the condensed problem is a bounded linear least-squares
           problem, solved with ``scipy.optimize.lsq_linear`` (BVLS); the solver result
-          is classified by :mod:`.solver_diagnostics`.
+          is classified by :mod:`.solver_diagnostics`. Separately, the plan is checked
+          against the declared limits (:mod:`.constraints`): input amplitudes are hard
+          (BVLS bounds); predicted sideslip and yaw rate against the heuristic stability
+          limits are advisory; input rates are only penalised (S), no limit is claimed.
 """
 
 from __future__ import annotations
@@ -40,6 +43,7 @@ from vehicle_model.controllers.motion_control import (
     MotionContext,
     MotionRequest,
 )
+from vehicle_model.controllers.constraints import ADVISORY, HARD, Constraint, ConstraintSet, FeasibilityMonitor, stability_limits
 from vehicle_model.controllers.solver_diagnostics import NOMINAL, SolverMonitor
 from vehicle_model.core.types import SevenDOFState
 from vehicle_model.handling_analysis import LinearSingleTrack, LinearSingleTrackParams
@@ -222,7 +226,18 @@ class LTVMPCYawLaw:
             weights=LQRWeights(q_vy=0.0 if tuple(inputs) == INPUTS_TV else 20.0, q_z=_MPC_Q_Z))
         self.name = f"LTV-MPC ({'4WS+TV' if self.model.inputs == INPUTS_4WS_TV else 'TV'})"
         self.monitor = SolverMonitor(self.settings.max_consecutive_failures, self.settings.time_budget_ms)
+        self.feasibility = FeasibilityMonitor()
         self.reset()
+
+    def constraints(self, ctx: MotionContext, vx: float) -> ConstraintSet:
+        beta_max, r_max = stability_limits(ctx.mu_hat, vx)
+        units = {"rear_steer": "rad", "yaw_moment": "N m"}
+        return ConstraintSet([
+            *(Constraint(i, HARD, float(lim), unit=units[i], note="BVLS bounds")
+              for i, lim in zip(self.model.inputs, _input_limits(self.model.inputs, ctx))),
+            Constraint("predicted_sideslip", ADVISORY, beta_max, unit="rad", note="heuristic, not enforced"),
+            Constraint("predicted_yaw_rate", ADVISORY, r_max, unit="rad/s", note="mu g / v, not enforced"),
+        ])
 
     def reset(self) -> None:
         m, N = len(self.model.inputs), self.settings.horizon
@@ -230,6 +245,7 @@ class LTVMPCYawLaw:
         self._plan = np.zeros((N, m))   # deviations from u_ss
         self._u_prev = None
         self.monitor.reset()
+        self.feasibility.reset()
 
     def _discrete(self, vx):
         A_a, B_a = self.model.augmented(vx)
@@ -286,6 +302,12 @@ class LTVMPCYawLaw:
         report = self.monitor.classify(ok, x, c_x, cost(warm), msg, nit, solve_ms)
         U = x if report.accepted else warm
         self._plan = U.reshape(N, m)
+        planned = u_ss + self._plan                                  # (N, m) absolute inputs
+        e_pred = (Phi @ e0 + Gam @ U).reshape(N, n)
+        values = {i: planned[:, k] for k, i in enumerate(inputs)}
+        values["predicted_sideslip"] = (e_pred[:, 0] + x_ss[0]) / vx
+        values["predicted_yaw_rate"] = e_pred[:, 1] + x_ss[1]
+        feas = self.feasibility.record(self.constraints(ctx, vx).check(values))
         u = u_ss + self._plan[0]
         u_sat = np.clip(u, -_input_limits(inputs, ctx), _input_limits(inputs, ctx))
         if np.allclose(u_sat, u, rtol=0, atol=1e-9 * (1 + np.abs(u).max())):  # anti-windup
@@ -293,7 +315,8 @@ class LTVMPCYawLaw:
         u = u_sat
         self._u_prev = u
         return _to_request(inputs, u, status=report.status,
-                           diagnostics={"solver": report.as_dict(), "u_ss": u_ss.tolist(), "z": self._z})
+                           diagnostics={"solver": report.as_dict(), "feasibility": feas.as_dict(),
+                                        "u_ss": u_ss.tolist(), "z": self._z})
 
 
 __all__ = (

@@ -155,6 +155,11 @@ def compute_kpis(h: dict, sc: Scenario) -> dict:
     out["computation_ms_max"] = float(np.max(h["computation_ms"]))
     statuses, counts = np.unique(h["status"], return_counts=True)
     out["status_counts"] = {str(s): int(c) for s, c in zip(statuses, counts)}
+    checked = [f for f in h.get("feasibility", ()) if f is not None]
+    if checked:  # constraint feasibility of the plan, counted separately from the solver status (Plan V3.0 M10 5.1)
+        out["plan_infeasible_steps"] = sum(not f["feasible"] for f in checked)
+        out["plan_unrealisable_steps"] = sum(not f["realisable"] for f in checked)
+        out["plan_advisory_steps"] = sum(bool(f["exceeded"].get("advisory")) for f in checked)
     return out
 
 
@@ -169,7 +174,7 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
     tel = None
     keys = ("t", "X", "Y", "psi", "vx", "r", "beta", "r_ref", "steer_f", "steer_r", "Mz_demand",
             "Mz_allocated", "computation_ms", "status", "T_brake_total", "max_abs_slip", "Mz_tyre_longitudinal",
-            "Mz_tyre_lateral", "speed")
+            "Mz_tyre_lateral", "speed", "feasibility")
     pos = model.wheel_positions
     h = {k: [] for k in keys}
     t = 0.0
@@ -193,9 +198,9 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
                      ("beta", math.atan2(s.vy, max(abs(s.vx), 0.1))), ("r_ref", r_ref),
                      ("steer_f", out.steer_f), ("steer_r", out.steer_r), ("Mz_demand", out.desired_yaw_moment),
                      ("Mz_allocated", out.allocated_yaw_moment), ("computation_ms", out.computation_time_ms),
-                     ("status", out.status)):
+                     ("status", out.status), ("feasibility", (out.diagnostics or {}).get("feasibility"))):
             h[k].append(v)
-    h = {k: (np.array(v) if k != "status" else np.array(v, dtype=object)) for k, v in h.items()}
+    h = {k: (np.array(v, dtype=object) if k in ("status", "feasibility") else np.array(v)) for k, v in h.items()}
     name = getattr(ctrl, "name", type(ctrl).__name__)
     return RunResult(sc.name, "passive" if controller_factory is None else name, h, compute_kpis(h, sc))
 
@@ -210,12 +215,12 @@ def kpi_table(results: list[RunResult]) -> str:
     lines = []
     for sc_name in dict.fromkeys(r.scenario for r in results):
         rows = [r for r in results if r.scenario == sc_name]
-        keys = [k for k in rows[0].kpis if k not in ("status_counts",)]
+        keys = [k for k in dict.fromkeys(k for r in rows for k in r.kpis) if k != "status_counts"]
         lines.append(f"\n**{sc_name}**\n")
         lines.append("| controller | " + " | ".join(keys) + " | statuses |")
         lines.append("|---" * (len(keys) + 2) + "|")
         for r in rows:
-            vals = " | ".join(f"{r.kpis[k]:.3g}" for k in keys)
+            vals = " | ".join(f"{r.kpis[k]:.3g}" if k in r.kpis else "–" for k in keys)
             st = ", ".join(f"{k}: {v}" for k, v in r.kpis["status_counts"].items())
             lines.append(f"| {r.controller} | {vals} | {st} |")
     return "\n".join(lines)

@@ -15,11 +15,21 @@ Control Input Vector (u in R^4):
 Features:
 1. Dynamic two-track non-linear prediction model with dynamic normal load transfer.
 2. Combined-slip Magic Formula tyre model; friction-circle utilisation above 0.90 is
-   penalised in the cost (soft penalty, not a hard constraint).
+   penalised in the cost (penalty, not a constraint). The prediction does not cap the
+   longitudinal tyre force at mu F_z, so a plan can rely on forces the vehicle cannot
+   produce; this is checked as a plant limit (utilisation <= 1) and reported.
 3. Single-shooting discretisation (decision variables are the 4N inputs, states are
    rolled out with RK4) with a shifted warm start.
 4. Active four-wheel steering (4WS) and direct yaw moment coordination.
-5. Hard box bounds on input amplitudes; input rates are only penalised in the cost.
+5. Hard box bounds on input amplitudes. Hard steering-rate limits (front and rear) as
+   linear inequalities; the first step is measured against the last applied command
+   over the control period, the others over the prediction step
+   (``enforce_steer_rate=False`` restores the former penalty-only behaviour).
+7. After each solve the plan is checked against the declared limits
+   (:mod:`.constraints`): hard input amplitudes and steering rates, the friction
+   penalty threshold, the plant friction limit, and advisory sideslip and yaw-rate
+   limits. The report is ``diagnostics["feasibility"]``; the output status remains the
+   solver status, so a converged solve with an unrealisable plan stays visible.
 6. Solver outcome classified by :mod:`.solver_diagnostics` (nominal / suboptimal /
    fallback / degraded) and reported as the output status; ``allocated_yaw_moment``
    is the moment produced by the (clipped) wheel-torque split, not the demand.
@@ -44,6 +54,16 @@ from vehicle_model.controllers.framework import (
     ControlTarget,
     VehicleController,
 )
+from vehicle_model.controllers.constraints import (
+    ADVISORY,
+    HARD,
+    PENALTY,
+    PLANT,
+    Constraint,
+    ConstraintSet,
+    FeasibilityMonitor,
+    stability_limits,
+)
 from vehicle_model.controllers.solver_diagnostics import SolverMonitor
 from vehicle_model.core.types import FL, FR, RL, RR, SevenDOFParams, SevenDOFState, WheelTelemetry
 from vehicle_model.vehicle_models.normal_loads import wheel_contact_positions
@@ -64,6 +84,8 @@ class DynamicNMPCConfig:
     max_accel_mps2: float = 4.5                     # Maximum acceleration [m/s^2]
     max_decel_mps2: float = 8.0                     # Maximum deceleration [m/s^2]
     max_steer_rate_radps: float = math.radians(60.0)# Steer slew rate limit [rad/s]
+    enforce_steer_rate: bool = True                 # hard rate constraint; False: penalty only (advisory check)
+    kamm_penalty_threshold: float = 0.90            # friction utilisation above which the cost penalises
     cornering_stiffness_f: float = 45000.0          # Per-wheel front cornering stiffness [N/rad]
     cornering_stiffness_r: float = 48000.0          # Per-wheel rear cornering stiffness [N/rad]
 
@@ -101,6 +123,7 @@ class DynamicNMPCConfig:
             max_accel_mps2=float(cfg.get("max_accel_mps2", 4.5)),
             max_decel_mps2=float(cfg.get("max_decel_mps2", 8.0)),
             max_steer_rate_radps=math.radians(float(cfg.get("max_steer_rate_degps", 60.0))),
+            enforce_steer_rate=bool(cfg.get("enforce_steer_rate", True)),
             cornering_stiffness_f=float(cfg.get("cornering_stiffness_f", 45000.0)),
             cornering_stiffness_r=float(cfg.get("cornering_stiffness_r", 48000.0)),
             q_lat_err=float(cfg.get("q_lat_err", 12.0)),
@@ -141,6 +164,7 @@ class DynamicTwoTrackNMPC(VehicleController):
         self.u_prev = np.zeros(self.n_dec, dtype=np.float64)
         self.last_u = np.zeros(self.n_inputs, dtype=np.float64)
         self.monitor = SolverMonitor(self.config.max_consecutive_failures, self.config.time_budget_ms)
+        self.feasibility = FeasibilityMonitor()
 
     @property
     def name(self) -> str:
@@ -151,6 +175,63 @@ class DynamicTwoTrackNMPC(VehicleController):
         self.u_prev.fill(0.0)
         self.last_u.fill(0.0)
         self.monitor.reset()
+        self.feasibility.reset()
+
+    def constraints(self, mu: float, vx: float) -> ConstraintSet:
+        """Declared limits and their kinds (see :mod:`.constraints`)."""
+        c = self.config
+        beta_max, r_max = stability_limits(mu, vx)
+        rate_kind = HARD if c.enforce_steer_rate else ADVISORY
+        rate_tol = c.tolerance if c.enforce_steer_rate else 1e-6    # SLSQP satisfies inequalities to its tolerance
+        return ConstraintSet([
+            Constraint("steer_front", HARD, c.max_steer_front_rad, unit="rad", note="SLSQP bounds"),
+            Constraint("steer_rear", HARD, c.max_steer_rear_rad, unit="rad", note="SLSQP bounds"),
+            Constraint("yaw_moment", HARD, c.max_yaw_moment_nm, unit="N m", note="SLSQP bounds"),
+            Constraint("accel", HARD, c.max_accel_mps2, lower=-c.max_decel_mps2, unit="m/s^2", note="SLSQP bounds"),
+            Constraint("steer_rate_front", rate_kind, c.max_steer_rate_radps, unit="rad/s", rel_tol=rate_tol,
+                       note="linear inequalities" if c.enforce_steer_rate else "configured, only penalised"),
+            Constraint("steer_rate_rear", rate_kind, c.max_steer_rate_radps, unit="rad/s", rel_tol=rate_tol,
+                       note="linear inequalities" if c.enforce_steer_rate else "configured, only penalised"),
+            Constraint("friction_penalty", PENALTY, c.kamm_penalty_threshold, lower=0.0,
+                       note="cost term above the threshold, no limit claimed"),
+            Constraint("friction_utilisation", PLANT, 1.0, lower=0.0,
+                       note="the plant tyres saturate; a predicted value above 1 is not realisable"),
+            Constraint("predicted_sideslip", ADVISORY, beta_max, unit="rad", note="heuristic, not enforced"),
+            Constraint("predicted_yaw_rate", ADVISORY, r_max, unit="rad/s", note="mu g / v, not enforced"),
+        ])
+
+    def predict(self, x0: np.ndarray, u_vec: np.ndarray, mu: float) -> Tuple[np.ndarray, np.ndarray]:
+        """Roll the prediction model out: states after each step (N, 6) and friction utilisation (N, 4)."""
+        x_k, states, kamm = x0.copy(), [], []
+        for k in range(self.config.N):
+            x_k, kamm_k = self.rk4_step(x_k, u_vec[k * 4:(k + 1) * 4], self.config.dt_pred, mu)
+            states.append(x_k)
+            kamm.append(kamm_k)
+        return np.array(states), np.array(kamm)
+
+    def _steer_rates(self, u_vec: np.ndarray, u_last: np.ndarray, dt: float) -> Tuple[np.ndarray, np.ndarray]:
+        """Steering rates over the plan: first step against the last applied command over the control period."""
+        U = u_vec.reshape(self.config.N, self.n_inputs)[:, :2]
+        d = np.diff(np.vstack([u_last[:2], U]), axis=0)
+        steps = np.r_[dt, np.full(self.config.N - 1, self.config.dt_pred)]
+        rates = d / steps[:, None]
+        return rates[:, 0], rates[:, 1]
+
+    def _rate_constraint(self, u_last: np.ndarray, dt: float) -> dict:
+        """|u_k - u_{k-1}| <= rate * step for front and rear steer, as SLSQP linear inequalities."""
+        N, m = self.config.N, self.n_inputs
+        D = np.zeros((2 * N, N * m))
+        off = np.zeros(2 * N)
+        for j in range(2):                       # 0 front, 1 rear steer
+            for k in range(N):
+                D[j * N + k, k * m + j] = 1.0
+                if k > 0:
+                    D[j * N + k, (k - 1) * m + j] = -1.0
+            off[j * N] = u_last[j]
+        lim = self.config.max_steer_rate_radps * np.tile(np.r_[dt, np.full(N - 1, self.config.dt_pred)], 2)
+        G = np.vstack([-D, D])
+        return {"type": "ineq", "fun": lambda u: np.r_[lim - (D @ u - off), lim + (D @ u - off)],
+                "jac": lambda u: G}
 
     def continuous_dynamics(
         self,
@@ -374,8 +455,8 @@ class DynamicTwoTrackNMPC(VehicleController):
 
                 # Kamm circle friction barrier penalty
                 for ratio in kamm_ratios:
-                    if ratio > 0.90:
-                        cost += cfg.w_kamm_circle * ((ratio - 0.90) ** 2)
+                    if ratio > cfg.kamm_penalty_threshold:
+                        cost += cfg.w_kamm_circle * ((ratio - cfg.kamm_penalty_threshold) ** 2)
 
             return float(cost)
 
@@ -386,6 +467,7 @@ class DynamicTwoTrackNMPC(VehicleController):
             x0=u_init,
             method="SLSQP",
             bounds=bounds,
+            constraints=[self._rate_constraint(self.last_u, dt)] if cfg.enforce_steer_rate else (),
             options={"maxiter": cfg.max_iter, "ftol": cfg.tolerance, "disp": False},
         )
         solve_ms = (time.perf_counter() - t_solve) * 1e3
@@ -397,7 +479,20 @@ class DynamicTwoTrackNMPC(VehicleController):
         report = self.monitor.classify(bool(res.success), x_res, cost_res, cost_init, str(res.message),
                                        int(getattr(res, "nit", 0)), solve_ms)
         u_opt = x_res if report.accepted else u_init
+        u_last_applied = self.last_u.copy()
         self.u_prev = u_opt.copy()
+
+        # Feasibility of the plan actually used, judged separately from the solver status
+        x_pred, kamm_pred = self.predict(x0, u_opt, mu_cur)
+        U = u_opt.reshape(N, self.n_inputs)
+        rate_f, rate_r = self._steer_rates(u_opt, u_last_applied, dt)
+        feas = self.feasibility.record(self.constraints(mu_cur, state.vx).check({
+            "steer_front": U[:, 0], "steer_rear": U[:, 1], "yaw_moment": U[:, 2], "accel": U[:, 3],
+            "steer_rate_front": rate_f, "steer_rate_rear": rate_r,
+            "friction_penalty": kamm_pred, "friction_utilisation": kamm_pred,
+            "predicted_sideslip": np.arctan2(x_pred[:, 4], np.maximum(1.5, np.abs(x_pred[:, 3]))),
+            "predicted_yaw_rate": x_pred[:, 5],
+        }))
 
         # First control action: [delta_f, delta_r, Mz_tv, ax_req]
         u_0 = u_opt[:4]
@@ -451,5 +546,7 @@ class DynamicTwoTrackNMPC(VehicleController):
                 "solver_iterations": report.iterations,
                 "solver": report.as_dict(),
                 "solver_counts": dict(self.monitor.counts),
+                "feasibility": feas.as_dict(),
+                "feasibility_summary": self.feasibility.summary(),
             },
         )
