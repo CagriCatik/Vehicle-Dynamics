@@ -33,6 +33,7 @@ from pathlib import Path
 import yaml
 
 LAWS = ("passive", "pi", "lqr", "gs_lqr", "ltv_mpc")
+FEEDBACK_MODES = ("ideal", "estimated", "sensor_constrained")
 _LAW_NAMES = {"pi": "PI", "lqr": "LQR", "gs_lqr": "GS-LQR", "ltv_mpc": "LTV-MPC"}
 INPUT_SETS = ("tv", "4ws_tv")
 ROADS = {"uniform": {"mu"}, "split_mu": {"mu_left", "mu_right"}}
@@ -51,14 +52,18 @@ _TOP = {"name", "description", "vehicle", "tyres", "kc", "road", "manoeuvre", "c
 class ControllerSpec:
     law: str
     inputs: str = "tv"
-    estimated_state: bool = False
+    feedback: str = "ideal"         # Plan V3.0 M10 5.4: ideal (Mode A), estimated (B), sensor_constrained (C)
+
+    @property
+    def estimated_state(self) -> bool:
+        return self.feedback != "ideal"
 
     @property
     def label(self) -> str:
         if self.law == "passive":
             return "passive"
         lab = f"{_LAW_NAMES[self.law]} ({self.inputs.replace('_', '+').upper()})"
-        return lab + " + observer" if self.estimated_state else lab
+        return lab + {"ideal": "", "estimated": " + observer", "sensor_constrained": " + sensors only"}[self.feedback]
 
 
 @dataclass(frozen=True)
@@ -90,7 +95,7 @@ class ExperimentSpec:
         d = {"name": self.name, "vehicle": self.vehicle, "tyres": dict(self.tyres), "road": dict(self.road),
              "manoeuvre": dict(self.manoeuvre), "dt": self.dt, "seed": self.seed, "outputs": dict(self.outputs),
              "verification": self.verification, "description": self.description,
-             "controllers": [{"law": c.law, "inputs": c.inputs, "estimated_state": c.estimated_state} for c in self.controllers]}
+             "controllers": [{"law": c.law, "inputs": c.inputs, "feedback": c.feedback} for c in self.controllers]}
         if self.kc:
             d["kc"] = self.kc
         if self.sweep:
@@ -134,14 +139,18 @@ def parse_experiment(data: dict, source: str = "<dict>") -> ExperimentSpec:
     _require(isinstance(ctrls, list) and ctrls, f"{source}: controllers must be a non-empty list")
     specs = []
     for i, c in enumerate(ctrls):
-        _keys(c, {"law", "inputs", "estimated_state"}, f"{source}: controllers[{i}]", {"law"})
+        _keys(c, {"law", "inputs", "estimated_state", "feedback"}, f"{source}: controllers[{i}]", {"law"})
         _require(c["law"] in LAWS, f"{source}: controllers[{i}].law must be one of {LAWS}")
         inputs = c.get("inputs", "tv")
         _require(inputs in INPUT_SETS, f"{source}: controllers[{i}].inputs must be one of {INPUT_SETS}")
         _require(not (c["law"] == "pi" and inputs != "tv"), f"{source}: controllers[{i}]: the PI law has yaw-moment input only")
-        est = bool(c.get("estimated_state", False))
-        _require(not (est and c["law"] == "passive"), f"{source}: controllers[{i}]: passive has no state feedback")
-        specs.append(ControllerSpec(c["law"], inputs, est))
+        est = c.get("estimated_state", False)
+        _require(isinstance(est, bool), f"{source}: controllers[{i}].estimated_state must be true or false")
+        feedback = c.get("feedback", "estimated" if est else "ideal")
+        _require(feedback in FEEDBACK_MODES, f"{source}: controllers[{i}].feedback must be one of {FEEDBACK_MODES}")
+        _require(not (est and feedback == "ideal"), f"{source}: controllers[{i}]: estimated_state: true contradicts feedback: ideal")
+        _require(not (feedback != "ideal" and c["law"] == "passive"), f"{source}: controllers[{i}]: passive has no state feedback")
+        specs.append(ControllerSpec(c["law"], inputs, feedback))
 
     sweep = data.get("sweep")
     if sweep is not None:

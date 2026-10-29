@@ -96,7 +96,10 @@ def controller_factories(spec: ExperimentSpec) -> dict:
             else:
                 law = LTVMPCYawLaw(design, inputs)
             ctrl = MotionController(p, law)
-            return EstimatedStateFeedback(ctrl, BlendedSideslipObserver(p), seed=spec.seed) if c.estimated_state else ctrl
+            if c.feedback == "ideal":
+                return ctrl
+            return EstimatedStateFeedback(ctrl, BlendedSideslipObserver(p), seed=spec.seed,
+                                          mode="C" if c.feedback == "sensor_constrained" else "B", params=p)
         out[c.label] = factory
     return out
 
@@ -286,7 +289,8 @@ def _report(spec: ExperimentSpec, summary: dict) -> str:
     L += ["## Information access and limits", "",
           "- Controllers use the vehicle state and the telemetry (wheel loads, lateral forces, road friction): idealised",
           "  full-state feedback, except where marked `+ observer` (motion state from virtual sensors and the blended",
-          "  sideslip observer; allocation and slip control still use the telemetry).",
+          "  sideslip observer; allocation and slip control still use the telemetry) and `+ sensors only` (Mode C:",
+          "  wheel loads, forces, slips and road friction are estimated from the sensors as well).",
           "- Model-based laws use the linear single track of the configured vehicle without K&C as design model.",
           "- Sine with dwell is modelled on FMVSS 126 (limits 0.35 / 0.20 / 1.83 m); it is a simulation, not the regulatory test.",
           "- Computation times are wall clock and not reproducible; all other results are (same specification, same code).", ""]

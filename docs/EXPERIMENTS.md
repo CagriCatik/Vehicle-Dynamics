@@ -44,7 +44,8 @@ outputs: {directory: output/experiments/x, formats: [csv, json, png, md]}   # gi
 | `manoeuvre.type` | `step_steer` (`speed_kph`, `steer_deg`, `duration_s`), `sine_with_dwell` (`speed_kph`, `amplitude_deg`), `split_mu_braking` (`speed_kph`) |
 | `controllers[].law` | `passive`, `pi`, `lqr`, `gs_lqr`, `ltv_mpc` |
 | `controllers[].inputs` | `tv`, `4ws_tv` (nicht für `pi`) |
-| `controllers[].estimated_state` | Rückführung über virtuelle Sensoren und den gemischten Schwimmwinkelbeobachter (M7) |
+| `controllers[].feedback` | `ideal` (Mode A, Standard), `estimated` (Mode B: Bewegung aus Sensoren und Beobachter), `sensor_constrained` (Mode C: zusätzlich Radlasten, Kräfte, Schlüpfe und Reibwert aus Sensoren); siehe ESTIMATION_ROBUSTNESS.md 2.1 |
+| `controllers[].estimated_state` | Kurzform: `true` = `feedback: estimated` |
 | `sweep.parameter` | `manoeuvre.<Schlüssel>` oder `road.<Schlüssel>`; jeder Punkt wird einzeln validiert |
 
 Die Validierung ist streng: Unbekannte Schlüssel, unbekannte Werte, fehlende Dateien und Werte außerhalb der Grenzen führen zu einem `ValueError` mit dem betroffenen Pfad. Ein Tippfehler fällt so nie still auf einen Standardwert zurück.

@@ -108,6 +108,9 @@ class SensorFrictionEstimator:
         self._r_dot = 0.0
         self.last_sensitivity = np.zeros(4)
         self.last_forces = (np.zeros(4), np.zeros(4), np.zeros(4))
+        self.last_slips = (np.zeros(4), np.zeros(4))
+        self.last_wheel_velocity = (np.zeros(4), np.zeros(4))
+        self.valid = False                    # True once a step with a speed reference has been processed
 
     # ------------------------------------------------------------------ pieces
     def _derivatives(self, meas: SensorMeasurements, dt: float) -> None:
@@ -158,6 +161,7 @@ class SensorFrictionEstimator:
         v_wy = -vxb * np.sin(steer) + vyb * np.cos(steer)
         kappa = (meas.omega * self.params.Reff - v_wx) / np.maximum(np.abs(v_wx), 0.5)
         alpha = -np.arctan2(v_wy, np.maximum(np.abs(v_wx), 0.5))
+        self.last_wheel_velocity = (v_wx, v_wy)
         return kappa, alpha
 
     def _invert(self, F, psi, Fz):
@@ -194,6 +198,8 @@ class SensorFrictionEstimator:
         mu_sample, sens = self._invert(F, psi, Fz)
         self.last_sensitivity = sens
         self.last_forces = (Fx, Fy, Fz)
+        self.last_slips = (kappa, alpha)
+        self.valid = True
         use = (sens > c.min_sensitivity) & (self.utilisation > c.min_utilisation) & (psi / Fz > c.min_slip_excitation)
         w = np.where(use, sens, 0.0)
         new_weight = self.weight + w
@@ -201,6 +207,30 @@ class SensorFrictionEstimator:
         self.weight = new_weight
         self.mu = np.clip(np.maximum(self.mu, np.minimum(self.utilisation, c.mu_max)), c.mu_min, c.mu_max)
         return self._estimate()
+
+    def as_telemetry(self, meas: SensorMeasurements):
+        """Wheel quantities for allocation and slip control, from sensors and this estimator only (Mode C).
+
+        ``None`` until a speed reference exists (consumers then fall back to nominal loads
+        and the target's friction estimate). Approximations, declared: wheel loads
+        quasi-static from measured accelerations; longitudinal forces from the wheel
+        dynamics and the *commanded* torques; lateral forces are the axle forces of the
+        single-track balance split by load and used as wheel-frame forces; slips from
+        the speed reference and the sideslip estimate; friction is the estimate (prior
+        until excited, see ``confidence_per_wheel``).
+        """
+        from vehicle_model.core.types import WheelTelemetry
+
+        if not self.valid:
+            return None
+        Fx, Fy, Fz = self.last_forces
+        kappa, alpha = self.last_slips
+        v_wx, v_wy = self.last_wheel_velocity
+        steer = np.array([meas.steer_f, meas.steer_f, meas.steer_r, meas.steer_r])
+        c, s = np.cos(steer), np.sin(steer)
+        return WheelTelemetry(omega=meas.omega.copy(), v_wx=v_wx.copy(), v_wy=v_wy.copy(), kappa=kappa.copy(),
+                              alpha=alpha.copy(), Fz=Fz.copy(), mu=self.mu.copy(), Fx_wheel=Fx.copy(), Fy_wheel=Fy.copy(),
+                              Fx_body=c * Fx - s * Fy, Fy_body=s * Fx + c * Fy, steer_angles=steer)
 
     def _estimate(self) -> FrictionEstimate:
         conf = 1.0 - np.exp(-self.weight)          # 0 without information, -> 1 with accumulated excitation

@@ -34,7 +34,37 @@ Jeder Beobachter deklariert `information`:
 | `BlendedSideslipObserver` (neu) | `sensors_only` |
 | `RoadFrictionEstimator` | `ground_truth_tyre_forces`: liest Reifenkräfte, Schlüpfe und Radlasten aus der Telemetrie. Kein Fahrzeugsensor liefert diese Größen; der Schätzer ist deshalb eine Referenz mit idealer Information, kein realisierbarer Schätzer. |
 
-`run_estimation_study` übergibt Beobachtern ausschließlich `SensorMeasurements` (ohne Positionen, Schwimmwinkel, Schlüpfe oder Kräfte) und weist Beobachter ohne `sensors_only` ab. Die Wahrheit nutzt nur die Fehlermetrik. `EstimatedStateFeedback` speist einen beliebigen Regler mit $v_x$ und $v_y$ aus dem Beobachter und der gemessenen Gierrate. Allokation und Schlupfregelung nutzen weiter die Telemetrie; das ist entsprechend deklariert.
+`run_estimation_study` übergibt Beobachtern ausschließlich `SensorMeasurements` (ohne Positionen, Schwimmwinkel, Schlüpfe oder Kräfte) und weist Beobachter ohne `sensors_only` ab. Die Wahrheit nutzt nur die Fehlermetrik. `EstimatedStateFeedback` speist einen beliebigen Regler mit $v_x$ und $v_y$ aus dem Beobachter und der gemessenen Gierrate.
+
+### 2.1 Betriebsarten A, B, C (V3.0 M10 §5.4)
+
+| Mode | Umsetzung | Regler erhält | `information` |
+|---|---|---|---|
+| A – Ideal Feedback | Regler ohne Hülle | wahrer Zustand und Telemetrie der Strecke | `full_state_ideal` |
+| B – Estimated Motion State | `EstimatedStateFeedback(..., mode="B")` | $v_x$, $v_y$ aus dem Beobachter, gemessene Gierrate; Allokation und Schlupfregelung weiter mit Telemetrie | `estimated_motion_state; …` |
+| C – Sensor-Constrained | `EstimatedStateFeedback(..., mode="C")` | wie B; statt der Telemetrie eine **Sensor-Telemetrie** aus `SensorFrictionEstimator.as_telemetry`: Radlasten quasi-statisch aus gemessenen Beschleunigungen, Längskräfte aus Raddynamik und den *eigenen* Momentenbefehlen, Seitenkräfte aus der Einspurbilanz nach Last aufgeteilt, Schlüpfe aus Geschwindigkeitsreferenz und Schwimmwinkelschätzung, Reibwert geschätzt | `sensor_constrained; …` |
+
+In Mode C erreicht nichts von der Strecke den Regler außer über das Sensormodell; ein Test mit einem aufzeichnenden Regler prüft, dass das Telemetrieobjekt der Strecke nie durchgereicht wird. Vor der Initialisierung der Geschwindigkeitsreferenz erhält der Regler `None` und rechnet mit Nennlasten und `target.mu_estimated`. In YAML-Experimenten: `feedback: ideal | estimated | sensor_constrained` (`estimated_state: true` bleibt als Kurzform für `estimated` gültig).
+
+**Gemessene Kosten** (synthetisches Fahrzeug, Sensorrauschen und Gyro-Offset nach den Standardwerten von `SensorConfig`, Seed 3):
+
+| Regler | Szenario | Kennwert | A | B | C |
+|---|---|---|---|---|---|
+| PI (TV) | Sine with Dwell 80 km/h | Gierratenverhältnis 1 s / Querversatz | 0,008 / 3,12 m | 0,007 / 3,04 m | 0,007 / 3,25 m |
+| PI (TV) | Vollbremsung Eis (µ 0,2) aus 90 km/h | Bremsweg / Gierwinkel / max. Schlupf | 151 m / 0,0° / 0,03 | 175 m / −5,2° / 0,03 | 192 m / −6,0° / 0,21 |
+| PI (TV) | Split-µ-Vollbremsung 90 km/h | Bremsweg / Gierwinkel / Querversatz | 151 m / 0,0° / 0,01 m | 172 m / −5,1° / 5,6 m | 233 m / −6,2° / 9,9 m |
+| IVMC | Sine with Dwell 80 km/h | Gierratenverhältnis 1 s / Querversatz | 0,000 / 3,43 m | 0,006 / 3,38 m | 0,006 / 3,37 m |
+| IVMC | Vollbremsung Eis | Bremsweg / Gierwinkel / max. Schlupf | 151 m / 0,0° / 0,03 | 230 m / −2,5° / 0,03 | 190 m / −2,3° / 0,97 |
+| IVMC | Split-µ-Vollbremsung 90 km/h | Bremsweg / Gierwinkel / Querversatz | 132 m / 6,6° / 0,61 m | 158 m / −1,8° / 2,1 m | 177 m / 0,1° / 2,3 m |
+
+Befunde:
+
+1. **Gyro-Offset (Mode B und C).** Der Drehratensensor hat 0,45°/s Offset. Der Gierregler regelt diese scheinbare Gierrate mit einem echten Giermoment aus: Bei der Eisbremsung dreht das Fahrzeug um −5°. Ohne Offset 0,35°, ohne Offset und Rauschen 0,0° und 151 m. Das Rauschen kostet weitere 15 m Bremsweg, weil das Gesetz es in Giermomentwünsche umsetzt und die Allokation dafür Bremskraft abgibt. Offset-Kompensation (Stillstand, Geradeausfahrt) und Totzone fehlen; das ist ein Schätz- und Robustheitsthema für M12.
+2. **Reibwert auf Eis überschätzt (Mode C).** Der Schätzer liefert 0,30–0,47 auf µ = 0,2. Die Schlupfregelung wählt danach einen zu großen Sollschlupf und bremst bei ≈ 0,11 statt 0,03 Schlupf, jenseits des Kraftmaximums: weniger Verzögerung.
+3. **Geschwindigkeitsreferenz** (Mode C): bei Dauerbremsung aller Räder nur über die integrierte Längsbeschleunigung gestützt; im PI-Fall bis zu 2,7 m/s über der wahren Geschwindigkeit (die bekannte Beobachtbarkeitsgrenze, Abschnitt 3a).
+4. **Blockieren unter ≈ 14 km/h** (IVMC, Mode C): Schlupf bis 0,97 bei 2–4 m/s, darüber 0,07–0,12. Die Schlupfnormierung und die Referenz werden bei kleiner Geschwindigkeit ungenau.
+
+Mode C ist damit strukturell erfüllt (keine undeklarierten Ground-Truth-Zugriffe) und stabil im Sine with Dwell, aber merklich schwächer beim Bremsen. Diese Fälle sind dokumentiert und nicht weggerechnet.
 
 ## 3. Schwimmwinkelschätzung
 
