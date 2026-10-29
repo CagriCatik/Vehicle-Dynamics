@@ -1,6 +1,8 @@
-"""Experiment specification from YAML (Plan.md M9).
+"""Experiment specification from YAML (Plan.md M9; experiment types: Plan V3.0 §12).
 
-An experiment selects vehicle, tyres, optional K&C, road, manoeuvre, controllers,
+:func:`load_experiment` and :func:`parse_experiment` dispatch on the top-level key
+``type`` (:mod:`.types`); this module defines the default type
+``controller_comparison``. Such an experiment selects vehicle, tyres, optional K&C, road, manoeuvre, controllers,
 an optional parameter sweep, the seed and the outputs. Validation is strict:
 unknown keys or values raise ``ValueError`` with the offending path, so a typo
 cannot silently fall back to a default.
@@ -44,7 +46,7 @@ MANOEUVRES = {
 }
 FORMATS = ("csv", "json", "png", "md", "gif")
 DEFAULT_FORMATS = ("csv", "json", "png", "md")  # gif is opt-in (rendering time)
-_TOP = {"name", "description", "vehicle", "tyres", "kc", "road", "manoeuvre", "controllers", "sweep", "dt",
+_TOP = {"type", "name", "description", "vehicle", "tyres", "kc", "road", "manoeuvre", "controllers", "sweep", "dt",
         "seed", "outputs", "verification"}
 
 
@@ -82,6 +84,7 @@ class ExperimentSpec:
     verification: bool = True
     description: str = ""
     source: str = ""
+    kind = "controller_comparison"          # experiment type (class attribute, not a field)
 
     def with_parameter(self, path: str, value) -> ExperimentSpec:
         """Copy with ``section.key`` set (used by sweeps), validated again."""
@@ -89,10 +92,10 @@ class ExperimentSpec:
         data = self.to_dict()
         data[section] = dict(data[section], **{key: value})
         data.pop("sweep", None)
-        return parse_experiment(data, self.source)
+        return parse_controller_comparison(data, self.source)
 
     def to_dict(self) -> dict:
-        d = {"name": self.name, "vehicle": self.vehicle, "tyres": dict(self.tyres), "road": dict(self.road),
+        d = {"type": self.kind, "name": self.name, "vehicle": self.vehicle, "tyres": dict(self.tyres), "road": dict(self.road),
              "manoeuvre": dict(self.manoeuvre), "dt": self.dt, "seed": self.seed, "outputs": dict(self.outputs),
              "verification": self.verification, "description": self.description,
              "controllers": [{"law": c.law, "inputs": c.inputs, "feedback": c.feedback} for c in self.controllers]}
@@ -116,7 +119,19 @@ def _keys(d: dict, allowed: set, where: str, required: set = frozenset()) -> Non
     _require(not missing, f"{where}: missing key(s) {sorted(missing)}")
 
 
-def parse_experiment(data: dict, source: str = "<dict>") -> ExperimentSpec:
+def parse_experiment(data: dict, source: str = "<dict>"):
+    """Validated specification of the experiment type named by ``data["type"]`` (default ``controller_comparison``)."""
+    from .types import DEFAULT_TYPE, get_type
+    _require(isinstance(data, dict), f"{source} must be a mapping")
+    try:
+        kind = get_type(data.get("type", DEFAULT_TYPE))
+    except ValueError as exc:
+        raise ValueError(f"{source}: {exc}") from None
+    return kind.parse(data, source)
+
+
+def parse_controller_comparison(data: dict, source: str = "<dict>") -> ExperimentSpec:
+    _require(data.get("type", ExperimentSpec.kind) == ExperimentSpec.kind, f"{source}: type must be {ExperimentSpec.kind!r}")
     _keys(data, _TOP, source, {"name", "vehicle", "road", "manoeuvre", "controllers"})
     _require(Path(data["vehicle"]).is_file(), f"{source}: vehicle file not found: {data['vehicle']}")
     tyres = data.get("tyres") or {}
@@ -180,9 +195,9 @@ def parse_experiment(data: dict, source: str = "<dict>") -> ExperimentSpec:
     return spec
 
 
-def load_experiment(path: str | Path) -> ExperimentSpec:
+def load_experiment(path: str | Path):
     with open(path, "r", encoding="utf-8") as f:
         return parse_experiment(yaml.safe_load(f) or {}, str(path))
 
 
-__all__ = ("ControllerSpec", "ExperimentSpec", "load_experiment", "parse_experiment")
+__all__ = ("ControllerSpec", "ExperimentSpec", "load_experiment", "parse_controller_comparison", "parse_experiment")

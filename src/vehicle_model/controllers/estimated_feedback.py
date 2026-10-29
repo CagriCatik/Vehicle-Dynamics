@@ -22,7 +22,9 @@ Operating modes (Plan V3.0 M10 5.4; Mode A, ideal feedback, is the unwrapped con
          gets ``None`` and falls back to nominal loads and ``target.mu_estimated``.
 
 The true state enters only through the sensor model (as a real vehicle would be
-measured); nothing else from the plant reaches the controller in Mode C.
+measured); nothing else from the plant reaches the controller in Mode C. The
+observers are initialised from the first wheel-speed measurement, not from the
+true speed.
 """
 
 from __future__ import annotations
@@ -61,6 +63,10 @@ class EstimatedStateFeedback:
                 raise ValueError("the friction estimator must use sensor measurements only")
             self.friction = friction_estimator
         self.information = INFORMATION_MODE_C if mode == "C" else INFORMATION_MODE_B
+        p = params if params is not None else getattr(inner, "params", getattr(observer, "params", None))
+        if p is None:
+            raise ValueError("vehicle parameters (params=...) are needed to initialise the observers from wheel speeds")
+        self.Reff = float(p.Reff)
         self.reset()
 
     @property
@@ -78,11 +84,6 @@ class EstimatedStateFeedback:
         self.last_sensor_telemetry = None
 
     def compute_control(self, state: SevenDOFState, target, telemetry=None, dt: float = 0.01):
-        if not self._initialised:
-            self.observer.reset(init_vx=state.vx)
-            if self.friction is not None:
-                self.friction.reset(init_vx=state.vx)
-            self._initialised = True
         if self._prev is None:
             ax = ay = 0.0
         else:
@@ -93,6 +94,13 @@ class EstimatedStateFeedback:
         # the rear steering angle is a sensor channel; the plant reports it through telemetry
         steer_r = telemetry.steer_angles[2] if telemetry is not None else 0.0
         meas = self.sensors.measure(self._t, dt, ax, ay, state.r, state.omega, target.driver_steer_f, steer_r)
+        if not self._initialised:
+            # no true initial speed: the observers start from the measured wheel speeds (middle two)
+            v0 = float(np.mean(np.sort(meas.omega)[1:3])) * self.Reff
+            self.observer.reset(init_vx=v0)
+            if self.friction is not None:
+                self.friction.reset(init_vx=v0)
+            self._initialised = True
         est = self.observer.update(meas, dt)
         self.last_estimate = est
         seen = SevenDOFState(vx=est.vx, vy=est.vy, r=meas.r, omega=meas.omega.copy())

@@ -60,7 +60,7 @@ from vehicle_model.controllers.framework import (
 from vehicle_model.allocation import ActuatorHealth
 from vehicle_model.controllers.constraints import HARD, Constraint, ConstraintSet, FeasibilityMonitor
 from vehicle_model.controllers.motion_control import INFORMATION_FULL_STATE, ActuationConfig, ActuationLayer
-from vehicle_model.controllers.solver_diagnostics import NOMINAL, SolverMonitor
+from vehicle_model.controllers.solver_diagnostics import NOMINAL, SolverMonitor, kkt_residuals
 from vehicle_model.core.types import SevenDOFParams, SevenDOFState, WheelTelemetry
 from vehicle_model.steering.lut import LookupTable, load_lookup_table
 from vehicle_model.vehicle_models.normal_loads import quasi_static_normal_loads
@@ -395,9 +395,11 @@ class SLSQPPathTrackingNMPC:
         solve_ms = (time.perf_counter() - t_solve) * 1e3
 
         # Use the solution if it converged or improves on the warm start (see solver_diagnostics)
+        lo, hi = np.array(bounds, dtype=float).T
         self.last_report = self.monitor.classify(
             bool(res.success), res.x, float(res.fun), float(_mpc_cost(u_guess, *args)),
             str(res.message), int(getattr(res, "nit", 0)), solve_ms,
+            x_warm_start=u_guess, kkt=kkt_residuals(getattr(res, "jac", None), res.x, lo, hi, cost=float(res.fun)),
         )
         if self.last_report.accepted:
             u_opt = res.x
@@ -530,6 +532,7 @@ class NMPCPathTrackingController:
                 "cmd_ax": cmd_ax,
                 "history_f": self.controller.history_f[-1] if self.controller.history_f else 0.0,
                 "solver": report.as_dict(),
+                "solver_summary": self.controller.monitor.summary(),
                 "feasibility": feas.as_dict(),
                 "actuation": {"demand": {"Fx": Fx_des, "Mz": 0.0},
                               "allocation_achievable": {"Fx": float(alloc.achieved[0]), "Mz": float(alloc.achieved[1])},

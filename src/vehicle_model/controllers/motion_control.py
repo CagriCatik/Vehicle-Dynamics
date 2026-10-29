@@ -30,12 +30,11 @@ from typing import Protocol, runtime_checkable
 import numpy as np
 
 from vehicle_model.allocation import ActuatorHealth, AllocatorConfig, WheelForceAllocator
-from vehicle_model.controllers.framework import ControlOutput, ControlTarget
+from vehicle_model.controllers.framework import INFORMATION_FULL_STATE, ControlOutput, ControlTarget
 from vehicle_model.controllers.slip_control import SlipControlConfig, WheelSlipController
 from vehicle_model.core.types import SevenDOFParams, SevenDOFState, WheelTelemetry
 from vehicle_model.vehicle_models.normal_loads import quasi_static_normal_loads, wheel_contact_positions
 
-INFORMATION_FULL_STATE = "full_state_ideal"  # state and telemetry incl. road friction, no sensor model
 
 
 @dataclass(frozen=True)

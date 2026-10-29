@@ -10,6 +10,7 @@ from dataclasses import dataclass
 import math
 import numpy as np
 
+from vehicle_model.controllers.framework import INFORMATION_FULL_STATE
 from vehicle_model.core.types import (
     FL,
     FR,
@@ -60,6 +61,8 @@ class TorqueVectoringConfig:
 
 class TorqueVectoringController:
     """Direct Yaw Moment Controller for agile torque distribution and ESC stability intervention."""
+
+    information = INFORMATION_FULL_STATE
 
     def __init__(
         self,

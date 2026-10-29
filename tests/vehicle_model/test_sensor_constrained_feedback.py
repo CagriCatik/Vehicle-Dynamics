@@ -55,6 +55,20 @@ def test_plant_telemetry_never_reaches_the_controller_in_mode_c():
     assert out.diagnostics["information"] == INFORMATION_MODE_C
 
 
+@pytest.mark.parametrize("mode", ["B", "C"])
+def test_observers_start_from_wheel_speeds_not_from_the_true_speed(mode):
+    """True v_x = 20 m/s, wheels turning for 18 m/s: the initial estimate must follow the wheels."""
+    from vehicle_model.estimation.ekf_sideslip import EKFSideslipObserver
+
+    p = SevenDOFModel.from_yaml().params
+    ekf = EKFSideslipObserver(p)
+    ctrl = EstimatedStateFeedback(Spy(p), ekf, seed=1, mode=mode)
+    ctrl.compute_control(SevenDOFState(vx=20.0, omega=np.full(4, 18.0 / p.Reff)), ControlTarget(), None, 0.005)
+    assert abs(ctrl.last_estimate.vx - 18.0) < 0.5
+    if mode == "C":
+        assert abs(ctrl.friction.v_ref - 18.0) < 0.5
+
+
 def test_mode_b_still_passes_the_telemetry_and_says_so():
     model = SevenDOFModel.from_yaml()
     p = model.params

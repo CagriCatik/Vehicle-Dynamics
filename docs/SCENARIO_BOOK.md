@@ -49,6 +49,12 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 | `exp_split_mu_braking` | **YAML experiment split_mu_braking** – Runs configs/experiments/split_mu_braking.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 | `exp_step_steer_speed_sweep` | **YAML experiment step_steer_speed_sweep** – Runs configs/experiments/step_steer_speed_sweep.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 
+## solver
+
+| name | scenario | parameters (defaults) | runtime | outputs |
+|---|---|---|---|---|
+| `exp_dynamic_nmpc_solver_benchmark` | **Solver benchmark dynamic_nmpc_solver_benchmark** – Runs configs/experiments/dynamic_nmpc_solver_benchmark.yaml (edit the YAML to change the NMPC variants, manoeuvre, road). | – | ~2 min | report.md, kpis.csv, results.json, histories, plot |
+
 ## validation
 
 | name | scenario | parameters (defaults) | runtime | outputs |

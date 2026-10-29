@@ -1,0 +1,16 @@
+# Computation effort and solution quality of the dynamic two-track NMPC (Plan V3.0 §12, M10 5.2).
+# Same lane change as the E2E test (90 km/h, 3.5 m, mu = 0.75); the variants change the solver budget and horizon.
+type: solver_benchmark
+name: dynamic_nmpc_solver_benchmark
+description: Iteration limit and horizon of the dynamic NMPC against status, KKT residuals, computation time and tracking.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+road: {type: uniform, mu: 0.75}
+manoeuvre: {type: lane_change, speed_kph: 90, offset_m: 3.5, start_s: 0.2, duration_s: 2.0}
+control_dt: 0.05
+base: {N: 10, dt_pred: 0.05, max_steer_front_deg: 25, max_steer_rear_deg: 8, max_yaw_moment_nm: 3500,
+       w_kamm_circle: 80, max_iter: 15}
+variants:
+  - {name: "max_iter 15"}
+  - {name: "max_iter 100", max_iter: 100}
+  - {name: "N 6, max_iter 15", N: 6}
+outputs: {directory: output/experiments/dynamic_nmpc_solver_benchmark}

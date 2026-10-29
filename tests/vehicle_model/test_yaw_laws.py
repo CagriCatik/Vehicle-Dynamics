@@ -140,6 +140,15 @@ def test_mpc_respects_input_limits_in_the_whole_plan(design):
     assert abs(req.rear_steer) <= 0.01 + 1e-12 and abs(req.yaw_moment) <= 500.0 + 1e-9
 
 
+def test_mpc_solution_is_a_kkt_point_also_with_active_limits(design):
+    """BVLS solves the box-constrained least squares exactly: the KKT residuals must vanish (M10 5.2)."""
+    law = LTVMPCYawLaw(design, INPUTS_4WS_TV)
+    _, _, req = _simulate_linear(design, law, steer=0.05, r_ref=0.6, T=0.5, ctx_kw={"max_mz": 500.0, "max_dr": 0.01})
+    rep = req.diagnostics["solver"]
+    assert rep["kkt_stationarity_relative"] < 1e-6 and rep["kkt_primal"] < 1e-9
+    assert law.monitor.summary()["kkt_stationarity_relative_max"] < 1e-6
+
+
 def test_mpc_solver_failure_falls_back_and_is_reported(design, monkeypatch):
     law = LTVMPCYawLaw(design, INPUTS_TV, MPCSettings(max_consecutive_failures=2))
     ctx = _ctx(0.03, 0.2)

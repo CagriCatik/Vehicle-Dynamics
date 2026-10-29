@@ -79,7 +79,7 @@ from vehicle_model.controllers.constraints import (
 )
 from vehicle_model.allocation import ActuatorHealth
 from vehicle_model.controllers.motion_control import INFORMATION_FULL_STATE, ActuationConfig, ActuationLayer
-from vehicle_model.controllers.solver_diagnostics import NOMINAL, SolverMonitor
+from vehicle_model.controllers.solver_diagnostics import NOMINAL, SolverMonitor, kkt_residuals
 from vehicle_model.core.types import FL, FR, RL, RR, SevenDOFParams, SevenDOFState, WheelTelemetry
 from vehicle_model.vehicle_models.normal_loads import quasi_static_normal_loads
 
@@ -484,13 +484,14 @@ class DynamicTwoTrackNMPC(VehicleController):
             return float(cost)
 
         # Solve nonlinear OCP
+        rate = self._rate_constraint(self.last_u, dt) if cfg.enforce_steer_rate else None
         t_solve = time.perf_counter()
         res = minimize(
             fun=cost_function,
             x0=u_init,
             method="SLSQP",
             bounds=bounds,
-            constraints=[self._rate_constraint(self.last_u, dt)] if cfg.enforce_steer_rate else (),
+            constraints=[rate] if rate is not None else (),
             options={"maxiter": cfg.max_iter, "ftol": cfg.tolerance, "disp": False},
         )
         solve_ms = (time.perf_counter() - t_solve) * 1e3
@@ -499,8 +500,11 @@ class DynamicTwoTrackNMPC(VehicleController):
         cost_init = cost_function(u_init)
         x_res = getattr(res, "x", None)
         cost_res = cost_function(x_res) if x_res is not None and np.all(np.isfinite(x_res)) else float("nan")
+        lo, hi = np.array(bounds, dtype=float).T
+        g = (rate["fun"](x_res), rate["jac"](x_res)) if rate is not None and x_res is not None else (None, None)
+        kkt = kkt_residuals(getattr(res, "jac", None), x_res, lo, hi, *g, cost=cost_res)
         report = self.monitor.classify(bool(res.success), x_res, cost_res, cost_init, str(res.message),
-                                       int(getattr(res, "nit", 0)), solve_ms)
+                                       int(getattr(res, "nit", 0)), solve_ms, x_warm_start=u_init, kkt=kkt)
         u_opt = x_res if report.accepted else u_init
         u_last_applied = self.last_u.copy()
         self.u_prev = u_opt.copy()
@@ -578,6 +582,7 @@ class DynamicTwoTrackNMPC(VehicleController):
                 "solver_iterations": report.iterations,
                 "solver": report.as_dict(),
                 "solver_counts": dict(self.monitor.counts),
+                "solver_summary": self.monitor.summary(),
                 "feasibility": feas.as_dict(),
                 "actuation": actuation,
                 "information": self.information,

@@ -23,6 +23,10 @@ from vehicle_model.core.types import (
 )
 
 
+# Declared information access of a controller (Plan V3.0 M10 5.4): what it reads besides the driver inputs.
+INFORMATION_FULL_STATE = "full_state_ideal"  # state and telemetry incl. road friction, no sensor model
+INFORMATION_DRIVER_ONLY = "driver_inputs_only"  # no feedback from the vehicle
+
 @dataclass
 class ControlTarget:
     """Standardized high-level motion demand and driver intent."""
@@ -83,6 +87,8 @@ class VehicleController(Protocol):
 class PassiveBaselineController:
     """Passive vehicle baseline: driver-only front steer, open differential, fixed 60/40 brake bias."""
 
+    information = INFORMATION_DRIVER_ONLY
+
     def __init__(self, params: SevenDOFParams | None = None):
         self.params = params or SevenDOFParams()
 
@@ -132,6 +138,8 @@ class PassiveBaselineController:
 
 class FourWheelSteeringController:
     """Four-wheel steering coordinator conforming to VehicleController protocol."""
+
+    information = INFORMATION_FULL_STATE
 
     def __init__(
         self,
@@ -236,6 +244,8 @@ class FourWheelSteeringController:
 
 
 __all__ = (
+    "INFORMATION_DRIVER_ONLY",
+    "INFORMATION_FULL_STATE",
     "ControlTarget",
     "ControlOutput",
     "VehicleController",

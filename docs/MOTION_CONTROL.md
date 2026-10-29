@@ -127,7 +127,31 @@ Stabilitätsgrenzen (advisory): $r_\max = \mu g / v$, $\beta_\max = \arctan(0{,}
 
 **Drei getrennte Aussagen im Benchmark:** Solverstatus (`status_counts`), Zulässigkeit des Plans (`plan_infeasible_steps`, `plan_unrealisable_steps`, `plan_advisory_steps`) und Erfüllbarkeit durch die Allokation (Status `infeasible`/`saturated`). Beispiel Sine with Dwell 80 km/h, LTV-MPC (TV): Plan in allen Schritten zulässig, vorhergesagte Gierrate in 289 von 986 Schritten über $\mu g/v$, Allokation in 253 Schritten nicht erfüllbar. Bei der Split-µ-Bremsung ist der Plan stets zulässig, die Allokation aber durchgehend nicht erfüllbar (Select-low-Grenze).
 
-Offen: KKT-Residuen, Kostenverbesserung und Warmstartgüte als Kennzahlen (§5.2); Prüfung für das kinematische NMPC (`nmpc.py`); `soft`-Grenzen mit Schlupfvariablen kommen in keinem Regler vor.
+Offen: `soft`-Grenzen mit Schlupfvariablen kommen in keinem Regler vor.
+
+### 3.2 Lösungsgüte: KKT-Residuen, Kostenverbesserung, Warmstart (V3.0 M10 §5.2)
+
+„Konvergiert“ heißt bei SLSQP: Die relative Kostenänderung ist unter `ftol` gefallen. Ob die Lösung ein Optimum erster Ordnung ist, sagt das nicht. Jeder `SolverReport` enthält deshalb zusätzlich (alle drei Optimierer: LTV-MPC, dynamisches und kinematisches NMPC):
+
+| Feld | Bedeutung |
+|---|---|
+| `kkt_stationarity` | $\lVert\nabla J - \sum_i \mu_i \nabla c_i\rVert_\infty$ über die aktiven Schranken und Ungleichungen, $\mu \ge 0$ per NNLS; Einheit: Kosten je Einheit der Entscheidungsvariablen |
+| `kkt_stationarity_relative` | dasselbe geteilt durch $\max(1, \lvert J\rvert)$ |
+| `kkt_primal` | größte Verletzung der eigenen Schranken und Ungleichungen |
+| `cost_improvement`, `relative_cost_improvement` | $J(\text{Warmstart}) - J(\text{Lösung})$, absolut und relativ |
+| `warm_start_step` | $\max\lvert x - x_\text{Warmstart}\rvert$ |
+
+Inaktive Grenzen erhalten $\mu = 0$ (Komplementarität per Konstruktion); aktiv heißt: innerhalb $10^{-6}(1 + \lvert\text{Grenze}\rvert)$. Der Gradient stammt vom Solver (SLSQP: Differenzenquotient, gegen zentrale Differenzen geprüft), bei der LTV-MPC analytisch. `SolverMonitor.summary()` fasst über alle Lösungen zusammen (Anteile je Status, Budgetüberschreitungen, Rechenzeit Mittel/P95/Max, Medianverbesserung, KKT Median/Max); NMPC-Diagnosedaten enthalten sie als `solver_summary`. Der Benchmark meldet `solver_kkt_stationarity_relative_max`, `solver_relative_improvement_median` und `solver_over_budget_steps`. Die Klassifikation (Abschnitt 3) bleibt unverändert; die Residuen sind Information, kein Annahmekriterium.
+
+Gemessen:
+
+| Fall | Status | KKT relativ, Median / Max | primal max | Verbesserung ggü. Warmstart (Median) | Rechenzeit Mittel / Max |
+|---|---|---|---|---|---|
+| LTV-MPC (4WS+TV), Sine with Dwell 80 km/h, 986 Lösungen | 100 % nominal | 3·10⁻¹⁴ / 6·10⁻¹⁰ | 0 | 0,4 % | 0,15 / 2,8 ms |
+| Dynamisches NMPC, E2E-Spurwechsel (90 km/h, µ = 0,75, 40 Schritte), `max_iter` 15 | 42 % nominal, 35 % suboptimal, 22 % degraded | 0,08 / 1,3 | 1,5·10⁻⁸ | 0,4 % | 0,62 / 0,81 s |
+| dasselbe, `max_iter` 100 | 100 % nominal (Mittel 14 Iterationen) | 0,05 / 1,1 | 2·10⁻⁸ | 0,4 % | 0,70 / 1,5 s |
+
+**Befund:** Die BVLS-Lösung der LTV-MPC ist ein KKT-Punkt bis auf Rundung. Das dynamische NMPC endet auch als `nominal` teils deutlich vor dem KKT-Punkt. Im schlechtesten Schritt (Kosten 45) liegt der erste Vorderachslenkwinkel 4·10⁻⁴ rad vor seiner Ratengrenze, der Kostengradient zeigt mit 49 je rad dorthin. Die Kosten sind dort glatt (einseitige Differenzenquotienten stimmen auf 10⁻³ überein); SLSQP hat wegen der kleinen Kostenänderung (≈ 0,05 %) abgebrochen. Mehr Iterationen beseitigen das nicht. Der Warmstart ist gut: Die Lösung verbessert ihn im Median um 0,4 %.
 
 ## 4. Benchmark
 
@@ -201,7 +225,7 @@ Alle Regler halten die Grenzwerte in allen drei Varianten deutlich ein.
 |---|---|
 | [test_yaw_laws.py](../tests/vehicle_model/test_yaw_laws.py) | Gleichgewicht ist stationärer Punkt; Riccati-Residuum; geschlossener Kreis Hurwitz (alle Geschwindigkeiten); Interpolation und Klemmung der Verstärkungen; LQR und MPC folgen auf ihrem Entwurfsmodell exakt (4WS: Schwimmwinkel 0); Stellgrenzen im ganzen MPC-Plan; Solverausfall → `fallback` → `degraded`; Protokolle; PI-Kette = M5-Regler |
 | [test_constraints.py](../tests/vehicle_model/test_constraints.py) | nur `hard` entscheidet die Zulässigkeit, `plant` die Realisierbarkeit; alle Überschreitungen mit Betrag; fehlende/unbekannte Werte und nicht endliche Pläne; Toleranz; Stabilitätsgrenzen; LTV-MPC meldet Zulässigkeit neben dem Solverstatus; NMPC: harte Lenkrate auf dem angewendeten Befehl (abschaltbar: dann advisory und gemeldet); Bremsplan auf µ = 0,1 als nicht realisierbar erkannt |
-| [test_solver_diagnostics.py](../tests/vehicle_model/test_solver_diagnostics.py) | Klassifikation, Zeitbudget, Erholung; injizierter NMPC-Ausfall nutzt den verschobenen Plan; gemeldetes Giermoment = erzeugtes Moment |
+| [test_solver_diagnostics.py](../tests/vehicle_model/test_solver_diagnostics.py) | Klassifikation, Zeitbudget, Erholung; injizierter NMPC-Ausfall nutzt den verschobenen Plan; gemeldetes Giermoment = erzeugtes Moment; KKT-Residuen auf Problemen mit bekannter Lösung (aktive Schranke, Ungleichung, falsches Multiplikatorvorzeichen, Verletzung); Kostenverbesserung, Warmstartschritt, Zusammenfassung; NMPC meldet beides. LTV-MPC-Lösung ist KKT-Punkt auch mit aktiven Grenzen ([test_yaw_laws.py](../tests/vehicle_model/test_yaw_laws.py)) |
 | [test_controller_benchmark.py](../tests/vehicle_model/test_controller_benchmark.py) | Sine-with-Dwell-Signal; Kennzahlen an einer synthetischen Historie; Reproduzierbarkeit und Unabhängigkeit der Läufe; Abnahme: passiv dreht sich ein, PI und GS-LQR halten die Grenzwerte (Marker `slow`) |
 
 ---

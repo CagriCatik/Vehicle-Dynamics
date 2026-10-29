@@ -1,4 +1,4 @@
-"""Command line: ``python -m vehicle_model.experiments {run,validate,list} ...`` (Plan.md M9)."""
+"""Command line: ``python -m vehicle_model.experiments {run,validate,list} ...`` (Plan.md M9; types: V3.0 §12)."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .runner import run_experiment
 from .spec import load_experiment
+from .types import get_type
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -27,8 +28,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "list":
         for p in sorted(args.directory.glob("*.yaml")):
             spec = load_experiment(p)
-            print(f"{p}: {spec.manoeuvre['type']}, {len(spec.controllers)} controller(s)"
-                  + (f", sweep over {spec.sweep['parameter']}" if spec.sweep else ""))
+            print(f"{p}: [{spec.kind}] {get_type(spec.kind).describe(spec)}")
         return 0
     if args.cmd == "validate":
         failed = 0

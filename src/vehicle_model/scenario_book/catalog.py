@@ -10,6 +10,7 @@ Categories:
     four_wheel_steering   the 4WS benchmark scenarios, 2WS vs 4WS (look-up table)
     split_mu              split-friction braking and launch scenarios
     yaw_stability         YAML experiments: controllers on step steer, sine with dwell, split-mu braking
+    solver                YAML solver benchmarks: NMPC status, KKT residuals, computation time
     validation            the validation matrix (configs/validation/matrix.yaml), one scenario at a time
 """
 
@@ -20,7 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
-CATEGORIES = ("parking", "four_wheel_steering", "split_mu", "yaw_stability", "validation")
+CATEGORIES = ("parking", "four_wheel_steering", "split_mu", "yaw_stability", "solver", "validation")
 VEHICLE = "configs/vehicles/seven_dof_passenger.yaml"
 
 
@@ -195,7 +196,14 @@ def _build() -> dict[str, ScenarioEntry]:
           "Braking, launch, friction transitions and evasive manoeuvres on split friction for several controllers.",
           _split_mu_suite, {}, "~7 min with GIFs", "dashboards, GIFs, reports, summary.json"),
     ]
+    import yaml
     for path in sorted(Path("configs/experiments").glob("*.yaml")):
+        kind = (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get("type", "controller_comparison")
+        if kind == "solver_benchmark":
+            entries.append(E(f"exp_{path.stem}", "solver", f"Solver benchmark {path.stem}",
+                             f"Runs {path} (edit the YAML to change the NMPC variants, manoeuvre, road).",
+                             _experiment(str(path)), {}, "~2 min", "report.md, kpis.csv, results.json, histories, plot"))
+            continue
         entries.append(E(f"exp_{path.stem}", "yaw_stability", f"YAML experiment {path.stem}",
                          f"Runs {path} (edit the YAML to change vehicle, manoeuvre, controllers, sweep).",
                          _experiment(str(path)), {}, "~1 min", "report.md, kpis.csv, results.json, histories, plots"))

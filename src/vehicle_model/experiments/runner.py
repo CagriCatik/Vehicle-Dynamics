@@ -1,6 +1,7 @@
 """Run an experiment specification and write results and report (Plan.md M9).
 
-For each sweep point (or once without a sweep) every controller runs on a fresh
+:func:`run_experiment` dispatches on the experiment type (:mod:`.types`, Plan V3.0
+§12). This module runs the default type ``controller_comparison``: for each sweep point (or once without a sweep) every controller runs on a fresh
 plant built from the specification, through the controller benchmark of M6
 (:mod:`vehicle_model.simulation.controller_benchmark`). Model-based laws use the
 linear single track of the configured vehicle without K&C as design model.
@@ -20,11 +21,7 @@ from __future__ import annotations
 
 import csv
 import dataclasses
-import json
 import math
-import platform
-import subprocess
-from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -44,6 +41,7 @@ from vehicle_model.simulation.controller_benchmark import (
 from vehicle_model.vehicle_models import SevenDOFModel
 
 from .spec import ExperimentSpec
+from .types import get_type, provenance, slug as _slug, write_json
 from .verification import verify_model
 
 SCHEDULE_SPEEDS = (5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0)
@@ -104,19 +102,19 @@ def controller_factories(spec: ExperimentSpec) -> dict:
     return out
 
 
-def _provenance() -> dict:
-    try:
-        commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, timeout=5).stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        commit = ""
-    import numpy, scipy
-    return {"git_commit": commit or "unknown", "python": platform.python_version(), "numpy": numpy.__version__,
-            "scipy": scipy.__version__, "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds")}
-
-
-def run_experiment(spec: ExperimentSpec, out_dir: str | Path | None = None, verify: bool | None = None) -> dict:
+def run_experiment(spec, out_dir: str | Path | None = None, verify: bool | None = None) -> dict:
+    """Run a validated specification of any experiment type into ``out_dir`` (default: from the specification)."""
     out = Path(out_dir or spec.outputs["directory"])
     out.mkdir(parents=True, exist_ok=True)
+    return get_type(spec.kind).run(spec, out, verify)
+
+
+def describe_controller_comparison(spec: ExperimentSpec) -> str:
+    return (f"{spec.manoeuvre['type']}, {len(spec.controllers)} controller(s)"
+            + (f", sweep over {spec.sweep['parameter']}" if spec.sweep else ""))
+
+
+def run_controller_comparison(spec: ExperimentSpec, out: Path, verify: bool | None = None) -> dict:
     formats = set(spec.outputs.get("formats", ()))
     points = [(None, spec)] if not spec.sweep else [
         (v, spec.with_parameter(spec.sweep["parameter"], v)) for v in spec.sweep["values"]]
@@ -146,10 +144,10 @@ def run_experiment(spec: ExperimentSpec, out_dir: str | Path | None = None, veri
         if "gif" in formats:
             _animate(runs, out / (_slug(point) + ".gif"), sp)
 
-    summary = {"experiment": spec.to_dict(), "source": spec.source, "provenance": _provenance(),
+    summary = {"experiment": spec.to_dict(), "source": spec.source, "provenance": provenance(),
                "verification": verification, "results": results}
     if "json" in formats:
-        (out / "results.json").write_text(json.dumps(summary, indent=2, default=_json_default), encoding="utf-8")
+        write_json(out / "results.json", summary)
     if "csv" in formats:
         keys = sorted({k for r in results for k, v in r["kpis"].items() if not isinstance(v, dict)})
         with open(out / "kpis.csv", "w", newline="", encoding="utf-8") as f:
@@ -160,18 +158,6 @@ def run_experiment(spec: ExperimentSpec, out_dir: str | Path | None = None, veri
     if "md" in formats:
         (out / "report.md").write_text(_report(spec, summary), encoding="utf-8")
     return summary
-
-
-def _slug(s: str) -> str:
-    return "".join(ch if ch.isalnum() or ch in "-_." else "_" for ch in s).strip("_")
-
-
-def _json_default(o):
-    if isinstance(o, (np.floating, np.integer)):
-        return o.item()
-    if isinstance(o, np.ndarray):
-        return o.tolist()
-    raise TypeError(type(o))
 
 
 def _plot(runs, path, spec):
@@ -297,4 +283,5 @@ def _report(spec: ExperimentSpec, summary: dict) -> str:
     return "\n".join(L)
 
 
-__all__ = ("controller_factories", "make_road", "make_scenario", "plant_factory", "run_experiment")
+__all__ = ("controller_factories", "describe_controller_comparison", "make_road", "make_scenario", "plant_factory",
+           "run_controller_comparison", "run_experiment")

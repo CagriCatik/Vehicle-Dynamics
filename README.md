@@ -2,7 +2,7 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Standards](https://img.shields.io/badge/standards-ISO%208855%20%7C%20ISO%203888--2%20%7C%20FMVSS%20126-orange.svg)](docs/ARCHITECTURE.md)
-[![Test Suite](https://img.shields.io/badge/tests-498%20passed-brightgreen.svg)](tests/)
+[![Test Suite](https://img.shields.io/badge/tests-517%20passed-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 A modular, physically consistent Python research and engineering platform for non-linear vehicle dynamics, interchangeable tyre models, physical actuator dynamics, four-wheel steering (4WS), torque vectoring, and integrated vehicle motion control (ABS, TCS, ESC, IVMC).

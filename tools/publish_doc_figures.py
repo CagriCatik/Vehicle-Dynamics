@@ -105,6 +105,12 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Ausgabe des YAML-Experiments `sine_with_dwell_comparison`: Gierrate, Schwimmwinkel und Bahn für passiv, PI, "
          "GS-LQR (4WS+TV) und LTV-MPC mit Beobachter. Quelle: "
          "`python -m vehicle_model.experiments run configs/experiments/sine_with_dwell_comparison.yaml`."),
+        ("experiments/dynamic_nmpc_solver_benchmark/solver_benchmark.png",
+         "Experimenttyp `solver_benchmark`: dynamisches NMPC im Spurwechsel (90 km/h, 3,5 m, µ = 0,75) mit drei "
+         "Varianten. Links Querposition (alle überschwingen, N = 6 um 1,2 m), Mitte Rechenzeit je Lösung "
+         "(Wanduhr), rechts KKT-Stationarität relativ zu den Kosten (logarithmisch): auch als `nominal` gemeldete "
+         "Lösungen erreichen teils Werte um 1. Quelle: "
+         "`python -m vehicle_model.experiments run configs/experiments/dynamic_nmpc_solver_benchmark.yaml`."),
     ],
     "REAR_WHEEL_STEERING.md": [
         ("four_wheel_steering/parking/u_turn.gif",

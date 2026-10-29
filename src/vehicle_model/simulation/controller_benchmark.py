@@ -160,10 +160,24 @@ def compute_kpis(h: dict, sc: Scenario) -> dict:
         out["plan_infeasible_steps"] = sum(not f["feasible"] for f in checked)
         out["plan_unrealisable_steps"] = sum(not f["realisable"] for f in checked)
         out["plan_advisory_steps"] = sum(bool(f["exceeded"].get("advisory")) for f in checked)
+    solves = [r for r in h.get("solver", ()) if r is not None]
+    if solves:  # solution quality of optimisation-based controllers (Plan V3.0 M10 5.2)
+        fin = lambda k: np.array([r.get(k, np.nan) for r in solves], float)
+        kkt, rel = fin("kkt_stationarity_relative"), fin("relative_cost_improvement")
+        out["solver_over_budget_steps"] = sum(bool(r.get("over_budget")) for r in solves)
+        if np.isfinite(kkt).any():
+            out["solver_kkt_stationarity_relative_max"] = float(np.nanmax(kkt))
+        if np.isfinite(rel).any():
+            out["solver_relative_improvement_median"] = float(np.nanmedian(rel))
     return out
 
 
 # ----------------------------------------------------------------------------- runner
+def _solver_report(diag: dict) -> dict | None:
+    """The SolverReport of an optimisation-based controller, directly or from its yaw law."""
+    return diag.get("solver") or (diag.get("law") or {}).get("solver")
+
+
 def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFactory | None, sc: Scenario,
                  dt: float = 0.005, reference: YawReference | None = None) -> RunResult:
     model = plant_factory(sc.road())
@@ -174,7 +188,7 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
     tel = None
     keys = ("t", "X", "Y", "psi", "vx", "r", "beta", "r_ref", "steer_f", "steer_r", "Mz_demand",
             "Mz_allocated", "computation_ms", "status", "T_brake_total", "max_abs_slip", "Mz_tyre_longitudinal",
-            "Mz_tyre_lateral", "speed", "feasibility")
+            "Mz_tyre_lateral", "speed", "feasibility", "solver")
     pos = model.wheel_positions
     h = {k: [] for k in keys}
     t = 0.0
@@ -199,9 +213,11 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
                      ("beta", math.atan2(s.vy, max(abs(s.vx), 0.1))), ("r_ref", r_ref),
                      ("steer_f", out.steer_f), ("steer_r", out.steer_r), ("Mz_demand", out.desired_yaw_moment),
                      ("Mz_allocated", out.allocated_yaw_moment), ("computation_ms", out.computation_time_ms),
-                     ("status", out.status), ("feasibility", (out.diagnostics or {}).get("feasibility"))):
+                     ("status", out.status), ("feasibility", (out.diagnostics or {}).get("feasibility")),
+                     ("solver", _solver_report(out.diagnostics or {}))):
             h[k].append(v)
-    h = {k: (np.array(v, dtype=object) if k in ("status", "feasibility") else np.array(v)) for k, v in h.items()}
+    h = {k: (np.array(v, dtype=object) if k in ("status", "feasibility", "solver") else np.array(v))
+         for k, v in h.items()}
     name = getattr(ctrl, "name", type(ctrl).__name__)
     return RunResult(sc.name, "passive" if controller_factory is None else name, h, compute_kpis(h, sc))
 

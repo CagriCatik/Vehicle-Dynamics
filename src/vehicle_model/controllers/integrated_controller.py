@@ -33,7 +33,7 @@ import numpy as np
 
 import time
 from vehicle_model.controllers.abs import AntilockBrakingSystem
-from vehicle_model.controllers.framework import ControlOutput, ControlTarget
+from vehicle_model.controllers.framework import INFORMATION_FULL_STATE, ControlOutput, ControlTarget
 from vehicle_model.controllers.phase_plane import (
     PhasePlaneConfig,
     PhasePlaneEnvelopeController,
@@ -56,6 +56,8 @@ from vehicle_model.steering.four_wheel_steering import FourWheelSteering, Steeri
 
 class IntegratedChassisController:
     """Master chassis control coordinator combining all active subsystems (IVMC)."""
+
+    information = INFORMATION_FULL_STATE
 
     def __init__(
         self,

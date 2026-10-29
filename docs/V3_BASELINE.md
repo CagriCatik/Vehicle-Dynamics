@@ -10,7 +10,7 @@ Grundsatz des Plans: „Niemals annehmen, dass eine Funktion fehlt, nur weil sie
 
 | Punkt | Aussage im Plan | Befund im Code | Stand |
 |---|---|---|---|
-| **G01** NMPC-Zulässigkeit | Statusklassen vorhanden; harte Zustands- und Stellratengrenzen fehlen; das dynamische NMPC hat weiche Reibkreisstrafen und eine eigene Radmomentenaufteilung | bestätigt: `dynamic_two_track_nmpc.py` hat nur Box-Grenzen auf den Stellgrößen, Kamm-Strafe ab 0,90 im Kostenterm, eigene Momentenaufteilung (seit M6 wird das erzeugte Giermoment ehrlich gemeldet); `nmpc.py` hat Stellgrößenklemmen im Vorhersagemodell | teilweise: `controllers/constraints.py` (hard/soft/penalty/advisory/plant), Zulässigkeit getrennt vom Solverstatus für LTV-MPC und dynamisches NMPC; harte Lenkratengrenze im dynamischen NMPC; Zulässigkeitsprüfung auch im kinematischen NMPC; beide NMPCs über die `ActuationLayer` (§5.3), Ausnahmen dokumentiert (`MOTION_CONTROL.md` 1.1); IVMC standardmäßig über die `ActuationLayer` (legacy wählbar); offen: KKT-Residuen |
+| **G01** NMPC-Zulässigkeit | Statusklassen vorhanden; harte Zustands- und Stellratengrenzen fehlen; das dynamische NMPC hat weiche Reibkreisstrafen und eine eigene Radmomentenaufteilung | bestätigt: `dynamic_two_track_nmpc.py` hat nur Box-Grenzen auf den Stellgrößen, Kamm-Strafe ab 0,90 im Kostenterm, eigene Momentenaufteilung (seit M6 wird das erzeugte Giermoment ehrlich gemeldet); `nmpc.py` hat Stellgrößenklemmen im Vorhersagemodell | erledigt: `controllers/constraints.py` (hard/soft/penalty/advisory/plant), Zulässigkeit getrennt vom Solverstatus für LTV-MPC und dynamisches NMPC; harte Lenkratengrenze im dynamischen NMPC; Zulässigkeitsprüfung auch im kinematischen NMPC; beide NMPCs über die `ActuationLayer` (§5.3), Ausnahmen dokumentiert (`MOTION_CONTROL.md` 1.1); IVMC standardmäßig über die `ActuationLayer` (legacy wählbar); KKT-Residuen, Kostenverbesserung und Warmstartgüte in allen drei Optimierern (`MOTION_CONTROL.md` 3.2) |
 | **G02** Sensorik | `EstimatedStateFeedback` reicht Reifen-, Radlast- und Reibwerttelemetrie an Allokation und Schlupfregelung weiter | bestätigt (dokumentiert in `information`). Zusätzlich lesen `motion_control.py`, `slip_control.py`, `abs.py`, `tcs.py`, `integrated_controller.py` Telemetrie (Fz, µ, F_y, κ). **Neu:** `estimation/sensor_friction.py` schätzt µ nur aus Sensoren und Stellbefehlen (Grundlage für Mode C) | erledigt (strukturell): Mode C `EstimatedStateFeedback(mode="C")`, Sensor-Telemetrie aus `SensorFrictionEstimator.as_telemetry`, YAML `feedback: sensor_constrained`; Kosten und Schätzfehler in ESTIMATION_ROBUSTNESS.md 2.1 |
 | **G03** Stabilitätsgrenzen | Phase-Plane-Grenzen heuristisch | bestätigt: `phase_plane.py` berechnet β- und β̇-Grenzen aus Fahrbahn und Geschwindigkeit nach Formeln, nicht aus der Dynamik des Fahrzeugmodells | offen (M11) |
 | **G04** Szenariozugriff | YAML-Experimente nur für Gierstabilität und fünf Regler | bestätigt (`experiments/spec.py`: drei Manöver, `passive/pi/lqr/gs_lqr/ltv_mpc`); NMPC-Pfadfolge, 4WS-, Split-µ- und Validierungsszenarien nur über Python | offen (M10/M12) |
@@ -36,7 +36,7 @@ Grundsatz des Plans: „Niemals annehmen, dass eine Funktion fehlt, nur weil sie
 1. **Zwei Stellgrößenketten.** `MotionController` (Allokation, ABS/TCS) und die älteren Regler (NMPC, IVMC, 4WS) mit eigenen Momentenaufteilungen. Plan V3.0 §4.2 verlangt einen Pfad. (M10 §5.3)
 2. **Ground-Truth-Zugriff in der Stellebene.** Allokation und Schlupfregelung lesen F_z, µ, F_y und κ aus der Telemetrie. Mode C braucht Schätzer für diese Größen. Der Reibwertschätzer ist der erste Baustein; Radlast und Seitenkraft schätzt er intern bereits, sie müssen als eigene Schnittstelle herausgelöst werden. (M10 §5.4)
 3. **Constraint-Semantik.** Hart, weich, Strafterm oder Hinweisgrenze sind nirgends ausgewiesen; die Zulässigkeit der realisierten Stellgrößen wird nicht getrennt vom Solverstatus geprüft. (M10 §5.1–5.2)
-4. **Experiment-Runner ohne Typ-Schnittstelle.** Die neun Experimenttypen aus §12 brauchen eine kleine gemeinsame Schnittstelle, bevor der zweite Typ hinzukommt.
+4. ~~**Experiment-Runner ohne Typ-Schnittstelle.**~~ Erledigt: `experiments/types.py`, zweiter Typ `solver_benchmark` (EXPERIMENTS.md 2.0–2.1).
 5. **Szenariofunktionen monolithisch.** Nach der Paketaufteilung enthält jede `simulate_*`-Funktion weiterhin Straße, Fahrer, Schleife, Kennzahlen; eine Umstellung auf `controller_benchmark.Scenario`/`run_scenario` wäre der nächste Schritt (G06, Rest).
 
 ## 4. Hinweise zum Plan selbst
@@ -56,3 +56,25 @@ Grundsatz des Plans: „Niemals annehmen, dass eine Funktion fehlt, nur weil sie
 5. **§12:** Typ-Schnittstelle im Experiment-Runner, dann `solver_benchmark` als zweiter Typ.
 
 M11 (Gleichgewichte, lokale Stabilität, Stabilitätskarten) kann auf vorhandenen Bausteinen aufsetzen: `handling_analysis` für die Linearisierung, das 7-DOF-Modell, `controller_benchmark.run_scenario` für Trajektorien und `phase_plane.py` als Vergleichsbasis.
+
+## 6. Abnahme M10 (Plan §5.6)
+
+Stand: 2026-10-29. Bewertung je Kriterium mit Nachweis; „erfüllt mit Einschränkung“ heißt: Das Kriterium ist erfüllt, aber ein dokumentierter Rest bleibt.
+
+| # | Kriterium | Bewertung | Nachweis |
+|---|---|---|---|
+| 1 | Dieselbe Stellgrößenkette oder begründete Ausnahmen | erfüllt | `ActuationLayer` (Allokation + ABS/TCS) in `MotionController`, beiden NMPCs, IVMC (Standard `actuation: allocation`, `legacy` wählbar und gekennzeichnet). Ausnahmen begründet: reiner 4WS-Lenkregler, passive Referenz (`MOTION_CONTROL.md` 1.1). Bericht trennt Soll, erreichbar, ausgegeben, realisiert (`diagnostics["actuation"]`) |
+| 2 | Solverstatus und Zulässigkeit getrennt | erfüllt | `SolverReport` (Status, KKT-Residuen, Verbesserung, Warmstart) neben `FeasibilityReport` (hard → `feasible`, plant → `realisable`); Benchmark meldet beides getrennt; Tests `test_constraints.py`, `test_solver_diagnostics.py` (`MOTION_CONTROL.md` 3.1–3.2) |
+| 3 | Keine undeklarierten Ground-Truth-Zugriffe | erfüllt mit Einschränkung | Jeder Regler und Schätzer deklariert `information`; Mode C (`feedback: sensor_constrained`) gibt keine Streckentelemetrie weiter (Spionagetest). Bei der Abnahmeprüfung gefunden und behoben: EKF und Reibwertschätzer wurden mit der *wahren* Geschwindigkeit initialisiert; jetzt aus den Raddrehzahlen (Test). Einschränkung: Modes A und B greifen deklariert auf idealisierte Größen zu; das Sensormodell bildet IMU-Beschleunigungen aus dem wahren Zustand (wie ein realer Sensor), der Lenkwinkel hinten kommt als Sensorkanal aus der Telemetrie |
+| 4 | 4WS-Split-µ-Fall erklärt und abgesichert | erfüllt | Konfigurationsmatrix (sieben Konfigurationen), erwartetes Eindrehen ohne Bremsmomentausgleich als bestandener Grenztest; Widerspruch zum Validierungsfall aufgelöst (Validierung bremst mit ≈ 12 % Pedal); `SPLIT_MU_DYNAMICS.md`, `test_split_mu_matrix.py` |
+| 5 | V2.0-Regressionsfälle bestehen | erfüllt | volle Testsuite lokal: 517 bestanden, 2 übersprungen, inklusive `slow` |
+| 6 | CI-Zustand geprüft und dokumentiert | erfüllt mit Einschränkung | Letzter gepushter Commit (`992cc39`) grün auf Python 3.10 und 3.13 mit Aktionen v7 (Schnelllauf, Spezifikationsvalidierung). Der wöchentliche Volllauf mit `slow`-Tests ist auf GitHub noch nie gelaufen (kein `schedule`-/`workflow_dispatch`-Lauf); lokal nicht gepushte Commits sind noch nicht in der CI geprüft |
+| 7 | YAML-Experimente und Visualisierungen unverändert verfügbar | erfüllt | Alle vorhandenen Spezifikationen gültig ohne `type` (Test `test_bundled_experiments_are_valid`); neue Typ-Schnittstelle additiv (`EXPERIMENTS.md` 2.0); Ausgaben und Dokumentationsbilder neu erzeugt (`tools/publish_doc_figures.py --check`) |
+
+**Offene Punkte aus M10** (keine Abnahmehindernisse, aber dokumentierte Schwächen):
+
+- Dynamisches NMPC: SLSQP bricht über die relative Kostenänderung ab, teils deutlich vor dem KKT-Punkt (relative Stationarität bis ≈ 1); Spurwechsel überschwingt um ≥ 0,5 m; Rechenzeit 0,2–1,6 s je Lösung, nicht echtzeitfähig (`MOTION_CONTROL.md` 3.2, `EXPERIMENTS.md` 2.1).
+- Mode C: Gyro-Offset dreht das Fahrzeug bei Geradeausbremsung um ≈ 5°, Reibwert auf Eis überschätzt (0,3–0,47 statt 0,2), Geschwindigkeitsreferenz driftet bei Allradbremsung um bis zu 2,7 m/s, Blockieren unter ≈ 14 km/h (IVMC) (`ESTIMATION_ROBUSTNESS.md` 2.1). Gehört zu M12 (robuste Regelung).
+- IVMC mit geschwindigkeitsgeführter Gewichtung: Split-µ-Bremsung bis zum Stand endet bei 6,6° Gierwinkel (`MOTION_CONTROL.md` 1.2).
+- `soft`-Grenzen mit Schlupfvariablen nutzt kein Regler.
+- Stabilitätsgrenzen sind Faustregeln (advisory); modellbasierte Grenzen folgen in M11.

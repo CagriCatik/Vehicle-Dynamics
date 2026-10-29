@@ -44,7 +44,7 @@ from vehicle_model.controllers.motion_control import (
     MotionRequest,
 )
 from vehicle_model.controllers.constraints import ADVISORY, HARD, Constraint, ConstraintSet, FeasibilityMonitor, stability_limits
-from vehicle_model.controllers.solver_diagnostics import NOMINAL, SolverMonitor
+from vehicle_model.controllers.solver_diagnostics import NOMINAL, NO_KKT, SolverMonitor, kkt_residuals
 from vehicle_model.core.types import SevenDOFState
 from vehicle_model.handling_analysis import LinearSingleTrack, LinearSingleTrackParams
 
@@ -299,7 +299,8 @@ class LTVMPCYawLaw:
             x, ok, msg, nit = None, False, f"{type(exc).__name__}: {exc}", 0
         solve_ms = (time.perf_counter() - t0) * 1e3
         c_x = cost(x) if x is not None and np.all(np.isfinite(x)) else float("nan")
-        report = self.monitor.classify(ok, x, c_x, cost(warm), msg, nit, solve_ms)
+        kkt = kkt_residuals(2.0 * A_ls.T @ (A_ls @ x - b_ls), x, lo, hi, cost=c_x) if np.isfinite(c_x) else NO_KKT
+        report = self.monitor.classify(ok, x, c_x, cost(warm), msg, nit, solve_ms, x_warm_start=warm, kkt=kkt)
         U = x if report.accepted else warm
         self._plan = U.reshape(N, m)
         planned = u_ss + self._plan                                  # (N, m) absolute inputs

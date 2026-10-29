@@ -113,3 +113,49 @@ def test_kinematic_path_nmpc_acts_through_the_shared_actuation_layer():
     assert a["issued"]["Fx"] == pytest.approx(a["demand"]["Fx"], rel=1e-3)  # accelerating, within all limits
     assert abs(out.allocated_yaw_moment) < 1.0
     assert out.status == NOMINAL or out.status == out.diagnostics["solver"]["status"]
+
+
+# ----------------------------------------------------------------------------- solution quality (V3.0 M10 5.2)
+def test_kkt_residuals_on_known_problems():
+    from vehicle_model.controllers.solver_diagnostics import kkt_residuals
+
+    # min (x-2)^2 s.t. x <= 1: optimum at the bound, multiplier 2
+    k = kkt_residuals([-2.0], [1.0], upper=1.0)
+    assert k.stationarity < 1e-12 and k.primal == 0.0 and k.n_active == 1
+    k = kkt_residuals([-3.0], [0.5], upper=1.0, cost=6.0)                             # interior, not stationary
+    assert (k.stationarity, k.stationarity_relative) == (3.0, 0.5)
+    assert kkt_residuals([2.0], [1.0], upper=1.0).stationarity == pytest.approx(2.0)    # wrong-sign multiplier
+    # min -(x1 + x2) s.t. 1 - x1 - x2 >= 0
+    J = np.array([[-1.0, -1.0]])
+    assert kkt_residuals([-1.0, -1.0], [0.5, 0.5], ineq_value=[0.0], ineq_jacobian=J).stationarity < 1e-12
+    k = kkt_residuals([-1.0, -1.0], [1.0, 1.0], ineq_value=[-1.0], ineq_jacobian=J)
+    assert k.primal == pytest.approx(1.0)
+    assert np.isnan(kkt_residuals(None, [1.0]).stationarity)
+    assert np.isnan(kkt_residuals([1.0], [np.nan]).stationarity)
+
+
+def test_monitor_reports_cost_improvement_warm_start_step_and_a_summary():
+    from vehicle_model.controllers.solver_diagnostics import KKTResiduals
+
+    m = SolverMonitor(max_consecutive_failures=5, time_budget_ms=5.0)
+    r = m.classify(True, np.array([1.0, 0.0]), 1.0, 4.0, x_warm_start=np.zeros(2),
+                   kkt=KKTResiduals(1e-8, 0.0, 1, 1e-8))
+    assert (r.cost_improvement, r.relative_cost_improvement, r.warm_start_step) == (3.0, 0.75, 1.0)
+    assert r.kkt_stationarity == 1e-8
+    m.classify(False, np.zeros(2), 5.0, 4.0, solve_time_ms=10.0)                      # fallback, over budget
+    s = m.summary()
+    assert s["solves"] == 2 and s["fraction_nominal"] == 0.5 and s["fraction_fallback"] == 0.5
+    assert s["over_budget"] == 1 and s["kkt_stationarity_relative_max"] == 1e-8 and s["solve_ms_max"] == 10.0
+    assert s["relative_cost_improvement_median"] == pytest.approx((0.75 - 0.25) / 2)
+    m.reset()
+    assert m.summary() == {"solves": 0}
+
+
+def test_dynamic_nmpc_reports_kkt_and_warm_start_quality():
+    ctrl = DynamicTwoTrackNMPC(config=DynamicNMPCConfig(N=4))
+    state = SevenDOFState(vx=15.0, Y=0.5, omega=np.full(4, 15.0 / ctrl.params.Reff))
+    out = ctrl.compute_control(state, ControlTarget(target_vx=15.0, target_y=0.0))
+    rep = out.diagnostics["solver"]
+    assert np.isfinite(rep["kkt_stationarity_relative"]) and rep["kkt_primal"] < 1e-6
+    assert rep["cost_improvement"] >= 0.0 and rep["warm_start_step"] > 0.0
+    assert out.diagnostics["solver_summary"]["solves"] == 1
