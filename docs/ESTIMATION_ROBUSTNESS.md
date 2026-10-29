@@ -133,3 +133,17 @@ Offline-PSO zur Parameterabstimmung bestand bereits (`estimation/pso_optimizer.p
 - In der Rückführung nutzen Allokation und ABS/TCS weiter die Telemetrie (Radlasten, Reibwert).
 - Kein UKF (laut Plan optional).
 - Die Monte-Carlo-Studie variiert Streckenparameter; Aktuatorverzögerungen und Sensorfehler sind noch keine Variationsgrößen.
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![monte_carlo](assets/estimation_robustness/monte_carlo.png)
+
+*Monte Carlo über 25 Streckenstichproben (Seed 2026), Sine with Dwell 80 km/h: Gierratenverhältnis 1 s nach Lenkende und Querversatz, passiv gegen PI (TV), mit den nach FMVSS 126 nachgebildeten Grenzen. Quelle: `examples/monte_carlo_robustness.py`.*
+
+<!-- figures:end -->

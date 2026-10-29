@@ -120,3 +120,21 @@ Generated animation files are saved to `output/validation_report/animations/` an
 | **Plan-View Renderer** | [plan_view.py](../src/vehicle_model/visualization/plan_view.py) | [test_plan_view.py](../tests/vehicle_model/test_plan_view.py) |
 | **Animation Generator** | [animation.py](../src/vehicle_model/visualization/animation.py) | [test_animation.py](../tests/vehicle_model/test_animation.py) |
 | **NMPC Dashboard** | [dashboard.py](../src/vehicle_model/visualization/dashboard.py) | N/A |
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![multi_mu_lane_change_comparison](assets/visualization_guide/multi_mu_lane_change_comparison.gif)
+
+*Spurwechsel auf mehreren Reibwerten mit Nahkamera-Panel und HUD. Quelle: `examples/multi_mu_scenarios_benchmark.py`.*
+
+![tight_alley](assets/visualization_guide/tight_alley.gif)
+
+*4WS-Animation mit Lenkwinkel-Panel: unten Vorder- und Hinterachswinkel mit Cursor auf dem aktuellen Bild. Fahrzeuge werden an der Hinterachse gezeichnet, aus dem Schwerpunkt über l_r berechnet (`VehicleParams.cog_to_rear_axle`). Quelle: `examples/parking_4ws_demo.py`.*
+
+<!-- figures:end -->

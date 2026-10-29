@@ -235,3 +235,17 @@ python examples/run_validation_platform.py
 5. **Gillespie, Thomas D. (1992)**: *Fundamentals of Vehicle Dynamics*. Society of Automotive Engineers (SAE), Warrendale, PA. Chapter 6: Steady-State Cornering, pp. 195–236.
 6. **Heißing, Bernd; Ersoy, Metin; Gies, Stefan (2020)**: *Fahrwerkhandbuch: Grundlagen, Fahrdynamik, Komponenten, Systeme, Mechatronik, Perspektiven*. 5. Aufl., Springer Vieweg, Wiesbaden. [DOI: 10.1007/978-3-658-28688-0](https://doi.org/10.1007/978-3-658-28688-0).
 7. **Pacejka, Hans B. (2012)**: *Tire and Vehicle Dynamics*. 3rd ed., Butterworth-Heinemann / Elsevier, Oxford. Chapter 7: Vehicle Handling and Stability, pp. 315–380.
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![steady_state_handling_characteristics](assets/handling_limits/steady_state_handling_characteristics.png)
+
+*Stationäre Kreisfahrt nach dem Vorbild von ISO 4138 (Simulation): Lenkwinkel und lokaler Eigenlenkgradient über der Querbeschleunigung, dynamischer Schwimmwinkel und g-g-Diagramm für vier Konfigurationen. Quelle: `examples/handling_limits_and_understeer_demo.py`.*
+
+<!-- figures:end -->

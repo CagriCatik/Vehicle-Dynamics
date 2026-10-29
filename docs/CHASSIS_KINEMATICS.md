@@ -131,3 +131,17 @@ Die Wanksteifigkeitsverteilung ist bei hohem $a_y$ der stärkste Hebel. Im linea
 - Quasistatisch: kein Wank- oder Nick-Freiheitsgrad im 7-DOF-Modell. Die Aufbaulage folgt verzögerungsfrei aus $a_x$ und $a_y$.
 - Die K&C-Werte sind synthetisch und nicht an einem Prüfstand gemessen.
 - Rechenzeit: Mit K&C liegen die Lenkwinkel in der Fixpunktiteration, das Modell rechnet etwa 3- bis 4-mal langsamer.
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![kc_understeer](assets/chassis_kinematics/kc_understeer.png)
+
+*Eigenlenken mit K&C: Untersteuerwinkel und lokaler Eigenlenkgradient mit schrittweise zugeschalteten Rollzentren/Ackermann, Rolllenken und Elastokinematik; lineares Budget 2,19 °/g; Parameterempfindlichkeit. Quelle: `examples/kc_understeer_analysis.py`.*
+
+<!-- figures:end -->

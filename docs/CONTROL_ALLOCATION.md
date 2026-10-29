@@ -112,3 +112,17 @@ Der Status `infeasible` ist bei Vollbremsung korrekt: Das Pedal fordert etwa 32 
 - ABS/TCS: Die Kalibriertabelle gehört zum MF-Reifensatz. Es gibt keine Radbeschleunigungsschwellen, keine Druckmodulationsphasen und keine Hydraulik; Aktuatordynamik liegt in `actuators/`, ist aber noch nicht in den Szenarien verschaltet. Die Reifenkraft stammt ideal aus der Telemetrie.
 - Die Stabilitätsregelung nutzt den Fahrbahnreibwert ideal. Mit Totband (ESC-Betrieb) ist sie nicht systematisch untersucht.
 - Die Bestandsregler (`abs.py`, `tcs.py`, `torque_vectoring.py`, `integrated_controller.py`) sind unverändert. Sie verwenden diese Allokation nicht.
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![slip_and_allocation](assets/control_allocation/slip_and_allocation.png)
+
+*Schlupfregelung und beschränkte Allokation: mittlere Verzögerung bezogen auf µg ohne ABS, mit Alt-ABS und mit PI-Schlupfregelung (Werte über 1, weil die Spitzenreibung des MF-Reifens bei geringer Radlast über µ liegt); Split-µ-Bremsung mit fester Lenkung; Lenkwinkelsprung mit TV; Bremsenausfall vorn links. Quelle: `examples/slip_and_allocation_demo.py`.*
+
+<!-- figures:end -->

@@ -101,3 +101,15 @@ def test_generated_scenario_book_document_is_up_to_date():
     doc = Path(__file__).resolve().parents[2] / "docs" / "SCENARIO_BOOK.md"
     assert doc.read_text(encoding="utf-8") == book_markdown() + "\n", \
         "regenerate: python -m vehicle_model.scenario_book book --write docs/SCENARIO_BOOK.md"
+
+
+def test_all_image_links_in_the_documentation_resolve():
+    import re
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[2]
+    broken = []
+    for md in [root / "README.md", *sorted((root / "docs").glob("*.md"))]:
+        for link in re.findall(r"!\[[^\]]*\]\(([^)\s]+)\)", md.read_text(encoding="utf-8")):
+            if not link.startswith("http") and not (md.parent / link).exists():
+                broken.append(f"{md.name}: {link}")
+    assert not broken, broken

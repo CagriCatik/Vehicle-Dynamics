@@ -99,3 +99,17 @@ Installation in der CI: `pip install -e ".[test]"`; pytest ist das optionale Ext
 - Die großen Szenariomodule sind seit V3.0 aufgeteilt in die Pakete `simulation/split_mu/`, `simulation/four_wheel_steering/` und `simulation/validation/` (Teilmodule nach Verantwortung: Ergebnisse, Szenariogruppen, Sweep, Grafiken, Animation; Basisklasse plus Szenario-Mixins), größtes Teilmodul 836 Zeilen; die alten Module sind Kompatibilitätsfassaden. Offen: Trennung von Manöver, Fahrer, Ausführung und Kennzahlen innerhalb der Szenariofunktionen.
 - Monte-Carlo-Studien (M7) laufen über Python (`simulation/robustness.py`), noch nicht über die YAML-Spezifikation.
 - Die GIF-Ausgabe zeigt eine schematische Draufsicht (Rechteck je Fahrzeug), nicht die detaillierte Fahrzeuggrafik von `visualization/plan_view.py`.
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![base](assets/experiments/base.png)
+
+*Ausgabe des YAML-Experiments `sine_with_dwell_comparison`: Gierrate, Schwimmwinkel und Bahn für passiv, PI, GS-LQR (4WS+TV) und LTV-MPC mit Beobachter. Quelle: `python -m vehicle_model.experiments run configs/experiments/sine_with_dwell_comparison.yaml`.*
+
+<!-- figures:end -->

@@ -123,3 +123,21 @@ Die früheren C/GMRES-Schlüssel (`zeta`, `ht`, `phi_*`) wurden vom Löser nie g
 - Demonstration: [nmpc_path_tracking_simulation.py](../examples/nmpc_path_tracking_simulation.py) (`--headless` für Offline-Plot, ohne Option Live-Dashboard)
 - Tests: [test_nmpc_controller.py](../tests/vehicle_model/test_nmpc_controller.py)
 - Animation: `output/animations/nmpc_slalom.gif`, erzeugt mit `python examples/generate_maneuver_animations.py nmpc_slalom`
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![nmpc_slalom](assets/nmpc_path_tracking/nmpc_slalom.gif)
+
+*Kinematisches Pfadfolge-NMPC im Slalom mit Hinterachslenkung aus der Lookup-Tabelle. Quelle: `examples/generate_maneuver_animations.py`.*
+
+![nmpc_path_tracking_simulation](assets/nmpc_path_tracking/nmpc_path_tracking_simulation.png)
+
+*Pfadfolge-NMPC (Maßstabsmodell): Bahn, Lenkwinkel, Querfehler und Geschwindigkeit. Quelle: `python examples/nmpc_path_tracking_simulation.py --headless`.*
+
+<!-- figures:end -->

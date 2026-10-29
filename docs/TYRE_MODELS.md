@@ -174,3 +174,17 @@ The slip builds up with a delay, so the early yaw rate is lower. The lag also re
 python -m vehicle_model.tire_model.plots --all          # 8-panel figure per tyre set: output/tyres/<name>_curves.png
 python examples/tyre_models_m3_demo.py                  # MF Mz, combined slip, mu self-similarity, relaxation: output/tyres/tyre_models_m3.png
 ```
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![tyre_models_m3](assets/tyre_models/tyre_models_m3.png)
+
+*Magic-Formula-Reifen (synthetisch) gegen Fiala: Seitenkraft und Rückstellmoment bei drei Radlasten, kombinierter Schlupf, Selbstähnlichkeit in µ, Relaxation und Lenkwinkelsprung des 7-DOF-Modells mit Relaxationslängen. Quelle: `examples/tyre_models_m3_demo.py`.*
+
+<!-- figures:end -->

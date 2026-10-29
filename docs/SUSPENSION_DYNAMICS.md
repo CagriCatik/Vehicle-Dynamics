@@ -129,3 +129,17 @@ graph TD
 ## 5. Verification and road excitations (M8)
 
 See [VERTICAL_DYNAMICS.md](VERTICAL_DYNAMICS.md): analytical frequency responses, energy balance, ISO 8608 roads and the semi-active trade-off.
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![suspension_and_14dof_validation](assets/suspension_dynamics/suspension_and_14dof_validation.png)
+
+*Viertelfahrzeug (passiv, Skyhook, Groundhook) über eine Schwelle und 14-DOF-Fahrzeug bei Bremsen mit Lenken: Nick-, Hub- und Wankbewegung, Radlasten, Bahn. Quelle: `examples/suspension_dynamics_demo.py`.*
+
+<!-- figures:end -->

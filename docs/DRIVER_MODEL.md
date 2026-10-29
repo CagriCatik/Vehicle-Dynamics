@@ -97,3 +97,21 @@ Time: 1.0s - 3.5s: Split-Mu Transition (Left mu = 1.0, Right mu = 0.20 Ice)
 | :--- | :--- | :--- | :--- | :--- |
 | **Preview Driver Model** | `NeuromuscularDriverModel` | [driver_model.py](../src/vehicle_model/controllers/driver_model.py) | [driver_model.yaml](../configs/controllers/driver_model.yaml) | [test_driver_model.py](../tests/vehicle_model/test_driver_model.py) |
 | **Closed-Loop E2E Benchmark** | E2E Driver Scenario | [test_e2e_closed_loop_scenarios.py](../tests/vehicle_model/test_e2e_closed_loop_scenarios.py) | N/A | [test_e2e_closed_loop_scenarios.py](../tests/vehicle_model/test_e2e_closed_loop_scenarios.py) |
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![driver_closed_loop_workload](assets/driver_model/driver_closed_loop_workload.png)
+
+*Fahrermodell im Doppelspurwechsel: Bahn, Zerlegung von Totzeit und Verzögerung, Lenkaufwand und Lenkumkehrungen passiv gegen IVMC-unterstützt. Quelle: `examples/driver_and_nmpc_dynamics_demo.py`.*
+
+![e2e_driver_split_mu_stability](assets/driver_model/e2e_driver_split_mu_stability.png)
+
+*Fahrer im geschlossenen Kreis beim Reibwertübergang: Basis- gegen verbesserten Fahrer (Prädiktion, Adaption). Der verbesserte Fahrer lenkt stärker und schwingt mehr. Quelle: `examples/e2e_deep_analysis_and_benchmarking.py`.*
+
+<!-- figures:end -->

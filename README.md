@@ -2,10 +2,23 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Standards](https://img.shields.io/badge/standards-ISO%208855%20%7C%20ISO%203888--2%20%7C%20FMVSS%20126-orange.svg)](docs/ARCHITECTURE.md)
-[![Test Suite](https://img.shields.io/badge/tests-142%20passed-brightgreen.svg)](tests/)
+[![Test Suite](https://img.shields.io/badge/tests-490%20passed-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 A modular, physically consistent Python research and engineering platform for non-linear vehicle dynamics, interchangeable tyre models, physical actuator dynamics, four-wheel steering (4WS), torque vectoring, and integrated vehicle motion control (ABS, TCS, ESC, IVMC).
+
+### Results at a glance
+
+All results are simulations with synthetic parameters, not measurements. Each document under [docs/](docs/) ends with its own result figures; they are refreshed with `python tools/publish_doc_figures.py` after running the example scripts.
+
+| Rear-axle steering at walking pace (U-turn) | Double lane change, four configurations |
+| :---: | :---: |
+| ![U-turn 2WS vs 4WS](docs/assets/rear_wheel_steering/u_turn.gif) | ![Double lane change](docs/assets/validation_platform/iso_3888_dlc.gif) |
+| The rear axle steers −8° against the front; the street width needed drops from 12.75 m to 11.10 m ([details](docs/REAR_WHEEL_STEERING.md)). | Passive, 4WS, IVMC and IVMC + 4WS in a lane change modelled on ISO 3888-2 ([details](docs/VALIDATION_PLATFORM.md)). |
+
+![Split-mu braking matrix](docs/assets/motion_control/split_mu_matrix.png)
+
+*Split-µ full braking with the steering held straight: only the wheel-force allocation, which reduces brake torque on the high-friction side, keeps the car straight; rear steering and additive ESC cannot ([details](docs/MOTION_CONTROL.md)).*
 
 ---
 

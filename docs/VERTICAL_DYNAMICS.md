@@ -68,3 +68,17 @@ Skyhook verbessert den Komfort und bezahlt das mit Radlastschwankungen nahe der 
 - Die Kopplung mit der Planardynamik besteht nur im 14-DOF-Modell. Das 7-DOF-Modell bleibt quasistatisch (M4).
 - Der Groundhook ist nicht nachoptimiert.
 - Keine ISO-2631-Komfortbewertung (frequenzgewichtete Beschleunigung).
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![vertical_dynamics](assets/vertical_dynamics/vertical_dynamics.png)
+
+*Viertelfahrzeug: analytischer gegen simulierten Frequenzgang von Aufbaubeschleunigung und dynamischer Radlast, Skyhook und Groundhook, Straßenklassen A–E nach ISO 8608 mit erzeugtem Klasse-C-Profil. Quelle: `examples/vertical_dynamics_demo.py`.*
+
+<!-- figures:end -->

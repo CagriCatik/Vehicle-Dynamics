@@ -231,3 +231,29 @@ Weil durch die Zentrifugalkraft über 70% der vertikalen Achslast auf die kurven
 5. **Mitschke, Manfred; Wallentowitz, Henning (2014):** *Dynamik der Kraftfahrzeuge.* 5. Auflage, Springer Vieweg, Berlin/Heidelberg. ISBN 978-3-658-05068-9. (Kap. 14: Bremsen bei asymmetrischem Kraftschluss).
 6. **Bosch (2018):** *Kraftfahrtechnisches Taschenbuch.* 29. Auflage, Springer Vieweg, Wiesbaden. (Kapitel: Fahrdynamikregelsysteme ESP/ABS, Giermomenten-Aufbauverzögerung GMR).
 7. **Rajamani, Rajesh (2012):** *Vehicle Dynamics and Control.* 2nd Edition, Springer, New York. (Chapter 7: Electronic Stability Control).
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![scenario_1_split_mu_braking](assets/split_mu_dynamics/scenario_1_split_mu_braking.gif)
+
+*Split-µ-Vollbremsung aus 100 km/h mit Fahrermodell, das die Spur hält, und fester Bremsmomentvorgabe. Quelle: `examples/split_mu_scenarios_demo.py`.*
+
+![scenario_1_split_mu_braking](assets/split_mu_dynamics/scenario_1_split_mu_braking.png)
+
+*Dieselbe Bremsung als Dashboard: Bahnen, Gierrate, Querabweichung und Störgiermoment. Der lenkende Fahrer ist der Unterschied zur Konfigurationsmatrix in MOTION_CONTROL.md, in der die Lenkung gerade gehalten wird und IVMC sich eindreht. Quelle: `examples/split_mu_scenarios_demo.py`.*
+
+![split_mu_friction_sweep_analysis](assets/split_mu_dynamics/split_mu_friction_sweep_analysis.png)
+
+*Reibwert-Sweep der Niedrig-µ-Seite: Gierrate, Gierwinkel, Querabweichung, Bremsweg und Schwimmwinkel je Regler. Quelle: `examples/split_mu_scenarios_demo.py`.*
+
+![multi_mu_scenarios_dashboard](assets/split_mu_dynamics/multi_mu_scenarios_dashboard.png)
+
+*Multi-µ-Matrix: Kennwerte von acht Manövern über dem Reibwert für vier Konfigurationen. Quelle: `examples/multi_mu_scenarios_benchmark.py`.*
+
+<!-- figures:end -->

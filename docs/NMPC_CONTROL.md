@@ -77,3 +77,21 @@ Quantitative results (tracking error, sideslip) will be produced reproducibly by
 | **Kinematic NMPC (SLSQP)** | `SLSQPPathTrackingNMPC` | [nmpc.py](../src/vehicle_model/controllers/nmpc.py) | [test_nmpc_controller.py](../tests/vehicle_model/test_nmpc_controller.py) |
 | **NMPC Vehicle Controller** | `NMPCPathTrackingController` | [nmpc.py](../src/vehicle_model/controllers/nmpc.py) | [test_nmpc_controller.py](../tests/vehicle_model/test_nmpc_controller.py) |
 | **Dynamic Two-Track NMPC** | `DynamicTwoTrackNMPC` | [dynamic_two_track_nmpc.py](../src/vehicle_model/controllers/dynamic_two_track_nmpc.py) | [test_dynamic_two_track_nmpc.py](../tests/vehicle_model/test_dynamic_two_track_nmpc.py) |
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![dynamic_two_track_nmpc_tracking](assets/nmpc_control/dynamic_two_track_nmpc_tracking.png)
+
+*Dynamisches Zweispur-NMPC, Ausweichen bei 90 km/h: Bahn, Lenkwinkel vorn/hinten, Reibkreisausnutzung bezogen auf µF_z. Die Bahn schießt auf 4,8 m über (Ziel 3,5 m). Werte knapp über 1 sind keine Verletzung: Die Spitzenreibung des MF-Reifens liegt bei geringer Radlast über µ. Quelle: `examples/driver_and_nmpc_dynamics_demo.py`.*
+
+![e2e_nmpc_kamm_friction_evasion](assets/nmpc_control/e2e_nmpc_kamm_friction_evasion.png)
+
+*NMPC-Spurwechsel 90 km/h (E2E-Test): Bahn, koordinierte Lenkwinkel, Radmomente und Reibkreisausnutzung. Quelle: `examples/e2e_deep_analysis_and_benchmarking.py`.*
+
+<!-- figures:end -->

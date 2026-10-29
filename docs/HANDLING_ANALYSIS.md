@@ -149,3 +149,17 @@ Ausgaben in `output/handling_analysis/` (nicht versioniert): `reference_vehicle_
 - Die Reduktion vernachlässigt Radlastverlagerung; bei größeren $a_y$ weicht das 7-DOF-Modell erwartungsgemäß ab.
 - Transiente Reifendynamik (Relaxationslänge) fehlt in beiden Modellen (M3).
 - Die Hinterachslenkung im V1-Modell ist ein kinematischer Eingang ohne Aktuatordynamik (M4/M5).
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![reference_vehicle_handling](assets/handling_analysis/reference_vehicle_handling.png)
+
+*Lineare Fahrdynamik des Referenzfahrzeugs: stationäre Gierverstärkung (charakteristische Geschwindigkeit ≈ 194 km/h), Eigenfrequenz, Dämpfung, Frequenzgang der Gierrate und Lenkwinkelsprung 7-DOF gegen linear. Quelle: `examples/handling_analysis_reference_vehicle.py`.*
+
+<!-- figures:end -->

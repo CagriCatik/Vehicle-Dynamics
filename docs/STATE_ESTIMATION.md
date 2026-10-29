@@ -128,3 +128,17 @@ Where:
 ## 6. Sensor timing, information access, observer comparison and robustness (M7)
 
 See [ESTIMATION_ROBUSTNESS.md](ESTIMATION_ROBUSTNESS.md). Note: the RLS friction estimator (section 3) reads tyre forces, slips and wheel loads from the simulation telemetry; it is declared as a ground-truth reference (`information = "ground_truth_tyre_forces"`), not a sensor-based estimator.
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![estimation_and_pso_validation](assets/state_estimation/estimation_and_pso_validation.png)
+
+*EKF-Schwimmwinkelbeobachter und RLS-Reibwertschätzer gegen die Wahrheit, IMU-Biasschätzung, PSO-Konvergenz. **Ehrlicher Befund:** Der EKF verfehlt die Schwimmwinkelspitzen deutlich (≈ 3° statt 6°), und der RLS-Reibwert bleibt bei 1,0 bzw. 0,7, während der wahre Wert bei 0,35–0,45 liegt: In diesem Manöver konvergiert er nicht. Das war der Anlass für den sensorbasierten Schätzer `estimation/sensor_friction.py`. Quelle: `examples/estimation_and_pso_demo.py`.*
+
+<!-- figures:end -->

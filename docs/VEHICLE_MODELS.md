@@ -232,3 +232,16 @@ For complete bibliographic details, ISBNs, and full citations, refer to the mast
 - **Schramm, D.; Hiller, M.; Bardini, R. (2020):** *Modellbildung und Simulation der Dynamik von Kraftfahrzeugen*. 4. Aufl., Springer Vieweg. (Mehrkörperdynamik räumlicher 14-DOF Fahrzeugsysteme).
 - **Gillespie, T. D. (1992):** *Fundamentals of Vehicle Dynamics*. SAE International. (Klassische Grundlagen des Fahrverhaltens und Radlasttransfers).
 
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![seven_dof_maneuver](assets/vehicle_models/seven_dof_maneuver.png)
+
+*7-DOF-Zweispurmodell mit Hinterachslenkung und Torque Vectoring auf Split-µ: Bahn, Längs- und Querbewegung, Gierrate und Lenkwinkel, Raddrehzahlen, Längsschlupf, Radlasten, Antriebs- und Bremsmomente, Reifenkräfte. Quelle: `examples/seven_dof_4ws_tv_demo.py`.*
+
+<!-- figures:end -->

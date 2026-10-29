@@ -73,3 +73,33 @@ This generates:
 - Traceable Engineering Markdown Report: [output/validation_report/validation_report.md](../output/validation_report/validation_report.md)
 - Telemetry Plots (3-column layout): `output/validation_report/figures/*.png`
 - Real-Time 20 FPS Maneuver Animations: `output/validation_report/animations/*.gif`
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![iso_3888_dlc](assets/validation_platform/iso_3888_dlc.gif)
+
+*Doppelspurwechsel nach dem Vorbild von ISO 3888-2 mit allen vier Konfigurationen. Quelle: `python examples/run_validation_platform.py --animations`.*
+
+![iso_3888_dlc](assets/validation_platform/iso_3888_dlc.png)
+
+*Doppelspurwechsel: Bahn mit Pylonen, Gierrate, Schwimmwinkel, Querbeschleunigung. Quelle: `examples/run_validation_platform.py`.*
+
+![sine_with_dwell](assets/validation_platform/sine_with_dwell.png)
+
+*Sine with Dwell nach dem Vorbild von FMVSS 126 (Simulation, keine Prüfung nach Vorschrift). Quelle: `examples/run_validation_platform.py`.*
+
+![mu_split_braking](assets/validation_platform/mu_split_braking.png)
+
+*Split-µ-Bremsung mit fester Bremsmomentvorgabe und gerader Lenkung. **Offener Widerspruch:** Hier bleibt IVMC stabil, in der Konfigurationsmatrix (MOTION_CONTROL.md) mit Pedalvorgabe dreht er sich ein, mit MF- wie mit Pacejka-Reifen. Der Unterschied liegt in der Szenario-Ausführung und ist noch nicht geklärt. Quelle: `examples/run_validation_platform.py`.*
+
+![fishhook_ncap](assets/validation_platform/fishhook_ncap.png)
+
+*Fishhook nach NCAP-Vorbild. Quelle: `examples/run_validation_platform.py`.*
+
+<!-- figures:end -->

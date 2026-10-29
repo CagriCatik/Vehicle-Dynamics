@@ -184,3 +184,21 @@ Alle Regler halten die Grenzwerte in allen drei Varianten deutlich ein.
 | [test_constraints.py](../tests/vehicle_model/test_constraints.py) | nur `hard` entscheidet die Zulässigkeit, `plant` die Realisierbarkeit; alle Überschreitungen mit Betrag; fehlende/unbekannte Werte und nicht endliche Pläne; Toleranz; Stabilitätsgrenzen; LTV-MPC meldet Zulässigkeit neben dem Solverstatus; NMPC: harte Lenkrate auf dem angewendeten Befehl (abschaltbar: dann advisory und gemeldet); Bremsplan auf µ = 0,1 als nicht realisierbar erkannt |
 | [test_solver_diagnostics.py](../tests/vehicle_model/test_solver_diagnostics.py) | Klassifikation, Zeitbudget, Erholung; injizierter NMPC-Ausfall nutzt den verschobenen Plan; gemeldetes Giermoment = erzeugtes Moment |
 | [test_controller_benchmark.py](../tests/vehicle_model/test_controller_benchmark.py) | Sine-with-Dwell-Signal; Kennzahlen an einer synthetischen Historie; Reproduzierbarkeit und Unabhängigkeit der Läufe; Abnahme: passiv dreht sich ein, PI und GS-LQR halten die Grenzwerte (Marker `slow`) |
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![controller_benchmark](assets/motion_control/controller_benchmark.png)
+
+*Gierrate im Sine with Dwell (80 km/h, 8°) für alle Regler auf derselben Strecke, nominal und auf zwei Streckenvarianten (+15 % Masse/Trägheit, Hinterachs-Schräglaufsteifigkeit −20 %). Quelle: `examples/controller_benchmark.py`.*
+
+![split_mu_matrix](assets/motion_control/split_mu_matrix.png)
+
+*Split-µ-Vollbremsung (100 km/h, µ 1,0/0,2, Lenkung gerade): Bahn und Gierwinkel je Konfiguration. Nur die Allokation, die das Bremsmoment auf der Hoch-µ-Seite reduziert, bleibt gerade. Quelle: `examples/split_mu_matrix_demo.py`.*
+
+<!-- figures:end -->
