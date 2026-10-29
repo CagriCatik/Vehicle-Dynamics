@@ -109,36 +109,20 @@ class TestFourWheelSteeringScenarios:
         assert not np.isnan(res.ay_mps2).any()
 
     @pytest.mark.slow
-    @pytest.mark.xfail(strict=True, reason=(
-        "Known limitation (docs/AUDIT.md, 4.7): in this scenario the vehicle spins with and without "
-        "rear-steer yaw damping (heading ~90 deg), with either tyre set. The former assertion compared "
-        "the lateral offset of two spinning vehicles and passed by coincidence. Stabilising split-mu "
-        "braking needs ABS and a brake yaw moment (see controllers/stability_control.py), which this "
-        "scenario does not use; to be reworked with the scenario modules (M9)."))
-    def test_split_mu_braking_active_yaw_damping(self, test_vehicle: SevenDOFModel):
-        """Active rear-steer yaw damping should keep the vehicle stable during split-mu braking."""
+    def test_split_mu_braking_rear_steer_yaw_damping_cannot_prevent_the_spin(self, test_vehicle: SevenDOFModel):
+        """Physical limit (Plan V3.0 M10 5.5, Audit 4.7): rear-steer yaw damping alone cannot stabilise split-mu braking.
+
+        Without brake-moment control the rear steering cannot counter the brake yaw moment
+        (see simulation/four_wheel_steering/split_mu_matrix.py: 260-1300 N m against 3700-4000 N m).
+        The test passes when the model shows this limit: both variants spin. It replaces a former
+        assertion that compared two spinning vehicles and passed by coincidence.
+        """
         ctrl_open_loop = FourWheelSteeringController(mode=SteeringMode.LOOKUP_TABLE, enable_yaw_damping=False)
         ctrl_closed_loop = FourWheelSteeringController(mode=SteeringMode.LOOKUP_TABLE, enable_yaw_damping=True, k_yaw_damping=0.08)
-
-        res_open = simulate_split_mu_braking_4ws(
-            model=test_vehicle,
-            controller=ctrl_open_loop,
-            v_kph=100.0,
-            duration_s=2.5,
-            controller_name="4WS Open-Loop",
-        )
-        res_closed = simulate_split_mu_braking_4ws(
-            model=test_vehicle,
-            controller=ctrl_closed_loop,
-            v_kph=100.0,
-            duration_s=2.5,
-            controller_name="4WS Closed-Loop",
-        )
-
-        # The vehicle must stay stable (not spin) and on its lane with yaw damping active
-        assert abs(res_closed.metrics.final_heading_dev_deg) < 10.0
-        assert res_closed.metrics.max_lateral_dev_m < 0.5
-        assert res_open.metrics is not None
+        for ctrl in (ctrl_open_loop, ctrl_closed_loop):
+            res = simulate_split_mu_braking_4ws(model=test_vehicle, controller=ctrl, v_kph=100.0, duration_s=2.5,
+                                                controller_name="4WS")
+            assert abs(res.metrics.final_heading_dev_deg) > 45.0
 
     @pytest.mark.slow
     def test_parallel_parking_sweep_reduction(self, test_vehicle: SevenDOFModel):

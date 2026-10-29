@@ -96,6 +96,21 @@ Alle Regler stoßen an das Momentenlimit von 4000 N m. Rund 20–30 % der Schrit
 
 **Split-µ-Bremsung:** passiv dreht sich ein (88°). Alle Regler bleiben auf 0,01–0,02° und 2–4 cm Versatz, mit 151–152 m Bremsweg. Das entspricht der Select-low-Grenze bei fester Lenkung (M5); die Regler unterscheiden sich hier kaum, weil alle durch dieselbe Allokation begrenzt sind.
 
+### Split-µ-Konfigurationsmatrix (V3.0 M10 §5.5)
+
+[`four_wheel_steering/split_mu_matrix.py`](../src/vehicle_model/simulation/four_wheel_steering/split_mu_matrix.py), 100 km/h, µ 1,0 / 0,2, gleiches Pedal für alle, Lenkung gerade gehalten. Giermomente: Spitze der ersten 0,3 s, aufgeteilt in Längskraft- (Bremse) und Querkraftanteil (Lenkung).
+
+| Konfiguration | Giermoment durch | Pedal 0,3: Gierwinkel / Brems-Mz / Lenk-Mz | Pedal 1,0: Gierwinkel / Brems-Mz / Lenk-Mz |
+|---|---|---|---|
+| passiv | – | 89,0° / 3746 / 947 N m | 88,0° / 4049 / 165 N m |
+| 4WS | Lenkung | 88,8° / 3744 / 1293 N m | 88,2° / 4047 / 258 N m |
+| 4WS + ABS | Lenkung | 94,4° / 3720 / 1309 N m | 90,6° / 4047 / 746 N m |
+| 4WS + ABS + ESC/TV | Bremsmoment addieren | 106,4° / 3502 / 1603 N m | 100,8° / 4091 / 1830 N m |
+| TV (Allokation) | Bremsmoment umverteilen | **0,0°** / 955 / 47 N m | **0,0°** / 1311 / 68 N m |
+| IVMC | Bremsmoment addieren | 78,3° / 3502 / 1603 N m | 103,1° / 4091 / 1830 N m |
+
+Auf homogener Fahrbahn bremsen alle Konfigurationen gerade. Die Hinterachslenkung erreicht höchstens ein Drittel des Bremsgiermoments, weil die gebremsten Reifen kaum Seitenkraft übertragen (Kammscher Kreis). ESC, das Bremsmoment nur addiert, greift auf der Niedrig-µ-Seite ein und ändert die Asymmetrie kaum. Nur die Allokation senkt das Bremsmoment auf der Hoch-µ-Seite (Select-low-ähnlich) und bleibt gerade, mit 2,2 m/s² Verzögerung. Die eindrehenden Konfigurationen sind erwartete physikalische Grenzen und werden als solche getestet.
+
 **Robustheit** (Plan.md, Abschnitt 10.4), Sine with Dwell auf Streckenvarianten, Regler unverändert:
 
 | Variante | passiv | ungünstigster Regler (Verhältnis 1,0 s) |
@@ -112,7 +127,7 @@ Alle Regler halten die Grenzwerte in allen drei Varianten deutlich ein.
 - **LTV-MPC:** LTI-Modell über den Horizont; nur Box-Grenzen auf den Stellgrößen, keine Zustandsgrenzen; keine formale Stabilitätsgarantie (kein Endkostenterm aus der Riccati-Lösung).
 - **NMPC (Pfadfolge):** Die neue Diagnostik zeigt, dass das dynamische NMPC im anspruchsvollen Spurwechsel des E2E-Tests (90 km/h, µ = 0,75, 15 Iterationen) in 25–48 % der Schritte `degraded` ist. Es erreicht den Zielversatz trotzdem (Y = 3,7–3,9 m bei Soll 3,5 m). Mehr Iterationen oder ein besserer Warmstart sind offen. Das Zeitbudget wird nur gemeldet. Die NMPCs sind nicht im Benchmark, weil sie eine andere Aufgabe lösen (Pfadfolge statt Gierstabilisierung bei Fahrervorgabe).
 - Nicht umgesetzt: ein separates Gierraten-PID mit D-Anteil (das PI-Gesetz deckt die Referenz ab).
-- **4WS-Split-µ-Szenario** (`four_wheel_steering_scenarios.py`): Das Fahrzeug dreht sich mit und ohne Gierdämpfung ein. Der Test ist jetzt ein striktes `xfail` mit dokumentiertem Grund (Audit 4.7).
+- **4WS-Split-µ-Szenario:** in V3.0 (M10 §5.5) als Konfigurationsmatrix aufgelöst, siehe Abschnitt „Split-µ-Konfigurationsmatrix“.
 
 ## 6. Verifikation
 

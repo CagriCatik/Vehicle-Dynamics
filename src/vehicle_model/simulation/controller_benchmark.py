@@ -143,6 +143,12 @@ def compute_kpis(h: dict, sc: Scenario) -> dict:
             out[k] = float(h["X"][-1])
         elif k == "max_lateral_offset":
             out[k] = float(np.max(np.abs(h["Y"])))
+        elif k == "peak_yaw_rate_deg":
+            out[k] = float(np.degrees(np.max(np.abs(r))))
+        elif k == "max_abs_slip":
+            out[k] = float(np.max(h["max_abs_slip"]))
+        elif k == "mean_deceleration":  # from the speed magnitude: v_x alone drops when the car turns sideways
+            out[k] = float((sc.v0 - h["speed"][-1]) / t[-1])
         else:
             raise ValueError(f"unknown KPI {k!r}")
     out["computation_ms_mean"] = float(np.mean(h["computation_ms"]))
@@ -162,7 +168,9 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
     s = SevenDOFState(vx=sc.v0, omega=np.full(4, sc.v0 / p.Reff))
     tel = None
     keys = ("t", "X", "Y", "psi", "vx", "r", "beta", "r_ref", "steer_f", "steer_r", "Mz_demand",
-            "Mz_allocated", "computation_ms", "status")
+            "Mz_allocated", "computation_ms", "status", "T_brake_total", "max_abs_slip", "Mz_tyre_longitudinal",
+            "Mz_tyre_lateral", "speed")
+    pos = model.wheel_positions
     h = {k: [] for k in keys}
     t = 0.0
     while t < sc.duration - 1e-9 and (sc.stop_speed is None or s.vx > sc.stop_speed):
@@ -173,6 +181,14 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
         s, tel = model.step(s, SevenDOFControlInput(steer_f=out.steer_f, steer_r=out.steer_r,
                                                     T_drive=out.T_drive, T_brake=out.T_brake), dt)
         t += dt
+        # Yaw moment of the tyre forces about the CoG, split by force direction in the wheel frame:
+        # longitudinal (brake/drive) and lateral (steering) contributions; together sum (x F_y,b - y F_x,b).
+        c, sn = np.cos(tel.steer_angles), np.sin(tel.steer_angles)
+        mz_long = float(np.sum((pos[:, 0] * sn - pos[:, 1] * c) * tel.Fx_wheel))
+        mz_lat = float(np.sum((pos[:, 0] * c + pos[:, 1] * sn) * tel.Fy_wheel))
+        for k, v in (("T_brake_total", float(np.sum(out.T_brake))), ("max_abs_slip", float(np.max(np.abs(tel.kappa)))),
+                     ("Mz_tyre_longitudinal", mz_long), ("Mz_tyre_lateral", mz_lat), ("speed", math.hypot(s.vx, s.vy))):
+            h[k].append(v)
         for k, v in (("t", t), ("X", s.X), ("Y", s.Y), ("psi", s.psi), ("vx", s.vx), ("r", s.r),
                      ("beta", math.atan2(s.vy, max(abs(s.vx), 0.1))), ("r_ref", r_ref),
                      ("steer_f", out.steer_f), ("steer_r", out.steer_r), ("Mz_demand", out.desired_yaw_moment),
