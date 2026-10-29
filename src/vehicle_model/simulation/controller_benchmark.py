@@ -139,8 +139,8 @@ def compute_kpis(h: dict, sc: Scenario) -> dict:
             out[k] = float(abs(np.interp(t_end + dt_after, t, r)) / r_peak)
         elif k == "lateral_displacement":  # 1.07 s after the start of steer, from the initial path
             out[k] = float(abs(np.interp(sc.params["t_start"] + 1.07, t, h["Y"])))
-        elif k == "stopping_distance":
-            out[k] = float(h["X"][-1])
+        elif k == "stopping_distance":  # path length: equals X when braking straight, also valid when spinning
+            out[k] = float(h["X"][0] + np.sum(np.hypot(np.diff(h["X"]), np.diff(h["Y"]))))
         elif k == "max_lateral_offset":
             out[k] = float(np.max(np.abs(h["Y"])))
         elif k == "peak_yaw_rate_deg":
@@ -178,7 +178,8 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
     pos = model.wheel_positions
     h = {k: [] for k in keys}
     t = 0.0
-    while t < sc.duration - 1e-9 and (sc.stop_speed is None or s.vx > sc.stop_speed):
+    # speed magnitude, not v_x: a spinning vehicle with small v_x is still moving
+    while t < sc.duration - 1e-9 and (sc.stop_speed is None or math.hypot(s.vx, s.vy) > sc.stop_speed):
         target = sc.driver(t, s)
         out = ctrl.compute_control(s, target, tel, dt)
         mu_hat = float(np.mean(tel.mu)) if tel is not None else 1.0

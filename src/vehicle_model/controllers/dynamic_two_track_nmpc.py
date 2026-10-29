@@ -15,9 +15,10 @@ Control Input Vector (u in R^4):
 Features:
 1. Dynamic two-track non-linear prediction model with dynamic normal load transfer.
 2. Combined-slip Magic Formula tyre model; friction-circle utilisation above 0.90 is
-   penalised in the cost (penalty, not a constraint). The prediction does not cap the
-   longitudinal tyre force at mu F_z, so a plan can rely on forces the vehicle cannot
-   produce; this is checked as a plant limit (utilisation <= 1) and reported.
+   penalised in the cost (penalty, not a constraint). The utilisation is that of the
+   *demanded* forces; the prediction caps the longitudinal force at mu F_z as the plant
+   tyres do, so an over-demand does not distort the predicted motion. A demand above
+   the friction limit is checked as a plant limit (utilisation <= 1) and reported.
 3. Single-shooting discretisation (decision variables are the 4N inputs, states are
    rolled out with RK4) with a shifted warm start.
 4. Active four-wheel steering (4WS) and direct yaw moment coordination.
@@ -276,12 +277,14 @@ class DynamicTwoTrackNMPC(VehicleController):
         # Torque vectoring moment differential: delta_Fx = Mz_tv / track
         dFx_f = 0.5 * Mz_tv / p.wf
         dFx_r = 0.5 * Mz_tv / p.wr
-        Fx = np.array([
+        Fx_demand = np.array([
             Fx_base - dFx_f,
             Fx_base + dFx_f,
             Fx_base - dFx_r,
             Fx_base + dFx_r,
         ])
+        mu_fz = np.maximum(100.0, mu * Fz)
+        Fx = np.clip(Fx_demand, -mu_fz, mu_fz)   # the tyres saturate: no more than mu F_z
 
         # Pacejka lateral tyre forces with combined-slip friction circle limitation
         # Cornering stiffness
@@ -301,8 +304,8 @@ class DynamicTwoTrackNMPC(VehicleController):
             # Kamm circle combined slip coupling
             fx_ratio = min(0.98, abs(Fx[i]) / mu_fzi)
             Fy[i] = Fy0 * math.sqrt(max(0.01, 1.0 - (fx_ratio ** 2)))
-            # Kamm utilization ratio
-            kamm_ratios[i] = math.sqrt(Fx[i] ** 2 + Fy[i] ** 2) / mu_fzi
+            # Kamm utilization of the demanded forces (> 1: the demand exceeds the friction limit)
+            kamm_ratios[i] = math.sqrt(Fx_demand[i] ** 2 + Fy[i] ** 2) / mu_fzi
 
         # Transform forces to body frame
         Fx_body = Fx * np.cos(steer_arr) - Fy * np.sin(steer_arr)

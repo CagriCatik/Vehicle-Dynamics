@@ -240,7 +240,7 @@ def run_pso_tuning_pass(
 
     result = pso.optimize(verbose=False)
 
-    yaml_target = Path("configs/controllers/pso_optimized_tv.yaml")
+    yaml_target = Path("output/estimation/pso_optimized_tv.yaml")   # generated result, not a tracked config
     result.export_to_yaml(
         yaml_target,
         objective_name="yaw_rate_and_sideslip_minimization",

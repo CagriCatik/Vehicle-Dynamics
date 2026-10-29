@@ -58,7 +58,9 @@ def test_kpis_on_a_synthetic_history():
     assert k["yaw_rate_ratio_1s"] == pytest.approx(0.1 * math.exp(-1.0) / 0.4, rel=1e-3)
     assert k["yaw_rate_ratio_1_75s"] == pytest.approx(0.1 * math.exp(-1.75) / 0.4, rel=1e-3)
     assert k["lateral_displacement"] == pytest.approx(2.14, rel=1e-3)
-    assert k["stopping_distance"] == pytest.approx(30.0) and k["max_sideslip_deg"] == pytest.approx(2.0)
+    # path length: first point X[0] (straight from the origin), then along the path (here at slope 2/10)
+    assert k["stopping_distance"] == pytest.approx(0.05 + (3.0 - 0.005) * math.hypot(10.0, 2.0))
+    assert k["max_sideslip_deg"] == pytest.approx(2.0)
     assert k["status_counts"] == {"nominal": 600}
 
 
