@@ -1,4 +1,4 @@
-# Drift-Regler: Verfahren (Drift-Plan D1–D4)
+# Drift-Regler: Verfahren (Drift-Plan D1–D5)
 
 Autonomer Drift auf der bestehenden 7-DOF-Strecke nach `Plan_v3.md`. Dieses Dokument beschreibt die Verfahren;
 Ergebnisse stehen in [DRIFT_RESULTS.md](DRIFT_RESULTS.md), Modellgrenzen und Konventionen in
@@ -20,6 +20,9 @@ reales Fahrzeug.
 | Gain-Schedule entlang eines Gleichgewichtszweigs | `drift/schedule.py` | D4 (für D5) |
 | Überwachter Regler (Einleitung, Halten, Austritt) | `drift/control_adapter.py` (`DriftSupervisedController`) | D4 |
 | Einleitung, Austritt, Erfolgsquoten | `simulation/drift/scenarios.py` | D4 |
+| Pfadreferenzen (Kreis, Acht) | `drift/path_reference.py` | D5 |
+| Geplanter Drift-LQR mit Sollpunktrampe und Radial-Außenschleife | `drift/control_adapter.py` (`ScheduledDriftController`) | D5 |
+| Kreisführung, Übergang, Acht | `simulation/drift/tracking.py` | D5 |
 | Plots | `visualization/drift_plots.py` | D1–D3 |
 
 Abhängigkeitsrichtung wie im Plan (3.2): `drift/` kennt weder Matplotlib noch Dateien; `simulation/drift/` liest
@@ -160,24 +163,57 @@ Teilweises Gegenlenken ist schlechter als keines; k_β = 1 ist Standard (`exit_c
 - Gegenlenken des gesamten Schwimmwinkels im Austritt: Bei 11 m/s hat normale Kurvenfahrt β = +4°; Gegenlenken lenkt
   dann weiter ein und das Austrittskriterium |β| < 3° wird nie erreicht. Deshalb nur der Driftanteil (β·r < 0).
 
-## 6. Reproduktion
+## 6. Kreisführung, Sollpunktwechsel und Acht (D5)
+
+**Kinematik** (Plan 4.1): Bahnrichtung `χ = ψ + β`, `χ̇ = r + β̇`; nur stationär ist `R = v/|r|`. Der Pfadfehler eines
+Kreises ist radial, `e = |p − c| − R` (> 0 außen), unabhängig von der Position auf dem Kreis.
+
+**Gain-Schedule entlang des Zweigs** (`drift/schedule.py`): Gleichgewichte und LQR an festen β-Stützstellen
+(13 m/s, µ 0,9: 6°…26°), `q*`, `u*`, `K` linear in β interpoliert. Entlang des Zweigs wächst der Radius monoton mit |β|
+(20,3 m bei 6°, 25,6 m bei 20°, 27,5 m bei 26°); `radius_to_beta` kehrt das um.
+
+**Sollpunktrampe (TRANSITION):** `β_ref` läuft mit höchstens `β̇_max` (Standard 1°/s) zum Ziel; der innere LQR folgt dem
+Arbeitspunkt `schedule.point(β_ref)`. Der Zustandsautomat meldet währenddessen TRANSITION und vergleicht den
+Schwimmwinkel mit dem bewegten Sollpunkt (`retarget`).
+
+**Radiale Außenschleife:** `β_Ziel = β(R_ref) − sign(β) (k_p e + k_d ė)`, auf den Zweig begrenzt und über die Rampe
+geführt (Standard k_p = 1°/m, k_d = 0,5°/(m/s)). Liegt das Fahrzeug außen (e > 0), wird |β| kleiner und damit der Radius
+enger. Die Außenschleife verschiebt nur den Sollpunkt, sie greift nicht in den LQR ein (Plan D5 4).
+
+**Vergleich S06** (gleiches Fahrzeug, Reifen, Straße): offener Kreis mit `u*`; das bestehende ESC
+(`AllocatedStabilityController`, Totband 2°/s, Allokation auf die Hinterräder) mit den Gleichgewichtsstellgrößen als
+Fahrervorgabe; Drift-LQR fest (D3); Drift-LQR mit Schedule und Außenschleife.
+
+**Acht (S07):** Linksdrift halten, überwachter Austritt, aus der Normalfahrt Rechtsdrift einleiten, halten, Austritt.
+Bewertet je Abschnitt (links, Übergang, rechts) mit Kreisausgleich (Kåsa) und geometrisch: Eine Acht verlangt sich
+berührende Kreise, Mittelpunktabstand / (R_links + R_rechts) = 1 (Toleranz 0,15).
+
+**Reproduzierbarkeit:** Jeder Simulationslauf beginnt mit einer frischen Kopie der Strecke (`fresh_plant`). Eine
+wiederverwendete Strecke trug den Startwert der Lastverlagerungsiteration von Lauf zu Lauf weiter; auf dem instabilen
+Driftgleichgewicht entschied das (1e-7) darüber, wann der offene Kreis abfällt (Befund in D5, Regressionstest).
+
+## 7. Reproduktion
 
 ```bash
 python examples/drift_tyre_audit.py                      # D1
 python examples/drift_equilibria_demo.py                 # D2, configs/drift/equilibrium_sweep.yaml (~8 min)
 python examples/drift_hold_demo.py                       # D3, configs/drift/drift_lqr.yaml (~3 min)
 python examples/drift_initiation_demo.py                 # D4, configs/drift/initiation.yaml (36 Läufe, ~16 min parallel)
+python examples/drift_circle_demo.py                     # D5, configs/drift/circle_hold.yaml (~10 min)
 python -m pytest tests/vehicle_model/drift -q
 ```
 
 Konfigurationen werden streng geprüft (unbekannte Schlüssel, Wertebereiche, Dateien, Reifennamen, Gewichtsdimensionen)
 und aufgelöst in den Ergebnisordner geschrieben (`run_config_resolved.yaml`).
 
-## 7. Grenzen (Stand D4)
+## 8. Grenzen (Stand D5)
 
 - Nur Hinterradantrieb mit offenem Differential und Frontlenkung; Torque Vectoring und Allrad folgen nicht vor D7.
 - Informationsmodus nur `ideal_full_state`; geschätzte und sensorbeschränkte Rückführung folgen (D7).
 - Lokale Aussage: Die Linearisierung gilt nahe dem Gleichgewicht; Einfangbereich und globales Verhalten sind nicht
   bewiesen, nur für die simulierten Störungen und die 36 Einleitungen des Sweeps gezeigt.
-- Einleitung nur über den Einfangbereich des LQR aus stationärer Kurvenfahrt; bei 25° und µ 0,9 reicht er nicht.
+- Einleitung nur über den Einfangbereich des LQR aus stationärer Kurvenfahrt; bei 25° und µ 0,9 reicht er nicht direkt,
+  wohl aber gestuft (15° einleiten, dann Sollpunktwechsel, D5).
+- Die Außenschleife verändert nur den Radius innerhalb des Zweigs (etwa 20–27 m bei 13 m/s), nicht den Mittelpunkt; eine
+  geometrische Acht entsteht so nicht.
 - Driftwinkel ab etwa 15–20° liegen an der Hinterachse außerhalb der erklärten Reifengültigkeit (`valid_extrapolated`).

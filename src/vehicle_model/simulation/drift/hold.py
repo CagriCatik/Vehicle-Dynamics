@@ -103,10 +103,25 @@ def initial_state(eq, pert: dict):
                          omega=omega)
 
 
+def fresh_plant(model):
+    """Independent copy of the plant with a defined load-transfer start value.
+
+    The plant warm-starts its load-transfer iteration from the previous evaluation
+    (``_accel_guess``). Reusing one plant object across runs made results depend on the run
+    order (found in D5: identical initial states of an unstable drift fell off the equilibrium
+    at different times). Every run therefore starts from a copy with the same start value.
+    """
+    import copy
+    m = copy.copy(model)
+    m._accel_guess = (0.0, 0.0)
+    return m
+
+
 def simulate(model, controller, x0, duration: float, dt: float):
-    """Closed loop through the existing ScenarioRunner; ``controller=None``: open loop with constant ``u*``."""
+    """Closed loop through the existing ScenarioRunner on a fresh plant copy (telemetry passed to the controller)."""
     from vehicle_model.core.types import SevenDOFControlInput
     from vehicle_model.simulation.scenario_runner import ScenarioRunner
+    model = fresh_plant(model)
     sat = []
 
     def cb(t, s, tel):

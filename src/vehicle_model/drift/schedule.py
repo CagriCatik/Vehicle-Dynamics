@@ -61,4 +61,14 @@ class BranchSchedule:
         return cornering_equilibrium(self.model, self.speed, float(self.u[0, 0]), self.mu)
 
 
-__all__ = ("BranchSchedule",)
+__all__ = ("BranchSchedule", "radius_to_beta")
+
+
+def radius_to_beta(schedule: BranchSchedule, radius: float) -> float:
+    """Sideslip on the branch whose equilibrium radius is ``radius`` (linear interpolation; clamped)."""
+    R = np.array([e.radius for e in schedule.equilibria])
+    b = schedule.betas
+    order = np.argsort(R)
+    if np.any(np.diff(R[order]) <= 0.0):
+        raise ValueError("radius is not monotonic along the branch; no unique sideslip for a radius")
+    return float(np.interp(radius, R[order], b[order]))

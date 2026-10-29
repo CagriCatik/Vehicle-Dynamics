@@ -1,0 +1,15 @@
+# Drift plan D5: circle tracking (S06), staged initiation with set-point transition, figure-eight (S07).
+name: drift_circle_tracking
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+powertrain: {layout: rwd}
+reference:
+  speed_mps: 13.0
+  beta_deg: 20.0                  # |beta| of the circle equilibrium (left drift)
+  mu: 0.9
+  branch_beta_deg: [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26]   # gain schedule along the branch
+circle: {offsets_m: [0.0, 2.0, -2.0], k_p_deg_per_m: 1.0, k_d_deg_per_mps: 0.5, duration_s: 25.0}
+transition: {initial_beta_deg: 15.0, final_beta_deg: 25.0, rate_degps: 1.0, mu: 0.9, duration_s: 60.0, exit_s: 50.0}
+figure_eight: {beta_deg: 20.0, left_hold_s: 12.0, right_hold_s: 12.0, duration_s: 80.0}
+simulation: {dt_s: 0.005}
+outputs: {directory: output/drift/circle_tracking}

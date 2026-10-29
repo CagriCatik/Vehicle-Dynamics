@@ -1,6 +1,6 @@
 # Drift-Regler: Ergebnisse und Abnahme (Drift-Plan)
 
-Ergebnisse der Pakete D0–D4 mit Gate-Bewertung (PASS / FAIL / INFEASIBLE). Verfahren:
+Ergebnisse der Pakete D0–D5 mit Gate-Bewertung (PASS / FAIL / INFEASIBLE). Verfahren:
 [DRIFT_CONTROLLER.md](DRIFT_CONTROLLER.md); Modellgrenzen: [DRIFT_MODEL_VALIDITY.md](DRIFT_MODEL_VALIDITY.md). Alle
 Parameter synthetisch, nur virtuelle Modellvalidierung.
 
@@ -13,6 +13,7 @@ Parameter synthetisch, nur virtuelle Modellvalidierung.
 | D2 Driftgleichgewichte | PASS (mit Extrapolation) | nichttriviale, physikalisch geprüfte Gleichgewichte in beiden Richtungen; innerhalb der Reifengültigkeit nur bis etwa 15° Schwimmwinkel (`valid`), darüber `valid_extrapolated`; 6 von 140 Punkten ohne Gleichgewicht, 2 als Kurvenfahrt statt Drift erkannt |
 | D3 Halten mit LQR | PASS | Gleichgewicht offen instabil (Eigenwert +3,4 1/s), stabilisierbar (PBH 7/7); LQR hält in beiden Richtungen und regelt alle 14 Störfälle aus, ohne Driftverlust; offen geht jede Störung verloren |
 | D4 Einleitung, Austritt, Recovery | PASS mit Grenze | End-to-End aus Geradeausfahrt ohne Zustandseingriff: 30 von 36 Läufen erfolgreich (83 %), µ 0,6 18/18, µ 0,9 12/18; nicht erreicht: 25° bei µ 0,9 (Einleitung überschwingt, korrekter Abbruch bei 13 und 15 m/s, Dreher in der Recovery bei 11 m/s → FAILED gemeldet). Überwachter Austritt ohne Überschwingen gegenüber 21–47° bei sofortiger Abschaltung |
+| D5 Kreisführung, Übergang, Acht | Kreis PASS, Übergang PASS, Acht: Ablauf PASS / Geometrie FAIL | Radiale Außenschleife beseitigt ±2 m Startversatz (0,00 / 0,06 m), fester LQR behält 1,4 m; gestufte Einleitung auf 25° bei µ 0,9 erreicht (die D4-Grenze), mit 8° Überschwingen; Acht: beide Driftkreise erreicht und symmetrisch, aber Mittelpunktabstand 1,34 × (R_l + R_r) statt 1 (Kreise berühren sich nicht) |
 
 ## D2: Driftgleichgewichte
 
@@ -110,10 +111,50 @@ Heck selbst aus; Austritt mit Gegenlenken in Fahrtrichtung (`k_β = 1`), teilwei
 rampierte Sollgeschwindigkeit nötig (Sollsprung erzeugte einen Dreher bei 3 m/s); Gegenlenken nur des Driftanteils
 (bei 11 m/s hat normale Kurvenfahrt β = +4°; vorher blieb der Austritt dort hängen, 26/36 → 30/36).
 
-## Offene Punkte nach D4
+## D5: Kreisführung, Sollpunktwechsel, Acht (S06, S07)
+
+`configs/drift/circle_hold.yaml`: Gleichgewicht 13 m/s, β −20°, R 25,6 m, µ 0,9; Schedule über 6…26°; Kreis mit
+Gleichgewichtsradius, radial um 0 / +2 / −2 m versetzt (außen / innen); 25 s. Ergebnisse: `output/drift/circle_tracking/`.
+
+| Startversatz | offen (u*) | ESC | Drift-LQR fest | Drift-LQR + Außenschleife |
+|---|---|---|---|---|
+| 0 m | Drift verloren (Radialfehler 19 m) | Drift beendet, 13,4 m | 0,00 m | 0,00 m |
+| +2 m | verloren, 20,0 m | beendet, 14,9 m | 1,39 m | **0,00 m** |
+| −2 m | verloren, 18,1 m | beendet, 12,0 m | 1,41 m | **0,06 m** |
+
+(Radialfehler RMS der letzten 10 s.) Befunde:
+
+- Der offene Kreis fällt auch ohne Störung nach 8,6 s vom instabilen Gleichgewicht ab (in D3 über 6 s noch nicht sichtbar).
+- **ESC und Drift widersprechen sich:** Das ESC regelt die Gierrate auf die Referenz aus dem Fahrerlenkwinkel; der ist im
+  Drift ein Gegenlenkwinkel nach rechts. Es beendet den Drift (β-RMSE 15,6°), und das Fahrzeug fährt danach einen
+  Rechtskreis. Der Drift braucht deshalb die exklusive Drift-Regelung (Plan 5.2).
+- Der feste LQR hält den Drift, aber auf einem um den Startversatz verschobenen Kreis (Radialfehler pendelt ±1,4 m);
+  erst die Außenschleife führt auf den Sollkreis. Sie bewegt dabei β um höchstens etwa ±3°.
+
+**Gestufte Einleitung (Sollpunktwechsel):** aus der Geradeausfahrt auf 15° eingeleitet (HOLD nach 2,7 s), dann
+TRANSITION entlang des Zweigs auf 25° mit 1°/s (bis 12,7 s), Halten bis 50 s, Austritt, Normalfahrt bei 52,8 s: PASS.
+Damit ist der 25°-Drift bei µ 0,9 erreichbar, den die direkte Einleitung in D4 nicht schafft. Schwäche: Nach Erreichen
+des Sollpunkts schwingt β auf 33° über (8° über dem Ziel), die Geschwindigkeit steigt bis 16 m/s; β-RMSE im
+anschließenden HOLD 3,2° (langsame Geschwindigkeitsmode).
+
+**Acht:** Linksdrift 12 s, Austritt (3,1 s, Spitze 20°, min. 12,5 m/s), Rechtsdrift aus der Normalfahrt eingeleitet,
+12 s, Austritt.
+
+| Abschnitt | erreicht | Kreisausgleich R | radiale Streuung um den Ausgleichskreis | β Mittel / Std. |
+|---|---|---|---|---|
+| links | ja | 26,3 m | 0,52 m | −21,4° / 1,3° |
+| rechts | ja | 26,3 m | 0,52 m | +21,4° / 1,3° |
+
+Ablauf: PASS (beide Abschnitte, kein FAILED, exakt gespiegelt). **Geometrie: FAIL** — Mittelpunktabstand 70,2 m statt
+52,6 m (Verhältnis 1,34). Ursache: Zwischen den Kreisen verlässt das Fahrzeug den Drift und leitet neu ein; die
+Außenschleife kann nur den Radius, nicht den Mittelpunkt verschieben. Eine echte Acht braucht eine Mittelpunkt- bzw.
+Querablagenführung oder einen direkten Wechsel links → rechts ohne Austritt (offen).
+
+## Offene Punkte nach D5
 
 - Einfangbereich systematisch bestimmen (größere Störungen, Rasterung wie in M11), statt nur der definierten Störungen.
 - Kein Integralanteil: Bei Parameterabweichungen bleibt eine stationäre Abweichung zu erwarten (D7).
-- 25° bei µ 0,9 aus der Kurvenfahrt nicht einleitbar; gestufte Einleitung über Sollpunktwechsel (D5).
+- 25° bei µ 0,9 direkt nicht einleitbar; gestuft (D5) erreicht, mit 8° Überschwingen nach dem Sollpunktwechsel.
 - Der Austritt verliert bis 16 % Geschwindigkeit; die Recovery bei 11 m/s nach misslungener Einleitung dreht sich.
-- Nächstes Paket: D5, Kreisbahnführung, Sollpunktwechsel und Achter.
+- Acht geometrisch nicht erreicht (Mittelpunktführung fehlt).
+- Nächstes Paket: D6, Animation (GIF) und vollständiger Telemetrieexport.

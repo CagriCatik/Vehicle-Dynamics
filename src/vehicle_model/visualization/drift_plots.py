@@ -203,4 +203,35 @@ def plot_initiation(h, result: dict, path: str | Path, name: str = "") -> Path:
     return out
 
 
-__all__ = ("plot_equilibrium_sweep", "plot_hold_runs", "plot_initiation", "plot_tyre_audit")
+def plot_tracking(traj: dict, path: str | Path, name: str = "") -> Path:
+    """Driven paths (X, Y of the CoG) per case with the reference circle; one panel per case group."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from vehicle_model.visualization.theme import TEXT_MUTED, apply_dark_theme, style_axis
+    apply_dark_theme()
+    groups = list(dict.fromkeys(k[0] for k in traj))
+    fig, axes = plt.subplots(1, len(groups), figsize=(7 * len(groups), 7), squeeze=False)
+    for ax, g in zip(axes[0], groups):
+        items = [(k[1], v) for k, v in traj.items() if k[0] == g]
+        drawn = False
+        for (variant, (h, circ)), c in zip(items, _COLOURS * 2):
+            if circ is not None and not drawn:
+                cx, cy = circ.points()
+                ax.plot(cx, cy, color=TEXT_MUTED, ls="--", lw=1.2, label="reference circle")
+                drawn = True
+            ax.plot(h.X, h.Y, color=c, lw=1.3, label=variant)
+            ax.plot(h.X[0], h.Y[0], "o", color=c, ms=5)
+        ax.set_aspect("equal", adjustable="datalim")
+        ax.legend(fontsize=7, loc="best")
+        style_axis(ax, g, "X [m]", "Y [m]")
+    fig.suptitle(f"{name}: driven paths of the CoG (7-DOF plant; dot = start; synthetic parameters)")
+    fig.tight_layout()
+    out = Path(path)
+    fig.savefig(out, dpi=110, facecolor=fig.get_facecolor())
+    plt.close(fig)
+    return out
+
+
+__all__ = ("plot_equilibrium_sweep", "plot_hold_runs", "plot_initiation", "plot_tracking", "plot_tyre_audit")

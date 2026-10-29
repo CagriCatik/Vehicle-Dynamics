@@ -119,7 +119,8 @@ class DriftSupervisedController:
     information = INFORMATION_FULL_STATE
 
     def __init__(self, params, drift_eq, drift_lqr, corner_eq, supervisor, cruise_speed: float,
-                 speed_gain: float = 150.0, max_accel: float = 1.5, exit_countersteer_gain: float = 1.0):
+                 speed_gain: float = 150.0, max_accel: float = 1.5, exit_countersteer_gain: float = 1.0,
+                 scheduled=None):
         self.params = params
         self.drift = DriftLQRController(params, drift_eq, drift_lqr, equilibrium_id="drift")
         self.corner_eq = corner_eq
@@ -128,6 +129,7 @@ class DriftSupervisedController:
         self.kv = float(speed_gain)          # [N m per m/s]
         self.max_accel = float(max_accel)    # [m/s^2] ramp of the speed reference (no wheelspin from a speed step)
         self.k_beta = float(exit_countersteer_gain)
+        self.scheduled = scheduled           # ScheduledDriftController for HOLD/TRANSITION (D5), or None
         self.reset()
 
     @property
@@ -137,6 +139,8 @@ class DriftSupervisedController:
     def reset(self) -> None:
         self.sup.reset()
         self.drift.reset()
+        if self.scheduled is not None:
+            self.scheduled.reset()
         self.t = 0.0
         self.steer = 0.0
         self._law = None
@@ -201,13 +205,25 @@ class DriftSupervisedController:
             self._law = None
             steer = self._ramp(c.steer_front, dt)
             torque = self._speed_torque(float(c.wheel_drive_torque[2]), c.speed, v, dt)
-        elif mode in ("INITIATE", "HOLD"):
+        elif mode == "INITIATE" or (mode in ("HOLD", "TRANSITION") and self.scheduled is None):
             if self._law is not self.drift:             # bumpless entry: steer state from the last command
                 self.drift.initial_steer = self.steer
                 self.drift.reset()
                 self._law = self.drift
             out = self.drift.compute_control(state, None, None, dt)
             self.steer = out.steer_f
+            steer, torque, sat = out.steer_f, out.T_drive[2], out.status == "saturated"
+        elif mode in ("HOLD", "TRANSITION"):
+            sc = self.scheduled
+            if self._law is not sc:                     # bumpless: steer state and set point from the drift LQR
+                sc.lqr.initial_steer = self.steer
+                sc.beta_start = self.drift.eq.beta
+                sc.reset()
+                self._law = sc
+            out = sc.compute_control(state, None, None, dt)
+            self.steer = out.steer_f
+            q, _, _ = sc.schedule.point(sc.beta_ref)
+            self.sup.retarget(self.t, sc.beta_ref, q[2], math.hypot(q[0], q[1]), out.diagnostics["mode"] == "TRANSITION")
             steer, torque, sat = out.steer_f, out.T_drive[2], out.status == "saturated"
         elif mode in ("EXIT", "RECOVER"):
             self._law = None
@@ -217,7 +233,7 @@ class DriftSupervisedController:
             steer, torque = self._ramp(0.0, dt), 0.0
         eq = self.drift.eq
         diag = DriftControlDiagnostics(mode, eq.beta, beta, eq.yaw_rate, float(state.r), eq.speed, v,
-                                       "drift" if mode in ("INITIATE", "HOLD") else (self._phase or "none"), bool(sat),
+                                       "drift" if mode in ("INITIATE", "HOLD", "TRANSITION") else (self._phase or "none"), bool(sat),
                                        "saturated" if sat else "nominal")
         return ControlOutput(steer_f=float(steer), steer_r=0.0, T_drive=np.array([0.0, 0.0, torque, torque]),
                              T_brake=np.zeros(4), status=diag.status,
@@ -226,4 +242,71 @@ class DriftSupervisedController:
                                           "information": self.information})
 
 
-__all__ = ("DriftLQRController", "DriftSupervisedController")
+class ScheduledDriftController:
+    """Drift LQR scheduled along a branch of equilibria, with set-point ramp and optional circle outer loop (D5).
+
+    Inner loop: the steer-rate LQR at the operating point ``schedule.point(beta_ref)`` (gain scheduling,
+    :class:`.schedule.BranchSchedule`). Set point: ``beta_ref`` moves towards ``beta_target`` at most
+    ``beta_rate`` (TRANSITION when they differ). Outer loop (with a ``circle``): the radial error
+    ``e = |p - c| - R`` sets ``beta_target = beta(R_ref) - sign(beta) (k_p e + k_d e_dot)`` within the branch,
+    since the drift radius grows with |beta| along the branch (13 m/s, mu 0.9: 20.3 m at 6 deg, 27.5 m at
+    26 deg). The outer loop only moves the set point; the LQR operating point follows it slowly.
+    """
+
+    information = INFORMATION_FULL_STATE
+
+    def __init__(self, params, schedule, beta_target: float, beta_rate: float = math.radians(2.0), circle=None,
+                 k_p: float = math.radians(2.0), k_d: float = math.radians(1.0), initial_steer: float | None = None,
+                 beta_start: float | None = None):
+        from .schedule import radius_to_beta
+        self.params = params
+        self.schedule = schedule
+        self.beta_rate = float(beta_rate)
+        self.circle = circle
+        self.k_p, self.k_d = float(k_p), float(k_d)
+        self.beta_target = float(beta_target)
+        self.beta_nominal = radius_to_beta(schedule, circle.radius) if circle is not None else float(beta_target)
+        self.beta_start = beta_start
+        lo, hi = schedule.beta_range
+        self._lim = (min(lo, hi), max(lo, hi))
+        eq0 = schedule.equilibria[-1]
+        self.lqr = DriftLQRController(params, eq0, schedule.lqrs[-1], equilibrium_id="scheduled",
+                                      initial_steer=initial_steer)
+        self.reset()
+
+    @property
+    def name(self) -> str:
+        return "Scheduled drift LQR" + (" + circle outer loop" if self.circle is not None else "")
+
+    def reset(self) -> None:
+        self.lqr.reset()
+        self.beta_ref = None
+        self._prev_e = None
+
+    def set_target(self, beta_target: float) -> None:
+        """New set point (TRANSITION); the reference moves there at ``beta_rate``."""
+        self.beta_target = float(beta_target)
+
+    def compute_control(self, state, target=None, telemetry=None, dt: float = 0.01) -> ControlOutput:
+        if self.beta_ref is None:
+            b0 = math.atan2(state.vy, state.vx) if self.beta_start is None else self.beta_start
+            self.beta_ref = float(np.clip(b0, *self._lim))
+        goal = self.beta_target
+        e = e_dot = 0.0
+        if self.circle is not None:
+            e = float(self.circle.radial_error(state.X, state.Y))
+            e_dot = 0.0 if self._prev_e is None else (e - self._prev_e) / dt
+            self._prev_e = e
+            goal = self.beta_nominal - math.copysign(1.0, self.beta_nominal) * (self.k_p * e + self.k_d * e_dot)
+        goal = float(np.clip(goal, *self._lim))
+        step = self.beta_rate * dt
+        self.beta_ref += float(np.clip(goal - self.beta_ref, -step, step))
+        q, u, K = self.schedule.point(self.beta_ref)
+        self.lqr.set_point(q, u, K)
+        out = self.lqr.compute_control(state, None, None, dt)
+        out.diagnostics.update({"beta_ref": self.beta_ref, "beta_goal": goal, "radial_error": e,
+                                "mode": "TRANSITION" if abs(self.beta_ref - goal) > 1e-6 else "HOLD"})
+        return out
+
+
+__all__ = ("DriftLQRController", "DriftSupervisedController", "ScheduledDriftController")

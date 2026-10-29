@@ -15,8 +15,10 @@ Modes and transitions (each with a logged reason):
                              straight-driving ramp (|r - r_c| < approach_r_tol and |beta| < exit_beta)
     any        -> FAILED     |beta| >= spin_beta (spin) or RECOVER longer than ``recover_timeout_s``
 
+    HOLD      <-> TRANSITION the set point moves (:meth:`retarget` with ``moving``); the reference
+                             values follow it, so the loss criterion is judged against the moving set point
+
 HOLD is never reported while the state is outside the hold tolerance; FAILED is final.
-TRANSITION (change of drift set point) belongs to D5 and is not implemented here.
 """
 
 from __future__ import annotations
@@ -24,9 +26,9 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 
-DISABLED, APPROACH, INITIATE, HOLD, EXIT, RECOVER, FAILED = (
-    "DISABLED", "APPROACH", "INITIATE", "HOLD", "EXIT", "RECOVER", "FAILED")
-MODES = (DISABLED, APPROACH, INITIATE, HOLD, EXIT, RECOVER, FAILED)
+DISABLED, APPROACH, INITIATE, HOLD, TRANSITION, EXIT, RECOVER, FAILED = (
+    "DISABLED", "APPROACH", "INITIATE", "HOLD", "TRANSITION", "EXIT", "RECOVER", "FAILED")
+MODES = (DISABLED, APPROACH, INITIATE, HOLD, TRANSITION, EXIT, RECOVER, FAILED)
 
 
 @dataclass(frozen=True)
@@ -85,6 +87,14 @@ class DriftSupervisor:
             self._entered = t
             self._since = 0.0
 
+    def retarget(self, t: float, beta_star: float, r_star: float, v_star: float, moving: bool) -> None:
+        """New reference values (set-point change, D5); HOLD <-> TRANSITION while the set point moves."""
+        self.beta_star, self.r_star, self.v_star = float(beta_star), float(r_star), float(v_star)
+        if self.mode == HOLD and moving:
+            self._go(t, TRANSITION, "set point moving")
+        elif self.mode == TRANSITION and not moving:
+            self._go(t, HOLD, "set point reached")
+
     def update(self, t: float, dt: float, beta: float, r: float, v: float, straight_reached: bool = False) -> str:
         """Advance the mode with the measured ``beta``, ``r``, ``v``; ``straight_reached`` from the exit law."""
         s = self.settings
@@ -116,7 +126,7 @@ class DriftSupervisor:
                 self._go(t, RECOVER, "initiation timeout")
             elif abs(eb) > max(s.loss_beta, abs(self.beta_star) + s.loss_beta) and t - self._entered > 1.0:
                 self._go(t, RECOVER, "initiation diverged")
-        elif self.mode == HOLD:
+        elif self.mode in (HOLD, TRANSITION):
             if abs(eb) > s.loss_beta:
                 self._go(t, RECOVER, f"drift lost: |beta - beta*| {math.degrees(abs(eb)):.1f} deg")
             elif s.exit_s is not None and t >= s.exit_s:
@@ -130,5 +140,5 @@ class DriftSupervisor:
         return self.mode
 
 
-__all__ = ("APPROACH", "DISABLED", "EXIT", "FAILED", "HOLD", "INITIATE", "MODES", "RECOVER", "DriftSupervisor",
+__all__ = ("APPROACH", "DISABLED", "EXIT", "FAILED", "HOLD", "INITIATE", "MODES", "RECOVER", "TRANSITION", "DriftSupervisor",
            "SupervisorSettings", "Transition")

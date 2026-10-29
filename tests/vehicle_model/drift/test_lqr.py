@@ -92,3 +92,14 @@ def test_actuator_limits_act_on_the_command(drift):
     assert 0.0 <= o1.T_drive[2] <= params.max_drive_torque and o1.T_drive[0] == 0.0 and np.all(o1.T_brake == 0.0)
     c.reset()
     assert c.compute_control(far, None, None, 0.005).steer_f == pytest.approx(o1.steer_f)    # reset restores the start
+
+
+def test_simulation_results_do_not_depend_on_the_run_order(drift):
+    """Regression (D5): a reused plant carried its load-transfer start value from run to run; on the unstable
+    drift equilibrium that changed when the open loop fell off. Every run now starts from a fresh plant copy."""
+    params, plant, out = drift
+    eq, _, lqr = out["left"]
+    first, _ = simulate(plant, _OpenLoop(eq), initial_state(eq, {"name": "hold"}), 1.0, 0.005)
+    simulate(plant, DriftLQRController(params, eq, lqr), initial_state(eq, {"name": "b", "beta_deg": 3.0}), 1.0, 0.005)
+    again, _ = simulate(plant, _OpenLoop(eq), initial_state(eq, {"name": "hold"}), 1.0, 0.005)
+    assert np.array_equal(first.vy, again.vy) and np.array_equal(first.omega, again.omega)
