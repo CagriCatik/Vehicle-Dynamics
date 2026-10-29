@@ -147,6 +147,9 @@ Auswertung der 5 Prüfszenarien mit dem Flaggschiff-Skript `examples/split_mu_sc
 ---
 
 ### Szenario 1: Straight-Line Emergency Braking ($100\,\text{km/h}$ ECE-R13H)
+
+> [!NOTE]
+> **Bremsniveau (V3.0):** `brake_torque_nm = 1600` ist das *gesamte* Bremsmoment (60 % vorn, 40 % hinten), also eine moderate Bremsung, keine Vollbremsung. Ein Fahrermodell hält dabei die Spur und lenkt gegen. Bei Vollbremsung mit gerader Lenkung dreht sich auch IVMC ein; stabil bleibt dann nur die Allokation, die das Bremsmoment auf der Hoch-µ-Seite reduziert (Konfigurationsmatrix in [MOTION_CONTROL.md](MOTION_CONTROL.md)).
 - **Visualisierungs-Artefakte:**
   - [Szenario 1 Diagnosedashboard (PNG)](../output/split_mu_scenarios/scenario_1_split_mu_braking.png)
   - [Szenario 1 Dynamische Mehrfahrzeug-Animation (GIF)](../output/split_mu_scenarios/scenario_1_split_mu_braking.gif)
@@ -242,7 +245,7 @@ Weil durch die Zentrifugalkraft über 70% der vertikalen Achslast auf die kurven
 
 ![scenario_1_split_mu_braking](assets/split_mu_dynamics/scenario_1_split_mu_braking.gif)
 
-*Split-µ-Vollbremsung aus 100 km/h mit Fahrermodell, das die Spur hält, und fester Bremsmomentvorgabe. Quelle: `examples/split_mu_scenarios_demo.py`.*
+*Split-µ-Bremsung aus 100 km/h mit Fahrermodell, das die Spur hält, und 1600 N m *gesamtem* Bremsmoment (60/40), also einer moderaten Bremsung (im Bild als „Emergency Braking“ bezeichnet). Quelle: `examples/split_mu_scenarios_demo.py`.*
 
 ![scenario_1_split_mu_braking](assets/split_mu_dynamics/scenario_1_split_mu_braking.png)
 

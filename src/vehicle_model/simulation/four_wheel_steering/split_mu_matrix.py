@@ -42,6 +42,11 @@ How a configuration produces yaw moment decides the outcome (``yaw_moment_by``):
                 stays straight at any pedal, at the price of deceleration (2.2 m/s^2).
 
 The failing configurations are expected physical failures; the tests check them as such.
+
+Brake level matters for "addition": at about 12 % pedal (the validation matrix's
+"mu_split_braking", 1450 N m total) ESC/TV and IVMC end at about 10 deg and pass the
+validation's 15 deg limit; from about 20 % pedal on they spin (61 deg at 0.2, 97 deg at
+0.3). The validation and the matrix therefore agree; they test different brake levels.
 """
 
 from __future__ import annotations

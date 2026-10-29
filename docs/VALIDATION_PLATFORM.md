@@ -96,7 +96,7 @@ This generates:
 
 ![mu_split_braking](assets/validation_platform/mu_split_braking.png)
 
-*Split-µ-Bremsung mit fester Bremsmomentvorgabe und gerader Lenkung. **Offener Widerspruch:** Hier bleibt IVMC stabil, in der Konfigurationsmatrix (MOTION_CONTROL.md) mit Pedalvorgabe dreht er sich ein, mit MF- wie mit Pacejka-Reifen. Der Unterschied liegt in der Szenario-Ausführung und ist noch nicht geklärt. Quelle: `examples/run_validation_platform.py`.*
+*Split-µ-Bremsung mit gerader Lenkung und 1450 N m *gesamtem* Bremsmoment, also etwa 12 % Pedal: eine moderate Bremsung, keine Vollbremsung. IVMC bleibt hier unter der 15°-Grenze (≈ 10°). Ab etwa 20 % Pedal dreht er sich ein (Konfigurationsmatrix in MOTION_CONTROL.md, Test `test_additive_esc_holds_only_at_the_moderate_brake_level_of_the_validation_matrix`). Quelle: `examples/run_validation_platform.py`.*
 
 ![fishhook_ncap](assets/validation_platform/fishhook_ncap.png)
 

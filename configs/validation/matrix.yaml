@@ -19,10 +19,14 @@ scenarios:
       peak_lat_accel_g: 0.95
 
   mu_split_braking:
-    name: "Split-Mu Emergency Braking from 100 km/h (ECE-R13H)"
+    name: "Split-Mu Moderate Braking from 100 km/h (about 12 % pedal)"
     initial_speed_kph: 100.0
     road_mu_left: 1.0
     road_mu_right: 0.20
+    # TOTAL brake torque of all four wheels (simulate_maneuver: pedal = T / (4 max_brake_torque)
+    # = 1450 / 12000, about 0.12), not per wheel: moderate braking, not emergency braking. IVMC
+    # passes here (heading about 10 deg); from about 20 % pedal on it spins, see
+    # simulation/four_wheel_steering/split_mu_matrix.py and test_split_mu_matrix.py.
     brake_torque_nm: 1450.0
     duration_s: 3.5
     controllers: ["passive", "four_wheel_steering", "ivmc_2ws", "full_ivmc_4ws"]

@@ -133,7 +133,8 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
     ],
     "SPLIT_MU_DYNAMICS.md": [
         ("split_mu_scenarios/scenario_1_split_mu_braking.gif",
-         "Split-µ-Vollbremsung aus 100 km/h mit Fahrermodell, das die Spur hält, und fester Bremsmomentvorgabe. "
+         "Split-µ-Bremsung aus 100 km/h mit Fahrermodell, das die Spur hält, und 1600 N m *gesamtem* Bremsmoment (60/40), "
+         "also einer moderaten Bremsung (im Bild als „Emergency Braking“ bezeichnet). "
          "Quelle: `examples/split_mu_scenarios_demo.py`."),
         ("split_mu_scenarios/scenario_1_split_mu_braking.png",
          "Dieselbe Bremsung als Dashboard: Bahnen, Gierrate, Querabweichung und Störgiermoment. Der lenkende Fahrer ist "
@@ -200,9 +201,10 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Sine with Dwell nach dem Vorbild von FMVSS 126 (Simulation, keine Prüfung nach Vorschrift). "
          "Quelle: `examples/run_validation_platform.py`."),
         ("validation_report/figures/mu_split_braking.png",
-         "Split-µ-Bremsung mit fester Bremsmomentvorgabe und gerader Lenkung. **Offener Widerspruch:** Hier bleibt IVMC "
-         "stabil, in der Konfigurationsmatrix (MOTION_CONTROL.md) mit Pedalvorgabe dreht er sich ein, mit MF- wie mit "
-         "Pacejka-Reifen. Der Unterschied liegt in der Szenario-Ausführung und ist noch nicht geklärt. "
+         "Split-µ-Bremsung mit gerader Lenkung und 1450 N m *gesamtem* Bremsmoment, also etwa 12 % Pedal: eine moderate "
+         "Bremsung, keine Vollbremsung. IVMC bleibt hier unter der 15°-Grenze (≈ 10°). Ab etwa 20 % Pedal dreht er sich "
+         "ein (Konfigurationsmatrix in MOTION_CONTROL.md, Test "
+         "`test_additive_esc_holds_only_at_the_moderate_brake_level_of_the_validation_matrix`). "
          "Quelle: `examples/run_validation_platform.py`."),
         ("validation_report/figures/fishhook_ncap.png",
          "Fishhook nach NCAP-Vorbild. Quelle: `examples/run_validation_platform.py`."),

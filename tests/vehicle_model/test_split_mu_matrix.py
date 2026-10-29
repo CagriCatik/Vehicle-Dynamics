@@ -52,3 +52,20 @@ def test_allocation_stabilises_by_reducing_the_brake_asymmetry(split_full):
     assert alloc.kpis["max_abs_slip"] < 0.1                   # slip control keeps the wheels rolling
     assert 1.5 < alloc.kpis["mean_deceleration"] < passive.kpis["mean_deceleration"]   # the price: deceleration
     assert "| TV (allocation) | 1 | allocation | yes |" in matrix_table(list(split_full.values()))
+
+
+@pytest.mark.slow
+def test_additive_esc_holds_only_at_the_moderate_brake_level_of_the_validation_matrix():
+    """The validation's split-mu case brakes with 1450 N m in total (about 12 % pedal); IVMC passes there.
+
+    The same controller on the same road spins from about 20 % pedal on: validation and
+    matrix agree, they test different brake levels.
+    """
+    from vehicle_model.simulation.four_wheel_steering.split_mu_matrix import CONFIGURATIONS as C
+    cfg = {"IVMC": C["IVMC"]}
+    pedal_validation = 1450.0 / (4 * SevenDOFModel.from_yaml().params.max_brake_torque)
+    moderate = run_split_mu_matrix(plant, pedal=pedal_validation, duration=3.5, configurations=cfg)[0]
+    firm = run_split_mu_matrix(plant, pedal=0.2, duration=3.5, configurations=cfg)[0]
+    assert pedal_validation == pytest.approx(0.121, abs=1e-3)
+    assert abs(moderate.kpis["final_heading_deg"]) < 15.0            # the validation threshold
+    assert abs(firm.kpis["final_heading_deg"]) > 45.0
