@@ -113,6 +113,7 @@ All detailed theoretical formulations, mathematical derivations, component guide
 | **12** | [Handling Limits & Understeer Dynamics](docs/HANDLING_LIMITS.md) | ISO 4138 steady-state circular test, Understeer Gradient $K_{\text{us}}$, $v_{\text{char}}$, and G-G diagram |
 | **13** | [Split-μ Dynamics & Benchmark Suite](docs/SPLIT_MU_DYNAMICS.md) | 5 standardized split-$\mu$ scenarios, multi-$\mu$ matrix ($\mu = 0.2 \dots 1.0$), and 2D surfaces |
 | **14** | [Visualization & Animation Guide](docs/VISUALIZATION_GUIDE.md) | 2D Planar vehicle renderer, real-time 20 FPS GIF generator, HUD, and tracking camera |
+| **–** | [Scenario Book](docs/SCENARIO_BOOK.md) | Catalogue of runnable scenarios with parameters, runtime and outputs; CLI `python -m vehicle_model.scenario_book` |
 | **15** | [Literatur- & Quellenverzeichnis](docs/REFERENCES.md) | Academic textbooks & standards (Küçükay, Mitschke, Heißing, Isermann, Pacejka, Rajamani) |
 
 ---
@@ -223,7 +224,16 @@ python -m vehicle_model.experiments list
 python -m vehicle_model.experiments run configs/experiments/sine_with_dwell_comparison.yaml
 ```
 
-Each run checks the configured model first (parameter consistency, static loads, tyre symmetry, linear reference, mirror symmetry, determinism) and writes `results.json`, `kpis.csv`, time histories, figures and an engineering report (`report.md`) to `output/experiments/<name>/`. See [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
+For a catalogue of all runnable scenarios (parking with rear-axle steering, 4WS benchmark manoeuvres, split-µ, YAML experiments, validation matrix) and a command line to start them one by one, see the [Scenario Book](docs/SCENARIO_BOOK.md):
+
+```bash
+python -m vehicle_model.scenario_book list
+python -m vehicle_model.scenario_book info u_turn
+python -m vehicle_model.scenario_book run u_turn --no-gif
+python -m vehicle_model.scenario_book run --category parking
+```
+
+Each YAML experiment run checks the configured model first (parameter consistency, static loads, tyre symmetry, linear reference, mirror symmetry, determinism) and writes `results.json`, `kpis.csv`, time histories, figures and an engineering report (`report.md`) to `output/experiments/<name>/`. See [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
 
 ### 3. Running Flagship Demonstrations
 

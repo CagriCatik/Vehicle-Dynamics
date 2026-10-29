@@ -229,6 +229,22 @@ Die Leistungsfähigkeit der Allradlenkung wurde in virtuellen Testläufen quanti
 | **ISO 3888-2 DLC** | $80\,\text{km/h}$ | Spurabweichung $e_{y,\max}$ | $0{,}48\,\text{m}$ | **$0{,}29\,\text{m}$** | **$-39{,}6\,\%$** engere Trajektorienführung |
 | **ISO 7401 Step Steer** | $100\,\text{km/h}$ | Gierrateneinschwingzeit $T_{\text{settle}}$ | $0{,}42\,\text{s}$ | **$0{,}24\,\text{s}$** | **$-42{,}8\,\%$** schnellerer Transient |
 
+### 6.1 Parken und Rangieren (Schrittgeschwindigkeit, V3.0)
+
+[`four_wheel_steering/parking.py`](../src/vehicle_model/simulation/four_wheel_steering/parking.py), Beispiel [`examples/parking_4ws_demo.py`](../examples/parking_4ws_demo.py), Ausgabe `output/four_wheel_steering/parking/` (GIF mit Draufsicht und Lenkwinkelverlauf, Zusammenfassung). Der Fahrer arbeitet in Phasen, die auf Ereignisse enden (Gierwinkel erreicht, Querversatz erreicht, Strecke gefahren), nicht nach fester Zeit. So erreichen 2WS und 4WS dieselbe Zielpose, und verglichen wird der Platzbedarf. Gemessen wird an der Karosserie (4,50 × 1,80 m), nicht am Schwerpunkt. Bei 32° Vorderradwinkel lenkt die Hinterachse mit −8° gegen.
+
+| Szenario | Kennwert | 2WS | 4WS |
+|---|---|---|---|
+| Wenden auf schmaler Straße (Volleinschlag) | überstrichene Breite quer | 12,75 m | **11,10 m** |
+| Rückwärts senkrecht einparken (90°) | überstrichene Fläche längs × quer | 9,65 × 9,66 m | **8,76 × 9,35 m** |
+| 90°-Abbiegen zwischen engen Gassen | überstrichene Breite quer | 13,30 m | **12,21 m** |
+| Ausparken aus enger Längsparklücke | benötigte Lücke zum Vordermann | 1,96 m | **1,88 m** |
+| | Abstand zum Bordstein (Heck) | **0,23 m** | 0,10 m |
+
+Beim Ausparken ist der Vorteil klein, und das Heck schwenkt mit 4WS 13 cm weiter zum Bordstein: Die gegenphasige Hinterachse drückt das Heck nach außen. Das ist der bekannte Nachteil der Gegenphase beim Ausparken und wird hier nicht weggerechnet.
+
+**Animationen:** Alle 4WS-GIFs zeigen unter der Draufsicht die Radlenkwinkel vorn und hinten über der Zeit mit einem Cursor auf dem aktuellen Bild. Das Fahrzeug wird jetzt an der Hinterachse gezeichnet. Bis V3.0 wurde der Schwerpunkt als Hinterachspunkt übergeben, und jedes Fahrzeug erschien um $l_r$ = 1,5 m zu weit vorn.
+
 ---
 
 ## 7. Physikalische Grenzen & Niedrigreibwert-Bifurkation ($\mu \le 0.40$)
@@ -249,7 +265,9 @@ graph LR
 > [!WARNING]
 > **Notwendigkeit der Integrierten Regelung (IVMC):**
 > Auf Schnee ($\mu = 0.40$) und Glatteis ($\mu = 0.20$) reicht die Schräglaufsteifigkeit der Hinterachse nicht mehr aus, um allein über $\delta_r$ das erforderliche stabilisierende Giermoment aufzubringen.
-> Aus diesem Grund kombiniert der `IntegratedChassisController` (IVMC) die Hinterachslenkung mit radindividuellem Brems- und Antriebs-Torque-Vectoring. Erst diese Kopplung garantiert Spurstabilität bis $\mu = 0.10$.
+> Aus diesem Grund kombiniert der `IntegratedChassisController` (IVMC) die Hinterachslenkung mit radindividuellem Brems- und Antriebs-Torque-Vectoring.
+>
+> **Korrektur (V3.0, M10 §5.5):** Eine Garantie der Spurstabilität gibt es nicht. Bei der Split-µ-Vollbremsung (µ 1,0 / 0,2, Lenkung gerade gehalten) dreht sich auch der IVMC ein, weil er Bremsmoment nur *addiert*. Stabil bleibt nur die Allokation, die das Bremsmoment auf der Hoch-µ-Seite *reduziert* (Konfigurationsmatrix in [MOTION_CONTROL.md](MOTION_CONTROL.md)).
 
 ---
 
