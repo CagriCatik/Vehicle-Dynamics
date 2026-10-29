@@ -192,7 +192,7 @@ For complete bibliographic details, ISBNs, and full citations, refer to the mast
 
 ![mu_split_comparison](assets/chassis_control/mu_split_comparison.png)
 
-*Split-µ-Bremsung ohne Regelung gegen IVMC mit ABS und ESP: Gierwinkel nach 2 s ≈ 17° statt > 150°, ABS hält das Eisrad bei etwa −0,25 Schlupf. Quelle: `examples/abs_tcs_esc_benchmark.py`.*
+*Split-µ-Bremsung ohne Regelung gegen IVMC über die gemeinsame Allokation: Gierwinkel 0° statt > 150°. Die Allokation bremst das Eisrad nur leicht (Schlupf ≈ −0,01) und begrenzt die Hoch-µ-Seite entsprechend; die Legende „−0,15 optimal“ im Bild stammt aus der alten ABS-Kette. Quelle: `examples/abs_tcs_esc_benchmark.py`.*
 
 ![phase_plane_stability_analysis](assets/chassis_control/phase_plane_stability_analysis.png)
 

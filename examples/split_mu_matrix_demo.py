@@ -28,8 +28,8 @@ from vehicle_model.vehicle_models import SevenDOFModel
 from vehicle_model.visualization.theme import TEXT_MUTED, apply_dark_theme, style_axis
 
 OUT = Path("output/split_mu_matrix")
-# validated categorical slots 1-5 (dark surface); passive is drawn in muted ink
-COLORS = ("#3987e5", "#d95926", "#199e70", "#c98500", "#d55181")
+# validated categorical slots 1-6 (dark surface); passive is drawn in muted ink
+COLORS = ("#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300")
 
 
 def plant(road):
@@ -58,10 +58,9 @@ def main() -> None:
         ax_psi.plot(h["t"], np.degrees(h["psi"]), **style)
     ax_path.set_aspect("equal", adjustable="datalim")
     style_axis(ax_path, "Path at full braking (high friction on the left)", "X [m]", "Y [m]")
-    style_axis(ax_psi, "Yaw angle at full braking (a run ends when v_x < 1 m/s: the vehicle is sideways)",
-               "time [s]", "yaw angle [deg]")
+    style_axis(ax_psi, "Yaw angle at full braking", "time [s]", "yaw angle [deg]")
     ax_psi.legend(loc="upper left", fontsize=8)
-    fig.suptitle("Split-mu braking: only the allocation, which reduces brake torque on the high-friction side, stays straight")
+    fig.suptitle("Split-mu braking: only configurations whose allocation reduces brake torque on the high-friction side stay straight")
     fig.tight_layout()
     fig.savefig(OUT / "split_mu_matrix.png", dpi=150, facecolor=fig.get_facecolor())
     plt.close(fig)

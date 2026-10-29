@@ -139,7 +139,8 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
         ("split_mu_scenarios/scenario_1_split_mu_braking.png",
          "Dieselbe Bremsung als Dashboard: Bahnen, Gierrate, Querabweichung und Störgiermoment. Der lenkende Fahrer ist "
          "der Unterschied zur Konfigurationsmatrix in MOTION_CONTROL.md, in der die Lenkung gerade gehalten wird und "
-         "IVMC sich eindreht. Quelle: `examples/split_mu_scenarios_demo.py`."),
+         "IVMC mit der alten additiven Stellkette sich eindreht (über die gemeinsame Allokation, Standard seit V3.0, "
+         "bleibt er gerade). Quelle: `examples/split_mu_scenarios_demo.py`."),
         ("split_mu_scenarios/split_mu_friction_sweep_analysis.png",
          "Reibwert-Sweep der Niedrig-µ-Seite: Gierrate, Gierwinkel, Querabweichung, Bremsweg und Schwimmwinkel je "
          "Regler. Quelle: `examples/split_mu_scenarios_demo.py`."),
@@ -151,8 +152,9 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
         ("benchmark/double_lane_change_comparison.png",
          "Doppelspurwechsel 80 km/h bei µ = 0,75: passiv, 4WS und IVMC. Quelle: `examples/integrated_control_benchmark.py`."),
         ("benchmark/mu_split_comparison.png",
-         "Split-µ-Bremsung ohne Regelung gegen IVMC mit ABS und ESP: Gierwinkel nach 2 s ≈ 17° statt > 150°, ABS hält "
-         "das Eisrad bei etwa −0,25 Schlupf. Quelle: `examples/abs_tcs_esc_benchmark.py`."),
+         "Split-µ-Bremsung ohne Regelung gegen IVMC über die gemeinsame Allokation: Gierwinkel 0° statt > 150°. Die "
+         "Allokation bremst das Eisrad nur leicht (Schlupf ≈ −0,01) und begrenzt die Hoch-µ-Seite entsprechend; die "
+         "Legende „−0,15 optimal“ im Bild stammt aus der alten ABS-Kette. Quelle: `examples/abs_tcs_esc_benchmark.py`."),
         ("advanced_control/phase_plane_stability_analysis.png",
          "Phasenebene (β, β̇) mit Eingriffsgrenzen; Schwimmwinkel und Gierrate passiv gegen Phasenebenen-IVMC. "
          "Quelle: `examples/advanced_chassis_control_demo.py`."),
@@ -202,8 +204,9 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Quelle: `examples/run_validation_platform.py`."),
         ("validation_report/figures/mu_split_braking.png",
          "Split-µ-Bremsung mit gerader Lenkung und 1450 N m *gesamtem* Bremsmoment, also etwa 12 % Pedal: eine moderate "
-         "Bremsung, keine Vollbremsung. IVMC bleibt hier unter der 15°-Grenze (≈ 10°). Ab etwa 20 % Pedal dreht er sich "
-         "ein (Konfigurationsmatrix in MOTION_CONTROL.md, Test "
+         "Bremsung, keine Vollbremsung. Mit der alten additiven Stellkette bleibt IVMC hier unter der 15°-Grenze (≈ 10°) und "
+         "dreht sich ab etwa 20 % Pedal ein; über die gemeinsame Allokation (Standard seit V3.0) bleibt er bei jedem "
+         "Pedal gerade (Konfigurationsmatrix in MOTION_CONTROL.md, Test "
          "`test_additive_esc_holds_only_at_the_moderate_brake_level_of_the_validation_matrix`). "
          "Quelle: `examples/run_validation_platform.py`."),
         ("validation_report/figures/fishhook_ncap.png",

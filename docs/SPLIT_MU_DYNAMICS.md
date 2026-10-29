@@ -149,7 +149,7 @@ Auswertung der 5 Prüfszenarien mit dem Flaggschiff-Skript `examples/split_mu_sc
 ### Szenario 1: Straight-Line Emergency Braking ($100\,\text{km/h}$ ECE-R13H)
 
 > [!NOTE]
-> **Bremsniveau (V3.0):** `brake_torque_nm = 1600` ist das *gesamte* Bremsmoment (60 % vorn, 40 % hinten), also eine moderate Bremsung, keine Vollbremsung. Ein Fahrermodell hält dabei die Spur und lenkt gegen. Bei Vollbremsung mit gerader Lenkung dreht sich auch IVMC ein; stabil bleibt dann nur die Allokation, die das Bremsmoment auf der Hoch-µ-Seite reduziert (Konfigurationsmatrix in [MOTION_CONTROL.md](MOTION_CONTROL.md)).
+> **Bremsniveau (V3.0):** `brake_torque_nm = 1600` ist das *gesamte* Bremsmoment (60 % vorn, 40 % hinten), also eine moderate Bremsung, keine Vollbremsung. Ein Fahrermodell hält dabei die Spur und lenkt gegen. Bei Vollbremsung mit gerader Lenkung dreht sich IVMC mit der alten additiven Stellkette ein; stabil bleibt nur die Allokation, die das Bremsmoment auf der Hoch-µ-Seite reduziert – seit V3.0 der Standard des IVMC (Konfigurationsmatrix in [MOTION_CONTROL.md](MOTION_CONTROL.md)).
 - **Visualisierungs-Artefakte:**
   - [Szenario 1 Diagnosedashboard (PNG)](../output/split_mu_scenarios/scenario_1_split_mu_braking.png)
   - [Szenario 1 Dynamische Mehrfahrzeug-Animation (GIF)](../output/split_mu_scenarios/scenario_1_split_mu_braking.gif)
@@ -249,7 +249,7 @@ Weil durch die Zentrifugalkraft über 70% der vertikalen Achslast auf die kurven
 
 ![scenario_1_split_mu_braking](assets/split_mu_dynamics/scenario_1_split_mu_braking.png)
 
-*Dieselbe Bremsung als Dashboard: Bahnen, Gierrate, Querabweichung und Störgiermoment. Der lenkende Fahrer ist der Unterschied zur Konfigurationsmatrix in MOTION_CONTROL.md, in der die Lenkung gerade gehalten wird und IVMC sich eindreht. Quelle: `examples/split_mu_scenarios_demo.py`.*
+*Dieselbe Bremsung als Dashboard: Bahnen, Gierrate, Querabweichung und Störgiermoment. Der lenkende Fahrer ist der Unterschied zur Konfigurationsmatrix in MOTION_CONTROL.md, in der die Lenkung gerade gehalten wird und IVMC mit der alten additiven Stellkette sich eindreht (über die gemeinsame Allokation, Standard seit V3.0, bleibt er gerade). Quelle: `examples/split_mu_scenarios_demo.py`.*
 
 ![split_mu_friction_sweep_analysis](assets/split_mu_dynamics/split_mu_friction_sweep_analysis.png)
 

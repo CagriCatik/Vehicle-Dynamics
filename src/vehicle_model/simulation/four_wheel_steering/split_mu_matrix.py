@@ -12,11 +12,12 @@ full braking (no headroom).
     passive              60/40 brake distribution, no control
     4WS                  rear-axle steering with yaw damping (LUT mode)
     4WS + ABS            the same with the controller's wheel-slip limitation
-    4WS + ABS + ESC/TV   integrated controller without phase-plane supervision
-                         (ESC brake intervention and torque vectoring sit in one
-                         subsystem there and cannot be switched separately)
+    4WS + ABS + ESC/TV   integrated controller without phase-plane supervision, legacy
+                         additive actuation (ESC brake intervention and torque vectoring
+                         sit in one subsystem there and cannot be switched separately)
     TV (allocation)      yaw-moment control through the bounded wheel-force allocation (M5)
-    IVMC                 full integrated controller
+    IVMC (legacy)        full integrated controller, legacy additive actuation
+    IVMC (allocation)    the same controller on the shared allocation (default since V3.0)
 
 Authority: the yaw moment of the tyre forces about the CoG is split into the part of
 the longitudinal (brake/drive) forces and the part of the lateral (steering) forces.
@@ -68,9 +69,11 @@ CONFIGURATIONS = {
     "4WS": (lambda p: FourWheelSteeringController(params=p, mode=SteeringMode.LOOKUP_TABLE, enable_yaw_damping=True), "none"),
     "4WS + ABS": (lambda p: FourWheelSteeringController(params=p, mode=SteeringMode.LOOKUP_TABLE,
                                                         enable_yaw_damping=True, enable_abs=True), "none"),
-    "4WS + ABS + ESC/TV": (lambda p: IntegratedChassisController(p, enable_phase_plane=False, enable_tcs=False), "addition"),
+    "4WS + ABS + ESC/TV": (lambda p: IntegratedChassisController(p, enable_phase_plane=False, enable_tcs=False,
+                                                                 actuation="legacy"), "addition"),
     "TV (allocation)": (lambda p: AllocatedStabilityController(p), "allocation"),
-    "IVMC": (lambda p: IntegratedChassisController(p), "addition"),
+    "IVMC (legacy)": (lambda p: IntegratedChassisController(p, actuation="legacy"), "addition"),
+    "IVMC (allocation)": (lambda p: IntegratedChassisController(p), "allocation"),
 }
 KPIS = ("final_heading_deg", "peak_yaw_rate_deg", "max_lateral_offset", "max_sideslip_deg",
         "mean_deceleration", "max_abs_slip", "max_yaw_moment")

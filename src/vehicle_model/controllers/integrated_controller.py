@@ -1,7 +1,33 @@
-"""Integrated Vehicle Motion Controller (IVMC) coordinating 4WS, TV, ESC, ABS, and TCS."""
+"""Integrated Vehicle Motion Controller (IVMC) coordinating 4WS, TV, ESC, ABS, and TCS.
+
+Two actuation paths (``actuation``, default "allocation" since V3.0):
+
+    "legacy"      the original additive chain: driver torques, TV adds a differential
+                  torque (``TorqueVectoringController.allocate_torques``), emergency
+                  deceleration, legacy TCS/ABS, heuristic split-mu brake limiter (GMR).
+    "allocation"  the shared chain of Plan V3.0 M10 5.3: the longitudinal force demand
+                  (pedals, minus the phase-plane emergency deceleration) and the yaw
+                  moment demand (TV + phase plane) go to
+                  :class:`~vehicle_model.controllers.motion_control.ActuationLayer`
+                  (bounded wheel-force allocation, then ABS/TCS slip control). The
+                  allocation can *reduce* brake torque on one side; the additive chain
+                  cannot. The weight of the yaw moment against the longitudinal force
+                  (``yaw_priority``) is scheduled over speed: 100 above
+                  ``yaw_priority_speeds[1]`` (select-low-like, the car stays straight under
+                  split-mu braking), 1 below ``yaw_priority_speeds[0]`` (traction and braking
+                  force first; the asymmetric yaw moment is small in consequence at low speed
+                  and the steering can balance it), log-linear in between. Fixed priorities
+                  fail one case: 100 gives 19.5 km/h after a 2.5 s split-mu launch (passive
+                  31), 1 lets the car yaw 19 deg under split-mu braking from 100 km/h.
+
+Steering (4WS look-up/schedule, counter-steer, phase-plane supervision) is the same in
+both paths.
+"""
 
 from __future__ import annotations
 
+import dataclasses
+import math
 from dataclasses import dataclass
 import numpy as np
 
@@ -45,7 +71,26 @@ class IntegratedChassisController:
         enable_tcs: bool = True,
         enable_phase_plane: bool = True,
         k_yaw_counter_steer: float = 0.12,  # Active steering counter-steer gain [rad / (rad/s)]
+        actuation: str = "allocation",
+        yaw_priority_speeds: tuple[float, float] = (8.0, 15.0),   # [m/s] low / high end of the schedule
+        yaw_priority_range: tuple[float, float] = (1.0, 100.0),   # [-] priority at low / high speed
     ):
+        if actuation not in ("legacy", "allocation"):
+            raise ValueError(f"actuation must be 'legacy' or 'allocation', got {actuation!r}")
+        self.actuation = actuation
+        self.yaw_priority_speeds = tuple(map(float, yaw_priority_speeds))
+        self.yaw_priority_range = tuple(map(float, yaw_priority_range))
+        if not (0.0 <= self.yaw_priority_speeds[0] < self.yaw_priority_speeds[1]) or min(self.yaw_priority_range) <= 0.0:
+            raise ValueError("yaw_priority_speeds must be 0 <= low < high and yaw_priority_range positive")
+        self.actuation_layer = None
+        if actuation == "allocation":
+            from vehicle_model.allocation import AllocatorConfig
+            from vehicle_model.controllers.motion_control import ActuationConfig, ActuationLayer
+            # ABS and TCS are one slip controller in the shared layer: on if either is enabled
+            self.actuation_layer = ActuationLayer(params, ActuationConfig(
+                allocator=AllocatorConfig(max_drive_torque=params.max_drive_torque,
+                                          max_brake_torque=params.max_brake_torque),
+                enable_slip_control=enable_abs or enable_tcs))
         self.params = params
         self.steering = steering or FourWheelSteering()
         self.tv = tv or TorqueVectoringController(params=params)
@@ -70,6 +115,7 @@ class IntegratedChassisController:
         enable_abs: bool | None = None,
         enable_tcs: bool | None = None,
         enable_phase_plane: bool | None = None,
+        actuation: str | None = None,
     ) -> IntegratedChassisController:
         """Instantiate an IntegratedChassisController configured from YAML."""
         from pathlib import Path
@@ -121,16 +167,20 @@ class IntegratedChassisController:
             enable_tcs=en_tcs,
             enable_phase_plane=en_pp,
             k_yaw_counter_steer=float(stab_cfg.get("k_yaw_counter_steer", 0.12)),
+            actuation=str(data.get("actuation", "allocation")) if actuation is None else actuation,
         )
 
     @property
     def name(self) -> str:
         rws_tag = "4WS + " if self.enable_4ws else "2WS + "
-        return f"Integrated Vehicle Motion Controller (IVMC: {rws_tag}TV + ABS + TCS)"
+        alloc = ", allocation" if self.actuation == "allocation" else ""
+        return f"Integrated Vehicle Motion Controller (IVMC: {rws_tag}TV + ABS + TCS{alloc})"
 
     def reset(self) -> None:
         """Reset internal controller and subsystem states."""
         self.tv.reset()
+        if self.actuation_layer is not None:
+            self.actuation_layer.reset()
 
     def compute_control(
         self,
@@ -213,6 +263,10 @@ class IntegratedChassisController:
         T_drive = np.asarray(driver_T_drive, dtype=float).copy()
         T_brake = np.asarray(driver_T_brake, dtype=float).copy()
 
+        if self.actuation == "allocation":
+            return self._actuate_allocated(state, telemetry, dt, mu_est, r_des, pp_eval, delta_f, delta_r,
+                                           T_drive, T_brake, t0)
+
         # 2. Torque Vectoring & ESC Direct Yaw Moment Control
         if self.enable_tv:
             Mz_corr = self.tv.compute_corrective_moment(state.r, r_des, dt=dt)
@@ -256,4 +310,51 @@ class IntegratedChassisController:
             T_drive=T_drive,
             T_brake=T_brake,
             computation_time_ms=t_elapsed,
+        )
+
+    def yaw_priority(self, vx: float) -> float:
+        """Allocator weight of M_z against F_x at speed ``vx`` (log-linear between the schedule ends)."""
+        lo, hi = self.yaw_priority_speeds
+        p_lo, p_hi = self.yaw_priority_range
+        f = min(max((abs(vx) - lo) / (hi - lo), 0.0), 1.0)
+        return float(math.exp(math.log(p_lo) + f * (math.log(p_hi) - math.log(p_lo))))
+
+    def _actuate_allocated(self, state, telemetry, dt, mu_est, r_des, pp_eval, delta_f, delta_r,
+                           T_drive_driver, T_brake_driver, t0) -> ControlOutput:
+        """Shared actuation chain: (F_x, M_z) demand -> bounded allocation -> ABS/TCS."""
+        from vehicle_model.vehicle_models.normal_loads import quasi_static_normal_loads
+
+        p = self.params
+        Fx_des = float(np.sum(T_drive_driver) - np.sum(T_brake_driver)) / p.Reff
+        if pp_eval is not None and pp_eval.emergency_decel_demand_mps2 > 0.0:
+            Fx_des -= p.mass * pp_eval.emergency_decel_demand_mps2
+        Mz_des = 0.0
+        if self.enable_tv:
+            Mz_des = self.tv.compute_corrective_moment(state.r, r_des, dt=dt)
+            if pp_eval is not None:
+                Mz_des += pp_eval.stabilizing_yaw_moment_nm
+        if telemetry is not None:
+            Fz, mu, Fy, wheel_steer = telemetry.Fz, telemetry.mu, telemetry.Fy_wheel, telemetry.steer_angles
+        else:
+            Fz = quasi_static_normal_loads(p, 0.0, 0.0).Fz
+            mu, Fy = np.full(4, max(mu_est, 0.05)), np.zeros(4)
+            wheel_steer = np.array([delta_f, delta_f, delta_r, delta_r])
+        alloc_cfg = self.actuation_layer.allocator.config
+        self.actuation_layer.allocator.config = dataclasses.replace(alloc_cfg, yaw_priority=self.yaw_priority(state.vx))
+        T_drive, T_brake, alloc, Mz_achieved, slip_active = self.actuation_layer.actuate(
+            Fx_des, Mz_des, wheel_steer, Fz, mu, Fy, telemetry, state.vx, dt)
+        status = "saturated" if (alloc.status != "infeasible" and slip_active) else alloc.status
+        return ControlOutput(
+            steer_f=delta_f,
+            steer_r=delta_r,
+            T_drive=T_drive,
+            T_brake=T_brake,
+            desired_yaw_moment=Mz_des,
+            allocated_yaw_moment=Mz_achieved,
+            status=status,
+            computation_time_ms=(time.perf_counter() - t0) * 1000.0,
+            diagnostics={"actuation": "allocation", "Fx_demand": Fx_des, "allocation_status": alloc.status,
+                         "allocation_achieved": alloc.achieved.tolist(), "at_bound": alloc.at_bound.tolist(),
+                         "grip_limited": alloc.grip_limited.tolist(),
+                         "yaw_priority": self.actuation_layer.allocator.config.yaw_priority},
         )

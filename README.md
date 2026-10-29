@@ -2,7 +2,7 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Standards](https://img.shields.io/badge/standards-ISO%208855%20%7C%20ISO%203888--2%20%7C%20FMVSS%20126-orange.svg)](docs/ARCHITECTURE.md)
-[![Test Suite](https://img.shields.io/badge/tests-490%20passed-brightgreen.svg)](tests/)
+[![Test Suite](https://img.shields.io/badge/tests-493%20passed-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 A modular, physically consistent Python research and engineering platform for non-linear vehicle dynamics, interchangeable tyre models, physical actuator dynamics, four-wheel steering (4WS), torque vectoring, and integrated vehicle motion control (ABS, TCS, ESC, IVMC).
@@ -306,9 +306,9 @@ python examples/integrated_control_benchmark.py
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | **1. Passive Baseline** | 28.3°/s | 2.10° | 0.39° | 1.27 m | 0.65 g | 105.3 % |
 | **2. Active 4WS (speed scheduled)** | 21.2°/s | 1.26° (−40 %) | 0.05° | 0.87 m | 0.59 g | 100.7 % |
-| **3. Integrated IVMC (4WS + TV + ESC)** | 21.0°/s | 1.17° (−44 %) | 0.08° | 0.87 m | 0.63 g | 104.7 % |
+| **3. Integrated IVMC (4WS + TV + ESC)** | 21.0°/s | 1.23° (−41 %) | 0.07° | 0.85 m | 0.61 g | 103.2 % |
 
-Generated with the default tyre `magic_formula_passenger_synthetic` (since M6; the table before M6 used the legacy Pacejka adapter). Tyre utilisation is relative to the road friction $\mu F_z$; values above 100 % are possible because the MF tyre's peak friction exceeds $\mu$ at light wheel loads (load sensitivity). Synthetic vehicle and tyre parameters: the numbers compare controllers on the virtual vehicle, they are not predictions for a real car.
+IVMC acts through the shared wheel-force allocation (default since V3.0; see [MOTION_CONTROL.md](docs/MOTION_CONTROL.md) 1.2). Generated with the default tyre `magic_formula_passenger_synthetic` (since M6; the table before M6 used the legacy Pacejka adapter). Tyre utilisation is relative to the road friction $\mu F_z$; values above 100 % are possible because the MF tyre's peak friction exceeds $\mu$ at light wheel loads (load sensitivity). Synthetic vehicle and tyre parameters: the numbers compare controllers on the virtual vehicle, they are not predictions for a real car.
 
 ---
 

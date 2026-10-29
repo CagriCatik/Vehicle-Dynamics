@@ -35,9 +35,27 @@ Gemeinsame Stellebene: `ActuationLayer` = `WheelForceAllocator` (beschränkte Ra
 | `MotionController` mit PI, LQR, GS-LQR, LTV-MPC; `AllocatedStabilityController` | `ActuationLayer` | seit M6 |
 | `DynamicTwoTrackNMPC` | `ActuationLayer` (**neu**) | erste geplante Stellgröße $(m a_x, M_z)$ an die Allokation; vorher eigene Aufteilung (gleiche Anteile, negative Werte abgeschnitten, kein ABS/TCS) |
 | `NMPCPathTrackingController` (kinematisch) | `ActuationLayer` (**neu**), $M_z = 0$ | vorher feste Aufteilung (Antrieb gleich, Bremse 60/40), kein ABS/TCS |
-| `IntegratedChassisController` (IVMC) | **Ausnahme:** eigene Kette | TV addiert Moment auf die Fahrerpedale (`TorqueVectoringController.allocate_torques`), Alt-ABS/-TCS (`abs.py`, `tcs.py`), Giermomentbegrenzer. Diese additive Kette ist der Grund, warum IVMC die Split-µ-Bremsung nicht stabilisiert (Matrix in Abschnitt 4): Sie kann Bremsmoment nur hinzufügen, nicht auf der Hoch-µ-Seite reduzieren. Umstellung auf die `ActuationLayer` ist der nächste Schritt; sie ändert das Verhalten der Bestandsszenarien und braucht neue Referenzwerte. |
+| `IntegratedChassisController` (IVMC) | `ActuationLayer` (**neu, Standard**) | Lenkung (4WS, Gegenlenken, Phasenebene) unverändert; Längskraftwunsch aus den Pedalen (minus Notverzögerung der Phasenebene) und Giermomentwunsch (TV + Phasenebene) gehen an die Allokation. Die alte additive Kette (TV addiert Differenzmoment, Alt-ABS/-TCS, heuristischer Split-µ-Begrenzer) bleibt als `actuation="legacy"` wählbar. Vergleich siehe 1.2. |
 | `FourWheelSteeringController` | **Ausnahme:** reiner Lenkregler | reicht die Fahrerpedale mit fester Aufteilung (Antrieb gleich, Bremse 60/40) durch, optionale einfache ABS-Dämpfung; dient als Referenz „nur Hinterachslenkung“ |
 | `PassiveBaselineController` | **Ausnahme:** passive Referenz | feste Aufteilung ohne Regelung, absichtlich |
+
+### 1.2 IVMC: additive Kette gegen gemeinsame Allokation
+
+Gleicher Regler, gleiche Lenkung, nur die Stellebene getauscht (`actuation`). Validierungsmatrix (`configs/validation/matrix.yaml`), IVMC 2WS / IVMC + 4WS:
+
+| Szenario | Kennwert | legacy | allocation |
+|---|---|---|---|
+| Split-µ-Bremsung (≈ 12 % Pedal) | Gierwinkel am Ende | 7,6° / 9,3° | **0,0° / 0,0°** |
+| Fishhook | Spitzen-Schwimmwinkel | **12,1° (FAIL)** / 4,9° | **7,1° (PASS)** / 4,0° |
+| Bremsen in der Kurve | Spitzen-Schwimmwinkel | 8,3° / 1,6° | **2,0° / 1,2°** |
+| Lenkwinkelsprung | Spitzen-Schwimmwinkel | 7,7° / 6,6° | 7,3° / **4,8°** |
+| Doppelspurwechsel, Sine with Dwell, Spurwechsel, Slalom, Kreisfahrt | | PASS | PASS, Werte gleich oder kleiner |
+
+Split-µ-Vollbremsung mit gerader Lenkung (Konfigurationsmatrix): legacy 9,8° / 97° / 150° bei 12 / 30 / 100 % Pedal, allocation **0,0°** bei jedem Pedal, mit 2,2 m/s² Verzögerung (Select-low-Grenze). Geradeausbremsung auf homogener Fahrbahn: mittlere Verzögerung 8,87 / 3,82 / 1,50 m/s² (legacy) gegen **9,19 / 4,82 / 2,21 m/s²** (allocation) bei µ = 1,0 / 0,5 / 0,2; auf µ = 0,2 blockiert das Alt-ABS die Räder (Schlupf 1,0), die Schlupfregelung hält ≈ 3 %.
+
+**Gewichtung über der Geschwindigkeit:** Die Allokation gewichtet das Giermoment gegen die Längskraft (`yaw_priority`). Ein fester Wert scheitert an einem der beiden Fälle: Mit 100 bleibt das Fahrzeug bei Split-µ-Bremsung gerade, erreicht beim Split-µ-Anfahren aber nur 19,5 km/h nach 2,5 s (passiv 31, legacy 46), weil auch das Antriebsmoment auf der Hoch-µ-Seite auf das der Eisseite begrenzt wird. Mit 1 erreicht es 42 km/h, dreht sich aber bei der Bremsung aus 100 km/h um 19° ein. Deshalb wird die Gewichtung über der Geschwindigkeit geführt: 100 oberhalb von 54 km/h, 1 unterhalb von 29 km/h, dazwischen log-linear (`yaw_priority_speeds`, `yaw_priority_range`). Bei niedriger Geschwindigkeit ist die Folge eines asymmetrischen Moments gering, und die Lenkung kann es ausgleichen. Ergebnis: Anfahren 38 km/h bei 0,2° Gierwinkel, Split-µ-Bremsung 0,0° bei jedem Pedal, Validierungswerte wie oben (alle Validierungsszenarien liegen über 54 km/h).
+
+Deshalb ist `allocation` seit V3.0 der Standard.
 
 Die Diagnosedaten beider NMPCs trennen (`diagnostics["actuation"]`): Soll-Längskraft und Soll-Giermoment (`demand`), durch die Allokation erreichbare Werte (`allocation_achievable`, `allocation_status`, `at_bound`, `grip_limited`), die ausgegebene Aktuatoranforderung nach ABS/TCS (`issued`, Fahrzeugkoordinaten) und die von der Strecke im letzten Schritt tatsächlich erzeugten Reifenkräfte (`realised_previous_step`: $F_x$, Giermoment der Längskräfte, gesamtes Reifengiermoment; nur mit Telemetrie). Ausgabestatus wie beim `MotionController`: Solverstatus, wenn nicht nominal, sonst Allokationsstatus.
 
@@ -154,7 +172,8 @@ Alle Regler stoßen an das Momentenlimit von 4000 N m. Rund 20–30 % der Schrit
 | 4WS + ABS | Lenkung | 94,4° / 3720 / 1309 N m | 90,6° / 4047 / 746 N m |
 | 4WS + ABS + ESC/TV | Bremsmoment addieren | 106,4° / 3502 / 1603 N m | 100,8° / 4091 / 1830 N m |
 | TV (Allokation) | Bremsmoment umverteilen | **0,0°** / 955 / 47 N m | **0,0°** / 1311 / 68 N m |
-| IVMC | Bremsmoment addieren | 78,3° / 3502 / 1603 N m | 103,1° / 4091 / 1830 N m |
+| IVMC (legacy) | Bremsmoment addieren | 78,3° / 3502 / 1603 N m | 122,1° / 4091 / 1830 N m |
+| IVMC (allocation, Standard seit V3.0) | Bremsmoment umverteilen | **0,0°** / 1311 / 107 N m | **0,0°** / 1311 / 107 N m |
 
 Auf homogener Fahrbahn bremsen alle Konfigurationen gerade. Die Hinterachslenkung erreicht höchstens ein Drittel des Bremsgiermoments, weil die gebremsten Reifen kaum Seitenkraft übertragen (Kammscher Kreis). ESC, das Bremsmoment nur addiert, greift auf der Niedrig-µ-Seite ein und ändert die Asymmetrie kaum. Nur die Allokation senkt das Bremsmoment auf der Hoch-µ-Seite (Select-low-ähnlich) und bleibt gerade, mit 2,2 m/s² Verzögerung. Die eindrehenden Konfigurationen sind erwartete physikalische Grenzen und werden als solche getestet.
 

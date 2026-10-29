@@ -267,7 +267,7 @@ graph LR
 > Auf Schnee ($\mu = 0.40$) und Glatteis ($\mu = 0.20$) reicht die Schräglaufsteifigkeit der Hinterachse nicht mehr aus, um allein über $\delta_r$ das erforderliche stabilisierende Giermoment aufzubringen.
 > Aus diesem Grund kombiniert der `IntegratedChassisController` (IVMC) die Hinterachslenkung mit radindividuellem Brems- und Antriebs-Torque-Vectoring.
 >
-> **Korrektur (V3.0, M10 §5.5):** Eine Garantie der Spurstabilität gibt es nicht. Bei der Split-µ-Vollbremsung (µ 1,0 / 0,2, Lenkung gerade gehalten) dreht sich auch der IVMC ein, weil er Bremsmoment nur *addiert*. Stabil bleibt nur die Allokation, die das Bremsmoment auf der Hoch-µ-Seite *reduziert* (Konfigurationsmatrix in [MOTION_CONTROL.md](MOTION_CONTROL.md)).
+> **Korrektur (V3.0, M10 §5.5):** Eine Garantie der Spurstabilität gibt es nicht. Mit der alten additiven Stellkette (`actuation="legacy"`) gilt: Bei der Split-µ-Vollbremsung (µ 1,0 / 0,2, Lenkung gerade gehalten) dreht sich auch der IVMC ein, weil er Bremsmoment nur *addiert*. Stabil bleibt nur die Allokation, die das Bremsmoment auf der Hoch-µ-Seite *reduziert* (Konfigurationsmatrix in [MOTION_CONTROL.md](MOTION_CONTROL.md)). Seit V3.0 arbeitet IVMC standardmäßig über die gemeinsame Allokation und bleibt dann auch bei Vollbremsung gerade (MOTION_CONTROL.md, Abschnitt 1.2).
 
 ---
 
