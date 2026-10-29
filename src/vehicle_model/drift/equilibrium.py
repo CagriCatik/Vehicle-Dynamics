@@ -64,6 +64,8 @@ class EquilibriumSettings:
     seed_steer_deg: tuple = (-20.0, -10.0, 0.0, 10.0)   # mirrored for right drifts
     seed_rear_slip: tuple = (0.1, 0.3, 0.6)
     bound_tol: float = 1e-6                        # relative distance to a bound counted as "on the bound"
+    require_drift: bool = True                     # False: accept any physical equilibrium (cornering, straight),
+                                                   # e.g. as intermediate points of a transition into the drift
     max_nfev: int = 3000                           # budget of a refinement solve
     seed_nfev: int = 300                           # budget per seed (a converging seed needs ~150)
 
@@ -168,14 +170,15 @@ class DriftEquilibriumSolver:
         if "steer" in at_bound or ("torque" in at_bound and z[6] > 0.5 * hi[6]):
             reasons.append(ACTUATOR_LIMIT)
         r = float(z[0])
-        if abs(r) < s.min_yaw_rate or abs(ref.beta_rad) < s.min_beta:
-            reasons.append(TRIVIAL)
-        elif r * ref.beta_rad >= 0.0:
-            reasons.append(WRONG_ATTITUDE)
         rear_peak = [peak_slip_angle(P.model.tyre_rear, tel.Fz[i], tel.mu[i]) for i in (2, 3)]
-        if TRIVIAL not in reasons and WRONG_ATTITUDE not in reasons and \
-                any(abs(tel.alpha[i]) < rear_peak[k] for k, i in enumerate((2, 3))):
-            reasons.append(REAR_NOT_SATURATED)
+        if s.require_drift:
+            if abs(r) < s.min_yaw_rate or abs(ref.beta_rad) < s.min_beta:
+                reasons.append(TRIVIAL)
+            elif r * ref.beta_rad >= 0.0:
+                reasons.append(WRONG_ATTITUDE)
+            if TRIVIAL not in reasons and WRONG_ATTITUDE not in reasons and \
+                    any(abs(tel.alpha[i]) < rear_peak[k] for k, i in enumerate((2, 3))):
+                reasons.append(REAR_NOT_SATURATED)
         if np.any(np.asarray(z[1:5]) < 0.0):
             reasons.append(NEGATIVE_WHEEL_SPEED)
         extra = extrapolating(P.model.tyre_front, tel.alpha[:2], tel.kappa[:2]).tolist() + \
@@ -242,4 +245,60 @@ class DriftEquilibriumSolver:
         return out
 
 
-__all__ = ("DriftEquilibriumSolver", "EquilibriumSettings", "peak_slip_angle", "rwd_input")
+__all__ = ("DriftEquilibriumSolver", "EquilibriumSettings", "approach_equilibrium", "cornering_equilibrium", "peak_slip_angle",
+           "rwd_input")
+
+
+def cornering_equilibrium(model, speed: float, steer: float, mu: float) -> DriftEquilibrium:
+    """Stable RWD cornering at fixed steer (the approach and exit state of D4) as a DriftEquilibrium.
+
+    Found with :class:`~vehicle_model.handling_analysis.equilibrium.EquilibriumAnalysis` (speed held by
+    equal rear torques) and re-solved by the drift solver without the drift criterion, so the same
+    linearisation and LQR tools apply. Raises ``ValueError`` if no accepted equilibrium exists.
+    """
+    import copy
+
+    from vehicle_model.handling_analysis.equilibrium import EquilibriumAnalysis, OperatingPoint
+    m = copy.copy(model)
+    m.road = UniformRoad(mu=float(mu))
+    c = EquilibriumAnalysis(m).solve(OperatingPoint(float(speed), float(steer), drive_split=(0.0, 0.0, 0.5, 0.5)))
+    if not c.accepted:
+        raise ValueError(f"no cornering equilibrium at {speed} m/s, steer {math.degrees(steer):.1f} deg, mu {mu}")
+    solver = DriftEquilibriumSolver(model, EquilibriumSettings(require_drift=False))
+    ref = DriftReference(float(speed), c.beta, float(mu))
+    eq = solver.solve(ref, guess=np.r_[c.r, c.state.omega, steer, c.drive_total / 2.0])
+    if not eq.physical_feasible:
+        raise ValueError(f"cornering equilibrium not reproduced by the drift solver: {eq.reasons}")
+    return eq
+
+
+def approach_equilibrium(model, speed: float, mu: float, ay_fraction: float = 0.6, direction: str = "left",
+                         tol: float = 0.01) -> DriftEquilibrium:
+    """Stable RWD cornering with lateral acceleration ``ay_fraction * mu * g`` (bisection over the steer).
+
+    The approach state of the drift initiation; chosen by lateral acceleration so that it fits every
+    friction level (a fixed steer can lie beyond the limit on a low-friction road).
+    """
+    if not 0.05 <= ay_fraction <= 0.9:
+        raise ValueError("ay_fraction must lie in [0.05, 0.9]")
+    target = ay_fraction * mu * model.params.g
+    sign = 1.0 if direction == "left" else -1.0
+    lo, hi = 0.0, math.radians(20.0)
+    best = None
+    for _ in range(30):
+        mid = 0.5 * (lo + hi)
+        try:
+            eq = cornering_equilibrium(model, speed, sign * mid, mu)
+            ay = abs(eq.yaw_rate) * eq.speed
+        except ValueError:
+            ay = math.inf                               # beyond the limit: steer less
+        if ay < target:
+            lo = mid
+        else:
+            hi = mid
+            best = eq if ay < math.inf else best
+        if best is not None and abs(abs(best.yaw_rate) * best.speed - target) < tol * target:
+            return best
+    if best is None:
+        raise ValueError(f"no stable cornering with a_y = {target:.2f} m/s^2 at {speed} m/s")
+    return best

@@ -1,4 +1,4 @@
-# Drift-Regler: Verfahren (Drift-Plan D1–D3)
+# Drift-Regler: Verfahren (Drift-Plan D1–D4)
 
 Autonomer Drift auf der bestehenden 7-DOF-Strecke nach `Plan_v3.md`. Dieses Dokument beschreibt die Verfahren;
 Ergebnisse stehen in [DRIFT_RESULTS.md](DRIFT_RESULTS.md), Modellgrenzen und Konventionen in
@@ -16,6 +16,10 @@ reales Fahrzeug.
 | Regler-Adapter | `drift/control_adapter.py` | D3 |
 | Kennzahlen | `drift/metrics.py` | D3 |
 | Halten und Störung | `simulation/drift/hold.py` | D3 |
+| Zustandsautomat | `drift/supervisor.py` | D4 |
+| Gain-Schedule entlang eines Gleichgewichtszweigs | `drift/schedule.py` | D4 (für D5) |
+| Überwachter Regler (Einleitung, Halten, Austritt) | `drift/control_adapter.py` (`DriftSupervisedController`) | D4 |
+| Einleitung, Austritt, Erfolgsquoten | `simulation/drift/scenarios.py` | D4 |
 | Plots | `visualization/drift_plots.py` | D1–D3 |
 
 Abhängigkeitsrichtung wie im Plan (3.2): `drift/` kennt weder Matplotlib noch Dateien; `simulation/drift/` liest
@@ -103,22 +107,77 @@ Kennzahlen (`drift/metrics.py`, Plan 7.1): RMS von `β − β_ref`, `r − r_ref
 (`t ≥ settle_s`), maximaler Schwimmwinkelfehler, Fehlernorm am Anfang und Ende
 (`√((Δβ/0,05 rad)² + (Δr/0,1 rad/s)² + (Δv/1 m/s)²)`), Sättigungsanteil, Driftverlust (`|β − β_ref| ≥ 30°`).
 
-## 5. Reproduktion
+## 5. Einleitung, Austritt und Recovery (D4)
+
+**Ausgangslage, gemessen (13 m/s, µ 0,9).** Die Driftgleichgewichte bilden über β einen stetigen, überall offen
+instabilen und stabilisierbaren Zweig von β = −1° bis −25° (R 20–27 m, δ_f von +18,6° bis −19,9°). Geradeausfahrt
+liegt aber auf einem anderen Zweig: der stabilen Kurvenfahrt über dem Lenkwinkel (β zwischen 0 und +1°, κ_RL ≤ 0,05).
+Bei gleichem Lenkwinkel (18,6°) existieren beide nebeneinander (Kurvenfahrt β +0,8°, κ_RL 0,05; Driftzweig β −1°,
+κ_RL 0,35). Es gibt also keinen quasistationären Weg aus der Geradeausfahrt in den Drift: Die Einleitung muss ein
+Übergangsvorgang sein.
+
+**Zustandsautomat** (`drift/supervisor.py`, nur diskrete Entscheidungen, jeder Wechsel mit Grund protokolliert):
+DISABLED → APPROACH (Driftanforderung, v ≥ 5 m/s) → INITIATE (stationäre Kurvenfahrt erreicht: |r − r_c| < 2°/s und
+|β̇| < 2°/s für 0,5 s) → HOLD (Einfangbereich |β − β*| < 5°, |r − r*| < 8°/s, |v − v*| < 2,5 m/s für 0,5 s) → EXIT
+(Austrittsanforderung) → DISABLED (Normalfahrt wiederhergestellt). Abbruch: INITIATE → RECOVER bei Zeitüberschreitung
+(15 s) oder Divergenz, HOLD → RECOVER bei |β − β*| > 15°, RECOVER → FAILED nach 15 s; jeder Modus → FAILED bei
+|β| ≥ 60°. HOLD wird nie außerhalb des Einfangbereichs gemeldet; FAILED ist endgültig. Schwellen in
+`configs/drift/initiation.yaml`.
+
+**Regelgesetze je Modus** (`DriftSupervisedController`):
+
+| Modus | Gesetz |
+|---|---|
+| DISABLED | Lenkwinkel mit Ratengrenze auf 0, Moment P-geregelt auf eine mit ≤ 1,5 m/s² **rampierte** Sollgeschwindigkeit |
+| APPROACH | Lenkwinkel auf δ_c der stabilen Kurvenfahrt bei 0,6 µ g (`approach_equilibrium`, Bisektion über δ), Moment T_c + P |
+| INITIATE, HOLD | Drift-LQR (D3), stoßfrei übernommen (Lenkzustand = letzter Befehl). **Kein Momentenstoß**: Der LQR bricht aus der Kurvenfahrt heraus selbst das Heck aus und fängt das Fahrzeug |
+| EXIT, RECOVER | `release`: Moment T_c, Lenkziel `δ_c + k_β β_d` (β_d Schwimmwinkel nur in Driftlage, β·r < 0), dann `straight`: Lenkrampe auf 0 mit Geschwindigkeitsregelung |
+| FAILED | Moment 0, Lenkrampe auf 0 (definierte, begrenzte Stellgröße, keine Rettung) |
+
+**Herleitung des Austrittsgesetzes.** Mit `δ = δ_c + β` wird der vordere Schräglaufwinkel
+`α_v ≈ δ − β − l_v r / v = δ_c − l_v r / v` unabhängig von β: Die Vorderachse behält ihre Kraft, während die Hinterachse
+wieder haftet (Lenken in Fahrtrichtung, wie ein Fahrer, der ins Rutschen lenkt). Gemessen aus den Gleichgewichten
+−15/−20/−25° (13 m/s, µ 0,9), Spitzen-Schwimmwinkel / minimale Geschwindigkeit:
+
+| k_β | −20° | −25° |
+|---|---|---|
+| 0 (nur δ_c) | 40° / 2,8 m/s | 42° / 2,7 m/s |
+| 0,5 | Dreher | Dreher |
+| 0,8 | Dreher | Dreher (mit T_c) |
+| 1,0 | **20° / 12,2 m/s** | **25° / 12,2 m/s** |
+| 1,2 | 21° / 12,6 m/s | 26° / 12,9 m/s |
+
+Teilweises Gegenlenken ist schlechter als keines; k_β = 1 ist Standard (`exit_countersteer_gain`).
+
+**Befunde beim Entwurf** (alle verworfen, dokumentiert):
+
+- Momentenstoß aus der Kurvenfahrt mit Übergabe an den LQR erst im Einfangbereich: Bei β = −19° war die Gierrate
+  89°/s statt 29°/s; das Gegenlenken (+6° → −14° bei 50°/s mindestens 0,4 s) kam zu spät, alle Varianten drehten sich.
+- Austritt mit einem LQR um das Kurvenfahrtgleichgewicht: dreht sich (lineare Auslegung fern ihres Arbeitspunkts).
+- Austritt entlang des Driftzweigs mit Gain-Scheduling (`drift/schedule.py`): erreicht das Zweigende bei ≤ 1°/s,
+  scheitert aber an der Übergabe zur Kurvenfahrt.
+- Geschwindigkeitsregelung mit Sollwertsprung: 1000 N·m bei 3 m/s nach einem Austritt → Leistungsübersteuern → Dreher.
+- Gegenlenken des gesamten Schwimmwinkels im Austritt: Bei 11 m/s hat normale Kurvenfahrt β = +4°; Gegenlenken lenkt
+  dann weiter ein und das Austrittskriterium |β| < 3° wird nie erreicht. Deshalb nur der Driftanteil (β·r < 0).
+
+## 6. Reproduktion
 
 ```bash
 python examples/drift_tyre_audit.py                      # D1
 python examples/drift_equilibria_demo.py                 # D2, configs/drift/equilibrium_sweep.yaml (~8 min)
 python examples/drift_hold_demo.py                       # D3, configs/drift/drift_lqr.yaml (~3 min)
+python examples/drift_initiation_demo.py                 # D4, configs/drift/initiation.yaml (36 Läufe, ~16 min parallel)
 python -m pytest tests/vehicle_model/drift -q
 ```
 
 Konfigurationen werden streng geprüft (unbekannte Schlüssel, Wertebereiche, Dateien, Reifennamen, Gewichtsdimensionen)
 und aufgelöst in den Ergebnisordner geschrieben (`run_config_resolved.yaml`).
 
-## 6. Grenzen (Stand D3)
+## 7. Grenzen (Stand D4)
 
 - Nur Hinterradantrieb mit offenem Differential und Frontlenkung; Torque Vectoring und Allrad folgen nicht vor D7.
 - Informationsmodus nur `ideal_full_state`; geschätzte und sensorbeschränkte Rückführung folgen (D7).
 - Lokale Aussage: Die Linearisierung gilt nahe dem Gleichgewicht; Einfangbereich und globales Verhalten sind nicht
-  bewiesen, nur für die simulierten Störungen gezeigt.
+  bewiesen, nur für die simulierten Störungen und die 36 Einleitungen des Sweeps gezeigt.
+- Einleitung nur über den Einfangbereich des LQR aus stationärer Kurvenfahrt; bei 25° und µ 0,9 reicht er nicht.
 - Driftwinkel ab etwa 15–20° liegen an der Hinterachse außerhalb der erklärten Reifengültigkeit (`valid_extrapolated`).

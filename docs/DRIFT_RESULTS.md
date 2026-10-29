@@ -1,6 +1,6 @@
 # Drift-Regler: Ergebnisse und Abnahme (Drift-Plan)
 
-Ergebnisse der Pakete D0–D3 mit Gate-Bewertung (PASS / FAIL / INFEASIBLE). Verfahren:
+Ergebnisse der Pakete D0–D4 mit Gate-Bewertung (PASS / FAIL / INFEASIBLE). Verfahren:
 [DRIFT_CONTROLLER.md](DRIFT_CONTROLLER.md); Modellgrenzen: [DRIFT_MODEL_VALIDITY.md](DRIFT_MODEL_VALIDITY.md). Alle
 Parameter synthetisch, nur virtuelle Modellvalidierung.
 
@@ -12,6 +12,7 @@ Parameter synthetisch, nur virtuelle Modellvalidierung.
 | D1 Reifen, deterministische Auswertung | PASS | Audit aller drei Reifen bestanden (mit Extrapolationswarnung jenseits 20°); Rohmodell reihenfolgeabhängig um 1,6e-7, `DeterministicPlant` bitgleich; Nichtkonvergenz gemeldet bzw. im strengen Modus Ausnahme (Tests) |
 | D2 Driftgleichgewichte | PASS (mit Extrapolation) | nichttriviale, physikalisch geprüfte Gleichgewichte in beiden Richtungen; innerhalb der Reifengültigkeit nur bis etwa 15° Schwimmwinkel (`valid`), darüber `valid_extrapolated`; 6 von 140 Punkten ohne Gleichgewicht, 2 als Kurvenfahrt statt Drift erkannt |
 | D3 Halten mit LQR | PASS | Gleichgewicht offen instabil (Eigenwert +3,4 1/s), stabilisierbar (PBH 7/7); LQR hält in beiden Richtungen und regelt alle 14 Störfälle aus, ohne Driftverlust; offen geht jede Störung verloren |
+| D4 Einleitung, Austritt, Recovery | PASS mit Grenze | End-to-End aus Geradeausfahrt ohne Zustandseingriff: 30 von 36 Läufen erfolgreich (83 %), µ 0,6 18/18, µ 0,9 12/18; nicht erreicht: 25° bei µ 0,9 (Einleitung überschwingt, korrekter Abbruch bei 13 und 15 m/s, Dreher in der Recovery bei 11 m/s → FAILED gemeldet). Überwachter Austritt ohne Überschwingen gegenüber 21–47° bei sofortiger Abschaltung |
 
 ## D2: Driftgleichgewichte
 
@@ -77,8 +78,42 @@ Gleichgewichts.
 Störung zuverlässig; die Ursache war die Lenkratengrenze (gefordert bis 4200°/s). Mit der Lenkrate als Eingang im
 Entwurf ist die Begrenzung kaum noch aktiv ([DRIFT_CONTROLLER.md](DRIFT_CONTROLLER.md) 3).
 
-## Offene Punkte nach D3
+## D4: Einleitung, Halten, Austritt (S04, S05)
+
+`configs/drift/initiation.yaml`: Start in Geradeausfahrt bei Driftgeschwindigkeit, Driftanforderung bei 0,5 s,
+Austrittsanforderung bei 25 s, 45 s je Lauf; v = 11/13/15 m/s × β* = 15/20/25° × µ = 0,9/0,6 × links/rechts = 36 Läufe
+(parallel, etwa 16 min). Ergebnisse: `output/drift/initiation/` (Bericht, `kpi.csv`, `mode_log.json` mit allen
+Moduswechseln und Gründen, Zeitverläufe, Ablaufbild).
+
+**Erfolg (HOLD erreicht, kein FAILED, Normalfahrt wiederhergestellt): 30 von 36 (83 %).** Links und rechts identisch.
+
+| µ | β* | 11 m/s | 13 m/s | 15 m/s |
+|---|---|---|---|---|
+| 0,9 | 15° | PASS (HOLD nach 2,2 s) | PASS (2,2 s) | PASS (2,1 s) |
+| 0,9 | 20° | PASS (15,0 s) | PASS (7,6 s) | PASS (2,0 s) |
+| 0,9 | 25° | FAIL: Zeitüberschreitung, RECOVER, Dreher → FAILED | FAIL: Zeitüberschreitung, Recovery zur Normalfahrt | FAIL: wie 13 m/s |
+| 0,6 | 15/20/25° | PASS (1,9–2,4 s) | PASS | PASS |
+
+Über die erfolgreichen Läufe: Zeit bis HOLD Median 2,2 s (max. 15,0 s), β-RMSE im HOLD ≤ 2,0°, Austritt bis zur
+Normalfahrt ≤ 3,5 s, Schwimmwinkelspitze im Austritt höchstens 0,14° über dem Driftwinkel, minimale Geschwindigkeit
+im Austritt ≥ 84 % der Driftgeschwindigkeit. Vergleich mit sofortiger Abschaltung (Moment 0, Lenkrampe auf 0) aus
+demselben HOLD: kein Dreher in den 30 Fällen, aber Schwimmwinkelspitzen von 21–47°.
+
+**Grenze 25° bei µ 0,9:** Der LQR, aus der Kurvenfahrt gestartet, überschwingt auf etwa −36°, das Moment sättigt und
+die Geschwindigkeit steigt bis 25 m/s; der Einfangbereich wird in 15 s nicht erreicht. Der Automat bricht korrekt ab
+(INITIATE → RECOVER); bei 11 m/s dreht sich das Fahrzeug in der Recovery, was als FAILED gemeldet wird. Ein gestufter
+Weg (zuerst 15°, dann Sollpunktwechsel entlang des Zweigs) gehört zu D5.
+
+**Entwurfsbefunde** (Verfahren und Zahlen in [DRIFT_CONTROLLER.md](DRIFT_CONTROLLER.md) 5): kein stationärer Weg aus
+der Geradeausfahrt in den Drift (getrennte Gleichgewichtszweige); Einleitung ohne Momentenstoß, der LQR bricht das
+Heck selbst aus; Austritt mit Gegenlenken in Fahrtrichtung (`k_β = 1`), teilweises Gegenlenken (0,5; 0,8) dreht sich;
+rampierte Sollgeschwindigkeit nötig (Sollsprung erzeugte einen Dreher bei 3 m/s); Gegenlenken nur des Driftanteils
+(bei 11 m/s hat normale Kurvenfahrt β = +4°; vorher blieb der Austritt dort hängen, 26/36 → 30/36).
+
+## Offene Punkte nach D4
 
 - Einfangbereich systematisch bestimmen (größere Störungen, Rasterung wie in M11), statt nur der definierten Störungen.
 - Kein Integralanteil: Bei Parameterabweichungen bleibt eine stationäre Abweichung zu erwarten (D7).
-- Nächstes Paket: D4, Drifteinleitung aus normaler Fahrt, Austritt und Recovery mit Zustandsautomat.
+- 25° bei µ 0,9 aus der Kurvenfahrt nicht einleitbar; gestufte Einleitung über Sollpunktwechsel (D5).
+- Der Austritt verliert bis 16 % Geschwindigkeit; die Recovery bei 11 m/s nach misslungener Einleitung dreht sich.
+- Nächstes Paket: D5, Kreisbahnführung, Sollpunktwechsel und Achter.

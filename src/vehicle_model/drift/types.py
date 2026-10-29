@@ -53,7 +53,7 @@ class DriftReference:
 
     @property
     def direction(self) -> str:
-        return "left" if self.beta_rad < 0 else "right"
+        return "left" if self.beta_rad <= 0 else "right"
 
     def mirrored(self) -> "DriftReference":
         return DriftReference(self.speed_mps, -self.beta_rad, self.road_mu)

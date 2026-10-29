@@ -1,0 +1,26 @@
+# Drift plan D4: drift initiation from straight driving, hold, exit (S04, S05), as a sweep with success rates.
+# Every run starts straight at the drift speed; no state is set after t = 0.
+name: drift_initiation
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+powertrain: {layout: rwd}
+sweep:
+  speed_mps: [11, 13, 15]
+  beta_deg: [15, 20, 25]
+  mu: [0.9, 0.6]
+directions: [left, right]
+approach: {ay_fraction: 0.6}            # stable cornering at 0.6 mu g before the initiation
+supervisor:
+  request_s: 0.5
+  exit_s: 25.0
+  capture_beta_deg: 5.0
+  capture_r_degps: 8.0
+  capture_v_mps: 2.5
+  capture_hold_s: 0.5
+  initiate_timeout_s: 15.0
+  loss_beta_deg: 15.0
+  exit_beta_deg: 3.0
+  recover_timeout_s: 15.0
+  spin_beta_deg: 60.0
+simulation: {dt_s: 0.005, duration_s: 45.0}
+outputs: {directory: output/drift/initiation}

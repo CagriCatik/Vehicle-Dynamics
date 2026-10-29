@@ -163,4 +163,44 @@ def plot_hold_runs(histories: dict, equilibria: dict, path: str | Path, name: st
     return out
 
 
-__all__ = ("plot_equilibrium_sweep", "plot_hold_runs", "plot_tyre_audit")
+def plot_initiation(h, result: dict, path: str | Path, name: str = "") -> Path:
+    """Sideslip, yaw rate, speed, steer and rear torque over time with the supervisor modes as background bands."""
+    import math
+
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from vehicle_model.visualization.theme import TEXT_MUTED, apply_dark_theme, style_axis
+    apply_dark_theme()
+    fig, ax = plt.subplots(5, 1, figsize=(14, 13), sharex=True)
+    t = h.time
+    series = ((np.degrees(np.unwrap(np.arctan2(h.vy, h.vx))), "beta [deg]"), (np.degrees(h.r), "r [deg/s]"),
+              (np.hypot(h.vx, h.vy), "v [m/s]"), (np.degrees(h.steer_f), "delta_f [deg]"), (h.T_drive[:, 2], "T rear [N m]"))
+    band = {"APPROACH": _COLOURS[0], "INITIATE": _COLOURS[3], "HOLD": _COLOURS[2], "EXIT": _COLOURS[1],
+            "RECOVER": _COLOURS[4], "FAILED": "#d03b3b"}
+    tr = result.get("transitions", [])
+    edges = [(x["t"], x["to"]) for x in tr] + [(t[-1], None)]
+    for a, (y, lab) in zip(ax, series):
+        a.plot(t, y, color="white", lw=1.4)
+        for (t0, mode), (t1, _) in zip(edges[:-1], edges[1:]):
+            if mode in band:
+                a.axvspan(t0, t1, color=band[mode], alpha=0.18, lw=0)
+        style_axis(a, None, None, lab)
+    eq = result.get("equilibrium") or {}
+    ax[1].axhline(eq.get("yaw_rate_degps", 0.0) * (1 if result["direction"] == "left" else 1), color=TEXT_MUTED, ls=":", lw=1)
+    ax[0].axhline((-1 if result["direction"] == "left" else 1) * result["beta_deg"], color=TEXT_MUTED, ls=":", lw=1)
+    for (t0, mode), (t1, _) in zip(edges[:-1], edges[1:]):
+        if mode:
+            ax[0].text(0.5 * (t0 + t1), ax[0].get_ylim()[1], mode, ha="center", va="top", fontsize=8, color=TEXT_MUTED)
+    ax[-1].set_xlabel("time [s]")
+    fig.suptitle(f"{name}: {result['direction']} drift, v {result['speed']:g} m/s, beta* {result['beta_deg']:g} deg, "
+                 f"mu {result['mu']:g}: {'PASS' if result.get('success') else 'FAIL'} (final mode {result.get('final_mode')})")
+    fig.tight_layout()
+    out = Path(path)
+    fig.savefig(out, dpi=110, facecolor=fig.get_facecolor())
+    plt.close(fig)
+    return out
+
+
+__all__ = ("plot_equilibrium_sweep", "plot_hold_runs", "plot_initiation", "plot_tyre_audit")
