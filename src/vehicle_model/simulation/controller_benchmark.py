@@ -353,7 +353,8 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
             "Mz_tyre_lateral", "speed", "feasibility", "solver", "tyre_utilisation", "supervisor_mode", "vy", "ax", "ay",
             *(f"{q}_{w}" for q in ("Fz", "Fx", "Fy") for w in WHEELS),
             "Mz_requested", "Mz_alloc_pre_slip", "Mz_issued", "Mz_realised", "T_issued_abs", "T_realised_abs",
-            "regen_power_w", "friction_power_w", "abs_active_n", "abs_active_mask", "alloc_residual_fx", "drive_power_w")
+            "regen_power_w", "friction_power_w", "abs_active_n", "abs_active_mask", "alloc_residual_fx", "drive_power_w",
+            "function_status")
     pos = model.wheel_positions
     h = {k: [] for k in keys}
     t = 0.0
@@ -398,6 +399,7 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
         util = np.hypot(tel.Fx_wheel, tel.Fy_wheel)[loaded] / np.maximum(tel.mu * tel.Fz, 1e-9)[loaded]
         h["tyre_utilisation"].append(float(np.max(util)) if util.size else float("nan"))
         h["supervisor_mode"].append((out.diagnostics or {}).get("supervisor_mode"))
+        h["function_status"].append((out.diagnostics or {}).get("function_status"))   # e.g. {"hdc": "active"} (M22)
         # body accelerations from the tyre forces (drag and rolling resistance not included) and per-wheel forces
         h["vy"].append(s.vy)
         h["ax"].append(float(np.sum(tel.Fx_body)) / p.mass)
@@ -415,7 +417,7 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
                      ("status", out.status), ("feasibility", (out.diagnostics or {}).get("feasibility")),
                      ("solver", _solver_report(out.diagnostics or {}))):
             h[k].append(v)
-    h = {k: (np.array(v, dtype=object) if k in ("status", "feasibility", "solver", "supervisor_mode") else np.array(v))
+    h = {k: (np.array(v, dtype=object) if k in ("status", "feasibility", "solver", "supervisor_mode", "function_status") else np.array(v))
          for k, v in h.items()}
     if not len(h["abs_active_mask"]):
         h["abs_active_mask"] = np.zeros((0, 4), int)

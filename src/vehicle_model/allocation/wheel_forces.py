@@ -54,10 +54,15 @@ class AllocatorConfig:
 
 @dataclass(frozen=True)
 class ActuatorHealth:
-    """Per-wheel actuator availability (False = failed, contributes no force)."""
+    """Per-wheel actuator availability (False = failed, contributes no force).
+
+    ``drive_scale`` / ``brake_scale`` (Plan V4.0 M23, compatible extension): remaining fraction of the torque
+    limit of a healthy but limited actuator (1.0 = full; the defaults leave every bound unchanged)."""
 
     drive_ok: tuple[bool, bool, bool, bool] = (True, True, True, True)
     brake_ok: tuple[bool, bool, bool, bool] = (True, True, True, True)
+    drive_scale: tuple[float, float, float, float] = (1.0, 1.0, 1.0, 1.0)
+    brake_scale: tuple[float, float, float, float] = (1.0, 1.0, 1.0, 1.0)
 
 
 @dataclass(frozen=True)
@@ -96,6 +101,9 @@ class WheelForceAllocator:
         avail = cfg.grip_margin * np.sqrt(np.maximum((np.asarray(mu) * np.asarray(Fz)) ** 2 - np.asarray(Fy) ** 2, 0.0))
         drive = np.where(np.array(cfg.driven) & np.array(health.drive_ok), cfg.max_drive_torque / self.Reff, 0.0)
         brake = np.where(np.array(health.brake_ok), cfg.max_brake_torque / self.Reff, 0.0)
+        if health.drive_scale != (1.0, 1.0, 1.0, 1.0) or health.brake_scale != (1.0, 1.0, 1.0, 1.0):
+            drive = drive * np.clip(np.asarray(health.drive_scale, float), 0.0, 1.0)
+            brake = brake * np.clip(np.asarray(health.brake_scale, float), 0.0, 1.0)
         upper = np.minimum(drive, avail)
         lower = -np.minimum(brake, avail)
         return lower, upper, avail, drive, brake
