@@ -1,0 +1,64 @@
+[project]
+site_name = "Vehicle Dynamics"
+site_description = "Virtuelle Plattform für Fahrdynamik, integrierte Fahrwerkregelung und Bewegungsmanagement"
+site_url = "https://cagricatik.github.io/Vehicle-Dynamics/"
+repo_url = "https://github.com/CagriCatik/Vehicle-Dynamics"
+repo_name = "CagriCatik/Vehicle-Dynamics"
+docs_dir = "docs"
+site_dir = "site"
+extra_javascript = [
+  "javascripts/mathjax.js",
+  "https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js",
+]
+nav = [
+  { "Start" = "index.md" },
+  { "Grundlagen" = [
+    "01_architecture.md", "02_vehicle_models.md", "03_tyre_models.md", "04_chassis_kinematics.md", "05_actuators.md",
+    "06_handling_analysis.md", "07_handling_limits.md", "08_vertical_dynamics.md", "09_suspension_dynamics.md",
+  ] },
+  { "Regelung" = [
+    "10_control_allocation.md", "11_motion_control.md", "12_chassis_control.md", "13_rear_wheel_steering.md",
+    "14_split_mu_dynamics.md", "15_driver_model.md", "16_nmpc_control.md", "17_nmpc_path_tracking.md",
+  ] },
+  { "Schätzung und Stabilität" = [
+    "18_state_estimation.md", "19_estimation_robustness.md", "20_nonlinear_stability.md", "21_robust_control.md",
+  ] },
+  { "Drift" = ["22_drift_model_validity.md", "23_drift_controller.md", "24_drift_results.md"] },
+  { "Integrierte Bewegungsregelung" = [
+    "25_actuation_chain.md", "26_brake_functions.md", "27_traction_control.md", "28_roll_stability_active_steering.md",
+    "29_g_vectoring.md", "30_preview_damping_active_pitch.md", "31_hill_descent_control.md", "32_fault_tolerance.md",
+    "33_motion_management_benchmark.md",
+  ] },
+  { "Werkzeuge" = [
+    "34_experiments.md", "35_scenario_book.md", "36_critical_scenarios.md", "37_design_optimization.md",
+    "38_validation_platform.md", "39_visualization_guide.md", "40_workbench.md",
+  ] },
+  { "Anhang" = [
+    "41_audit.md", "42_baseline_audit.md", "43_traceability.md", "44_references.md",
+    { "Pläne" = ["plans/chassis_control_platform_plan.md", "plans/integrated_motion_control_plan.md", "plans/drift_controller_plan.md"] },
+  ] },
+]
+
+[project.theme]
+language = "de"
+features = ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "content.code.copy"]
+
+[[project.theme.palette]]
+scheme = "default"
+primary = "indigo"
+toggle = { icon = "material/brightness-7", name = "Dunkles Design" }
+
+[[project.theme.palette]]
+scheme = "slate"
+primary = "indigo"
+toggle = { icon = "material/brightness-4", name = "Helles Design" }
+
+[project.markdown_extensions]
+admonition = {}
+tables = {}
+toc = { permalink = true }
+pymdownx.arithmatex.generic = true
+pymdownx.details = {}
+pymdownx.superfences.custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]

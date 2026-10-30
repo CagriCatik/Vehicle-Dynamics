@@ -28,7 +28,7 @@ CTRL = ("passive", "skyhook", "groundhook", "preview skyhook", "active pitch + s
 
 def main() -> None:
     apply_dark_theme()
-    rows = list(csv.DictReader(open(OUT / "ride" / "kpis.csv", encoding="utf-8")))
+    rows = list(csv.DictReader(open(OUT / "benchmark" / "kpis.csv", encoding="utf-8")))
     k = {(r["scenario"], r["controller"]): r for r in rows}
     scen = list(dict.fromkeys(r["scenario"] for r in rows))
     fig, ax = plt.subplots(2, 2, figsize=(17, 10))
@@ -43,7 +43,7 @@ def main() -> None:
         ax[i, j].set_xticks(x, scen, rotation=25, ha="right", fontsize=8)
         style_axis(ax[i, j], ttl, None, unit)
     ax[0, 0].legend(fontsize=8)
-    H = OUT / "ride" / "histories"
+    H = OUT / "benchmark" / "histories"
     for c, name in enumerate(CTRL):
         h = load_history(H / f"brake_100_wavy__{name}.csv".replace(" ", "_"))
         ax[1, 1].plot(h["t"], np.degrees(h["theta"]), color=C[c], lw=1.3, label=name)

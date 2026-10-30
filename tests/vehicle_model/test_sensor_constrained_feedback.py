@@ -116,7 +116,7 @@ def test_experiment_spec_feedback_modes(tmp_path):
 
 @pytest.mark.slow
 def test_mode_c_closed_loop_brakes_on_ice_and_holds_the_sine_with_dwell_limits():
-    """Measured cost of Mode C (see docs/ESTIMATION_ROBUSTNESS.md): lower deceleration, but stable."""
+    """Measured cost of Mode C (see docs/19_estimation_robustness.md): lower deceleration, but stable."""
     from vehicle_model.simulation.controller_benchmark import Scenario, run_scenario, sine_with_dwell_scenario
 
     plant = lambda road: SevenDOFModel.from_yaml(road=road)

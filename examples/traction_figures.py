@@ -1,4 +1,4 @@
-"""Result figure of the traction functions (run the v4_m18_* experiments first).
+"""Result figure of the traction functions (run the traction_* experiments first).
 
     python -m vehicle_model.experiments run configs/experiments/traction_split_mu_launch.yaml   (and the others)
     python examples/traction_figures.py
@@ -83,7 +83,7 @@ def main() -> None:
         ax[1, 0].plot(h["t"], h[f"Fx_{w}"] / 1e3, color=C[i], lw=1.3, label=w)
     ax[1, 0].legend(fontsize=7)
     style_axis(ax[1, 0], "ITC (band 2 deg/s): realised longitudinal tyre forces", "t [s]", "F_x [kN]")
-    rows = kpis("drive_faults")
+    rows = kpis("motor_faults")
     labels = [r["controller"].split("[")[-1].rstrip("]").replace("elsd, envelope, ", "").replace(", ITC band 2.0 deg/s", "")
               .replace("ITC band 2.0 deg/s", "AWD") for r in rows]
     labels[-1] = "no yaw control, failed FL+RL"
@@ -106,8 +106,8 @@ def main() -> None:
     plt.close(fig)
     meta = {"topic": "traction control", "provenance": provenance(),
             "experiments": {d: json.loads((OUT / d / "results.json").read_text())["provenance"]
-                            for d in ("split_mu_launch", "corner_exit", "mu_step_launch", "drive_faults")},
-            "configs": [str(p) for p in sorted(Path("configs/experiments").glob("v4_m18_*.yaml"))]}
+                            for d in ("split_mu_launch", "corner_exit", "mu_step_launch", "motor_faults")},
+            "configs": [str(p) for p in sorted(Path("configs/experiments").glob("traction_*.yaml"))]}
     (OUT / "metadata.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     print(f"wrote {OUT / 'traction_functions.png'}")
 

@@ -267,7 +267,7 @@ def test_heuristic_boundary_is_small_at_the_equilibrium_and_large_far_away():
 
 
 @pytest.mark.parametrize("controller", ["robust_lqr", "gs_lqr_dob", "tightening_mpc", "adaptive_lqr"])
-def test_m12_laws_are_available_in_recovery_maps(controller):
+def test_robust_laws_are_available_in_recovery_maps(controller):
     """Plan 6.4: the robust controllers of robust control are mapped like the others (designed from the nominal vehicle)."""
     prob = sr.RecoveryProblem(controller, speed=80 / 3.6, steer=math.radians(1.0), mu=0.6, duration=1.5)
     ref = sr.reference_state(prob)

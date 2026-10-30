@@ -17,7 +17,7 @@ provenance:
 
 # Tyre parameter sets per axle (configs/tyres/<name>.yaml). Until controller library this vehicle used the
 # legacy pacejka_{front,rear}_synthetic adapter (hard clip at ~2-3 deg, mu scales the
-# cornering stiffness; docs/TYRE_MODELS.md, 3.5).
+# cornering stiffness; docs/03_tyre_models.md, 3.5).
 tyres:
   front: magic_formula_passenger_synthetic
   rear: magic_formula_passenger_synthetic

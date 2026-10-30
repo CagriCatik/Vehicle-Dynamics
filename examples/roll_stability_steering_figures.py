@@ -24,6 +24,7 @@ from vehicle_model.experiments.types import provenance
 from vehicle_model.visualization.theme import TEXT_MUTED, apply_dark_theme, style_axis
 
 OUT = Path("output/roll_stability")
+AFS = Path("output/active_front_steering")
 C = ("#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#8a63d2", "#f5f5f5", "#7d8590")
 
 
@@ -41,7 +42,7 @@ def hist(path):
 def main() -> None:
     apply_dark_theme()
     fig, ax = plt.subplots(2, 3, figsize=(19, 10))
-    R = OUT / "rollover" / "histories"
+    R = OUT / "fishhook_evasive" / "histories"
     for i, (c, lab) in enumerate((("passive", "passive"), ("active_roll", "active roll only"), ("RSC", "RSC (brakes)"),
                                   ("RSC_+_active_roll", "RSC + active roll"))):
         h = hist(R / f"extreme_cog__fishhook_80__mu1.0__{c}.csv")
@@ -54,8 +55,8 @@ def main() -> None:
     style_axis(ax[0, 0], "14-DOF fishhook 80 km/h, 8 deg, h_cg 1.1 m: LTR", "t [s]", "-")
     style_axis(ax[0, 1], "wheels without contact (offset per curve for visibility)", "t [s]", "count")
     style_axis(ax[0, 2], "roll angle (model trusted up to 15 deg)", "t [s]", "deg")
-    S = OUT / "afs_step" / "histories"
-    W = OUT / "afs_swd" / "histories"
+    S = AFS / "step_steer" / "histories"
+    W = AFS / "sine_with_dwell" / "histories"
     runs = (("base__passive.csv", "2WS passive"), ("base__GS-LQR__TV.csv", "TV"), ("base__GS-LQR__4WS_TV.csv", "4WS+TV"),
             ("base__GS-LQR__AFS.csv", "AFS"), ("base__GS-LQR__AFS___actuator_dynamics.csv", "AFS, steering actuator"),
             ("base__GS-LQR__AFS___AFS_failed.csv", "AFS failed"))
@@ -77,9 +78,9 @@ def main() -> None:
     fig.savefig(OUT / "rsc_afs.png", dpi=110)
     plt.close(fig)
     meta = {"topic": "roll stability and active steering", "provenance": provenance(),
-            "experiments": {d: json.loads((OUT / d / "results.json").read_text())["provenance"]
-                            for d in ("rollover", "afs_step", "afs_swd")},
-            "configs": [str(p) for p in sorted(Path("configs/experiments").glob("v4_m19_*.yaml"))]}
+            "experiments": {str(d): json.loads((d / "results.json").read_text())["provenance"]
+                            for d in (OUT / "fishhook_evasive", AFS / "step_steer", AFS / "sine_with_dwell")},
+            "configs": [str(p) for p in [*Path("configs/experiments").glob("roll_stability_*.yaml"), *Path("configs/experiments").glob("active_front_steering_*.yaml")]]}
     (OUT / "metadata.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     print(f"wrote {OUT / 'rsc_afs.png'}")
 

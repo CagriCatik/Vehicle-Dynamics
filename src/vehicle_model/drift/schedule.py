@@ -2,7 +2,7 @@
 
 At fixed speed and friction the drift equilibria form a branch over the sideslip angle. For
 13 m/s, mu 0.9 it is continuous from beta = -1 deg (near-limit cornering with spinning inner
-rear wheel) to -25 deg, open-loop unstable and stabilisable everywhere (DRIFT_RESULTS.md, drift initiation and recovery).
+rear wheel) to -25 deg, open-loop unstable and stabilisable everywhere (24_drift_results.md, drift initiation and recovery).
 Straight driving lies on another branch (stable cornering over the steer angle); the two come
 close at the small-|beta| end, where the handover to the cornering LQR takes place.
 

@@ -114,7 +114,7 @@ class DriftSupervisedController:
                    steer ramp to 0 with speed control; ``straight_reached`` at |steer| < 0.5 deg
         FAILED     drive torque 0, steer ramped to 0: a defined, bounded command, not a rescue
 
-    Design findings behind the exit law (DRIFT_RESULTS.md, drift initiation and recovery): an LQR around the cornering
+    Design findings behind the exit law (24_drift_results.md, drift initiation and recovery): an LQR around the cornering
     equilibrium spins the vehicle from the drift (linear design far from its operating point); a
     gain-scheduled path back along the branch of drift equilibria reaches the branch end at
     <= 1 deg/s but fails at the handover. The cornering equilibrium is open-loop stable, and its

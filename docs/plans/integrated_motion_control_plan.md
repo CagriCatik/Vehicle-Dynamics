@@ -15,7 +15,7 @@
 
 1. `git status --short`, `git branch --show-current`, `git rev-parse HEAD`; vorhandene uncommittete Änderungen weder überschreiben noch wegwerfen. Auf einem eigenen Feature-Branch arbeiten, sofern möglich.
 2. `python -m pip install -e '.[test]'`; `python -m pytest -q -m 'not slow'`; `python -m vehicle_model.experiments validate configs/experiments/*.yaml`; bei Bedarf vollständige Suite separat ausführen. Baseline und Fehlermeldungen dokumentieren.
-3. Repo, insbesondere `chassis_control_platform_plan.md`, `docs/BASELINE_AUDIT.md`, `docs/AUDIT.md`, `docs/MOTION_CONTROL.md`, `docs/CONTROL_ALLOCATION.md`, `docs/CHASSIS_CONTROL.md`, `docs/ACTUATORS.md` und Quellcode inspizieren. **Dokumentationsbehauptungen immer mit implementiertem Code und Testbelegen abgleichen**; V3-Meilensteine können seit der Erstellung dieses Plans fortgeschritten sein.
+3. Repo, insbesondere `chassis_control_platform_plan.md`, `docs/42_baseline_audit.md`, `docs/41_audit.md`, `docs/11_motion_control.md`, `docs/10_control_allocation.md`, `docs/12_chassis_control.md`, `docs/05_actuators.md` und Quellcode inspizieren. **Dokumentationsbehauptungen immer mit implementiertem Code und Testbelegen abgleichen**; V3-Meilensteine können seit der Erstellung dieses Plans fortgeschritten sein.
 4. Vor Codeänderungen das bestehende Verhalten mit Golden Tests/Regressionsszenarien fixieren. Pro Meilenstein: Tests -> Implementierung -> fachliche Modellprüfung -> reproduzierbare Benchmarks -> Dokumentation -> Abnahme.
 5. Bestehende Methoden/Dateien nicht blind umbenennen; bei API-Änderungen explizite Kompatibilitätsschicht oder dokumentierte Migration mit Tests.
 6. Standards und Herstellerseiten dienen zur **Ableitung konzeptioneller Anforderungen**, nicht als Quelle proprietärer Algorithmen oder automatisch erfüllter Homologationskriterien.
@@ -82,7 +82,7 @@ Die Plattform soll aus einem integrierten Fahrzeugmodell eine **modular koordini
 
 **C. Informationszugriff:** `MotionController.compute_control` nutzt aktuell bei vorhandener Telemetrie `Fz`, `mu`, `Fy` und andere Größen direkt aus der Simulationsstrecke. Das ist im Ideal-Feedback-Modus zulässig, **nicht** in einem als sensorbeschränkt bezeichneten Regelbetrieb. Drei bestehende Modi A/B/C aus `chassis_control_platform_plan.md` erhalten und durchgängig durchsetzen.
 
-**D. Split-µ-Regressionswiderspruch:** `docs/MOTION_CONTROL.md` und `docs/VALIDATION_PLATFORM.md` berichten unterschiedliche Resultate für den IVMC-Split-µ-Fall. Vor Erweiterungen reproduzieren, Ursache feststellen (unterschiedliche Soll-/Ist-Momente, Ablauf, Streckenparameter oder Controller-Pfade) und mit Tests schließen. Kein Grenzwert-Abschwächen zur Erzeugung grüner Tests.
+**D. Split-µ-Regressionswiderspruch:** `docs/11_motion_control.md` und `docs/38_validation_platform.md` berichten unterschiedliche Resultate für den IVMC-Split-µ-Fall. Vor Erweiterungen reproduzieren, Ursache feststellen (unterschiedliche Soll-/Ist-Momente, Ablauf, Streckenparameter oder Controller-Pfade) und mit Tests schließen. Kein Grenzwert-Abschwächen zur Erzeugung grüner Tests.
 
 **E. Unterschiedliche Plant-Modelle:** 7-DOF plant kann keine expliziten vier Dämpfer- oder aktiven Hubkräfte realisieren. RSC mit Radlast-/Kontaktwirkung und Preview/Pitch müssen daher gegen 14-DOF getestet werden. Für reine 7-DOF-Szenarien ggf. nur eine **klar deklarierte approximative** RSC-Variante erlauben, keine fiktive 14-DOF-Wirkung.
 
@@ -157,11 +157,11 @@ configs/
 
 docs/
   V4_ARCHITECTURE.md
-  BRAKE_FUNCTIONS.md
-  TRACTION_CONTROL.md
-  ROLL_STABILITY_ACTIVE_STEERING.md
-  PREVIEW_DAMPING_ACTIVE_PITCH.md
-  FAULT_TOLERANCE.md
+  26_brake_functions.md
+  27_traction_control.md
+  28_roll_stability_active_steering.md
+  30_preview_damping_active_pitch.md
+  32_fault_tolerance.md
   V4_VALIDATION.md
   V4_REFERENCES.md
 ```
@@ -234,7 +234,7 @@ Bei Konflikten klarer `feasibility`-Status und kontrollierter Degradationspfad. 
 
 **Arbeitspakete:**
 
-1. Ist-Baseline per vollständiger Dateiliste, Commit, Teststatus, Versionsnummern und Bestandscontroller aufnehmen; Output `docs/ACTUATION_CHAIN.md`.
+1. Ist-Baseline per vollständiger Dateiliste, Commit, Teststatus, Versionsnummern und Bestandscontroller aufnehmen; Output `docs/25_actuation_chain.md`.
 2. In `controllers/integrated_controller.py` den bisherigen additiven Verteilpfad von den Regleranforderungen trennen. Eine Kompatibilitäts-/Adapterstrategie für bestehende `compute_control`-Aufrufe entwickeln. Den vorhandenen `MotionController`/`ActuationLayer` bevorzugen; insbesondere **keine** neue zweite ABS-Regelung implementieren.
 3. Integration der `BrakeByWireActuator`- und `ElectricPowertrainActuator`-Dynamik in geschlossene Szenarien prüfen/ergänzen. Ideale Aktuatoren weiterhin als Vergleich verfügbar lassen.
 4. Priorisierung des Fehlers `Split-µ IVMC` in den beiden Dokumenten: identische Strecke, Startgeschwindigkeit, Bremsanforderung, Reifentyp, `mu`, Radlast und Zeitintegration reproduzieren; die Abweichung auf Ursachen zurückführen. Erwartetes Scheitern klar erklären.
@@ -246,7 +246,7 @@ Bei Konflikten klarer `feasibility`-Status und kontrollierter Degradationspfad. 
 
 **Abnahme:** Alle aktiven V4-Funktionen verwenden die koordinierte Ausgabestelle; keine zwei Owner pro Radmoment; altes und neues Verhalten belegt; Split-µ-Differenz nachvollziehbar erklärt; keine ungeklärten M16-Regressionen.
 
-**Referenzen:** `docs/MOTION_CONTROL.md`, `docs/CONTROL_ALLOCATION.md`, `chassis_control_platform_plan.md` M10, Johansen & Fossen (2013) [R3].
+**Referenzen:** `docs/11_motion_control.md`, `docs/10_control_allocation.md`, `chassis_control_platform_plan.md` M10, Johansen & Fossen (2013) [R3].
 
 ## M17 — EBD, CBC, Integrated Brake Slip Control und Regenerative Slip / MSR
 
@@ -364,7 +364,7 @@ Nickmoment aus vier aktiven Federbeinkräften erzeugen, während Netto-Hubkraft 
 
 **Abnahme:** Keine Preview-Information aus zukünftigen Plant-Zuständen, nur aus explizit modellierter externer Vorschau; Dämpfer passiv dissipativ; aktive Kräfte und Energie begrenzt; Vergleich zeigt Trade-off zwischen Komfort und Straßenlage; Live-Plots und GIF bleiben vorhanden.
 
-**Quellen:** ISO 8608 [R11], ZF cubiX [R2], bestehende `docs/SUSPENSION_DYNAMICS.md`.
+**Quellen:** ISO 8608 [R11], ZF cubiX [R2], bestehende `docs/09_suspension_dynamics.md`.
 
 ## M22 — Hill Descent Control (HDC) und Straßenneigung
 
@@ -394,7 +394,7 @@ Nickmoment aus vier aktiven Federbeinkräften erzeugen, während Netto-Hubkraft 
 
 **Abnahme:** Keine unbemerkten Command-Leaks zu defekten Kanälen; Grenzen und Degraded State korrekt; Safety-Recovery-Lauf dokumentiert; Abhängigkeit zu Health/MotionSupervisor ohne Monolith.
 
-**Quellen:** Johansen & Fossen [R3], Bestand `ActuatorHealth`, `solver_diagnostics.py`, `ESTIMATION_ROBUSTNESS.md`.
+**Quellen:** Johansen & Fossen [R3], Bestand `ActuatorHealth`, `solver_diagnostics.py`, `19_estimation_robustness.md`.
 
 ## M24 — Vehicle Motion Supervisor, Full-Stack-Integration & Benchmark
 
@@ -593,7 +593,7 @@ Nächster Meilenstein:
 
 > Du arbeitest im bestehenden Repository `CagriCatik/Vehicle-Dynamics` als Principal Vehicle Dynamics Engineer, Control Systems Researcher und Senior Python Software Architect. Lies `Vehicle_Dynamics_V4_Implementation_chassis_control_platform_plan.md` vollständig und befolge **alle** Gates. Arbeite **nicht** an einem neuen separaten Projekt.
 >
-> **Sofort ausführen:** Git- und Testbaseline ermitteln, `chassis_control_platform_plan.md` (M10–M15), `docs/BASELINE_AUDIT.md`, `docs/MOTION_CONTROL.md`, `docs/CONTROL_ALLOCATION.md`, `docs/VALIDATION_PLATFORM.md`, bestehende Controller/Allocator/Plant/Experiment-Schnittstellen gegen Code prüfen. Danach mit **M16** beginnen und wirklich implementieren.
+> **Sofort ausführen:** Git- und Testbaseline ermitteln, `chassis_control_platform_plan.md` (M10–M15), `docs/42_baseline_audit.md`, `docs/11_motion_control.md`, `docs/10_control_allocation.md`, `docs/38_validation_platform.md`, bestehende Controller/Allocator/Plant/Experiment-Schnittstellen gegen Code prüfen. Danach mit **M16** beginnen und wirklich implementieren.
 >
 > **Technische Direktive:** Die bestehende `MotionController`/`ActuationLayer`/`WheelForceAllocator` als gemeinsamen Pfad nutzen. Ältere IVMC-Sonderpfade schrittweise konsolidieren und durch Characterization/Regressionstests schützen. Kein weiterer konkurrierender finaler Radmoment-Owner. Stets `requested / allocated / issued / realised` trennen und Sensor-Informationsmodi beachten. Neue Funktionen nur in echten geschlossenen Simulationen als fertig melden.
 >

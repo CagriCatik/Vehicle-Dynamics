@@ -153,9 +153,9 @@ tests/vehicle_model/drift/
   test_physical_invariants.py
   test_regressions.py
 docs/
-  DRIFT_CONTROLLER.md
-  DRIFT_MODEL_VALIDITY.md
-  DRIFT_RESULTS.md
+  23_drift_controller.md
+  22_drift_model_validity.md
+  24_drift_results.md
 ```
 
 **Bestehende Dateien nur minimal erweitern:** vorhandene `visualization/animation.py` und `plan_view.py` lediglich wiederverwenden; `experiments/spec.py` nur erweitern, falls der neue Drift-Runner tatsaechlich in dessen Schema aufgenommen wird. Keine umfangreiche Umbauaktion an IVMC/ESC als Teil des Drift-Features.
@@ -372,10 +372,10 @@ Jedes Ergebnis meldet den Modus. `equilibrium` darf offline exakte Streckenparam
 
 1. Branch/Commit/Working-Tree dokumentieren, uncommittete Arbeit nicht ueberschreiben.
 2. `python -m pip install -e ".[test]"` aus bestehender Umgebung und vorhandene Unit-Tests ausfuehren.
-3. Aktuelle `README.md`, `chassis_control_platform_plan.md`, `docs/ARCHITECTURE.md`, `docs/TYRE_MODELS.md`, `docs/MOTION_CONTROL.md`, `docs/VISUALIZATION_GUIDE.md` lesen.
+3. Aktuelle `README.md`, `chassis_control_platform_plan.md`, `docs/01_architecture.md`, `docs/03_tyre_models.md`, `docs/11_motion_control.md`, `docs/39_visualization_guide.md` lesen.
 4. `SevenDOFModel`, `ScenarioRunner`, `ControlOutput`, `animate_maneuver` im Code nachvollziehen; keine nur aus Dokumenten erfundenen APIs.
 5. Referenzlaufe (`examples/seven_dof_4ws_tv_demo.py`, vorhandene Animationsbeispiele) ohne Verhaltenseingriff pruefen.
-6. `docs/DRIFT_MODEL_VALIDITY.md` mit Grenzen, Konventionen und Reproduktionsinformationen anlegen.
+6. `docs/22_drift_model_validity.md` mit Grenzen, Konventionen und Reproduktionsinformationen anlegen.
 
 **Gate:** bekannte Testbaseline dokumentiert; keine unerklaerten Regressionen; eindeutig benannte Wiederverwendungsstellen.
 
@@ -655,7 +655,7 @@ Validierung: unbekannte Keys ablehnen, Einheiten und Wertebereiche pruefen, alle
 
 | Commit-Paket | Thema | Pflichtartefakte |
 |---|---|---|
-| DRIFT-00 | Audit & Validity | `docs/DRIFT_MODEL_VALIDITY.md`, dokumentierte Testbaseline |
+| DRIFT-00 | Audit & Validity | `docs/22_drift_model_validity.md`, dokumentierte Testbaseline |
 | DRIFT-01 | Tyre & Plant | Kennfeldplots, deterministischer Evaluator, Tests |
 | DRIFT-02 | Equilibrium | Solver, Sweep-CSV/PNG, in-/feasible Report, Tests |
 | DRIFT-03 | LQR Hold | Controller, Steady Drift GIF, Stoerungsantwort, Tests |
@@ -676,7 +676,7 @@ Validierung: unbekannte Keys ablehnen, Einheiten und Wertebereiche pruefen, alle
 - Kreis-/Achter-Szenarien sind parametrierbar, auch wenn der anspruchsvolle Achter testweise als `unachievable` endet.
 - Die GIF-Animationen entstehen ausschliesslich aus den echten `SimulationHistory`-Werten.
 - Alte Beispiele, Unit-Tests, Live-Plots und Exportformate bleiben erhalten.
-- Wissenschaftliche Annahmen, numerische Verfahren, Grenzen und Nachweise sind in `docs/DRIFT_CONTROLLER.md` und `docs/DRIFT_RESULTS.md` enthalten.
+- Wissenschaftliche Annahmen, numerische Verfahren, Grenzen und Nachweise sind in `docs/23_drift_controller.md` und `docs/24_drift_results.md` enthalten.
 
 ---
 
@@ -712,10 +712,10 @@ https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.solve_continuo
 
 **R8 — Bestehende Projektdefinition:**  
 https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/chassis_control_platform_plan.md  
-https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/docs/ARCHITECTURE.md  
-https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/docs/TYRE_MODELS.md  
-https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/docs/MOTION_CONTROL.md  
-https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/docs/VISUALIZATION_GUIDE.md  
+https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/docs/01_architecture.md  
+https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/docs/03_tyre_models.md  
+https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/docs/11_motion_control.md  
+https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/docs/39_visualization_guide.md  
 **Verwendung:** Verbindliche Einheiten/Vorzeichen, bestehende Ports, bekannte Limitierungen, Regressionsrichtlinien und Visualisierung.
 
 **Literaturhinweis:** R1 ist eine 2009er Konferenzveröffentlichung (auch wenn eine MIT-Archivseite unter 2010 indexiert ist). R3 hat Feldversuche bis 45° Beta im Forschungskontext, **keine** Garantie, dass der synthetische Reifen dieses Repository entsprechende Winkel realistisch abbildet.
@@ -736,7 +736,7 @@ https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/docs/VISUALIZATION_GUID
 >
 > **Tests/Reports:** Fuer jedes Paket Unit-/Grenzfall-/Integrationstests, YAML-Konfigurationen, Kommando zum Reproduzieren, Tests vor/nach der Aenderung und echte Ergebnisartefakte (CSV, JSON, PNG, GIF, Markdown) liefern. Vorhandene Live-Plots, andere GIFs, Controller, CLI und Tests nicht entfernen. Fuehre `pytest -m 'not slow'` und relevante schnelle Drift-Tests nach jedem Paket aus; Full Suite vor Abschluss.
 >
-> **Lieferung:** Implementierter Code mit minimalen, sauberen Commits oder Patch, `docs/DRIFT_CONTROLLER.md`, `docs/DRIFT_MODEL_VALIDITY.md`, `docs/DRIFT_RESULTS.md`, reproduzierbare GIFs und Benchmarks. Am Ende pro Gate PASS/FAIL/INFEASIBLE, Tests, Beispiele, Dateien, physikalische Grenzfaelle und verbleibende Risiken auflisten.
+> **Lieferung:** Implementierter Code mit minimalen, sauberen Commits oder Patch, `docs/23_drift_controller.md`, `docs/22_drift_model_validity.md`, `docs/24_drift_results.md`, reproduzierbare GIFs und Benchmarks. Am Ende pro Gate PASS/FAIL/INFEASIBLE, Tests, Beispiele, Dateien, physikalische Grenzfaelle und verbleibende Risiken auflisten.
 >
 > **Beginne jetzt mit D0/D1, erstelle nicht stattdessen eine zweite Planversion.**
 

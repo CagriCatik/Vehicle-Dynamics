@@ -21,7 +21,7 @@ from vehicle_model.visualization.run_animation import load_history
 from vehicle_model.visualization.theme import TEXT_MUTED, apply_dark_theme, style_axis
 
 OUT = Path("output/hill_descent")
-H = OUT / "hdc" / "histories"
+H = OUT / "benchmark" / "histories"
 C = ("#3987e5", "#d95926", "#199e70", "#c98500")
 
 

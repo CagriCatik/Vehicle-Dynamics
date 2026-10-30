@@ -1,6 +1,6 @@
 # Brake functions of the shared motion chain. Synthetic values for the reference car (no
 # measured calibration). Each entry: value, unit, allowed range, meaning; the source of a value is the reasoning
-# given here or a measurement in docs/BRAKE_FUNCTIONS.md. Loaded by vehicle_model.controllers.brake_functions_config;
+# given here or a measurement in docs/26_brake_functions.md. Loaded by vehicle_model.controllers.brake_functions_config;
 # an experiment switches the functions on per controller (controllers[i].brake), not here.
 
 ebd:                                  # Electronic brakeforce distribution (controllers/brake_distribution.py)

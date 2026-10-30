@@ -6,7 +6,7 @@ Dynamic degrees of freedom (7):
 Navigation states (3, integrated, not extra DOFs):
   X, Y [m], psi [rad]
 
-Modelling assumptions (documented in docs/VEHICLE_MODELS.md, section 2):
+Modelling assumptions (documented in docs/02_vehicle_models.md, section 2):
   * Planar motion on a level road, ISO 8855 axes (x forward, y left, z up). A road with ``has_grade``
     (:class:`~vehicle_model.roads.surface.GradedRoad`) adds gravity along the heading and across
     it, scales the normal load and rolling resistance by ``cos`` of the grade and shifts the load transfer by

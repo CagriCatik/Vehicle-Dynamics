@@ -1,4 +1,4 @@
-"""Result figure of the brake functions (run the v4_m17_* experiments first).
+"""Result figure of the brake functions (run the brake_functions_* and regen_slip_* experiments first).
 
     python -m vehicle_model.experiments run configs/experiments/brake_functions_straight_braking.yaml   (and the others)
     python examples/brake_functions_figures.py
@@ -63,7 +63,7 @@ def main() -> None:
     ax[0, 2].legend(fontsize=7)
     style_axis(ax[0, 2], "braking in a turn, mu 1.0 (80 km/h, 3 deg, pedal 0.5 from 2 s): sideslip", "t [s]", "beta [deg]")
     # (d) MSR: coast on mu 0.2 at 80 km/h
-    base = OUT / "regen" / "histories" / "manoeuvre.speed_kph_80__brake_functions__actuator_dynamics___regen_{}__coast_300_N_m.csv"
+    base = OUT / "regen_coast_low_mu" / "histories" / "manoeuvre.speed_kph_80__brake_functions__actuator_dynamics___regen_{}__coast_300_N_m.csv"
     for i, pol in enumerate(("cut_on_abs", "modulated")):
         h = hist(str(base).format(pol))
         ax[1, 0].plot(h["t"], h["max_abs_slip"], color=C[i], lw=1.4, label=f"max |kappa|, {pol}")
@@ -85,8 +85,8 @@ def main() -> None:
     plt.close(fig)
     meta = {"topic": "brake functions", "provenance": provenance(),
             "experiments": {d: json.loads((OUT / d / "results.json").read_text())["provenance"]
-                            for d in ("straight_braking", "split_mu", "mu_step", "brake_in_turn", "regen", "regen_braking")},
-            "configs": [str(p) for p in sorted(Path("configs/experiments").glob("v4_m17_*.yaml"))],
+                            for d in ("straight_braking", "split_mu", "mu_step", "brake_in_turn", "regen_coast_low_mu", "regen_braking")},
+            "configs": [str(p) for p in [*Path("configs/experiments").glob("brake_functions_*.yaml"), *Path("configs/experiments").glob("regen_slip_*.yaml")]],
             "parameters": "configs/braking/brake_functions.yaml"}
     (OUT / "metadata.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     print(f"wrote {OUT / 'braking_functions.png'}")

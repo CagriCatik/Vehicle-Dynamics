@@ -28,44 +28,44 @@ NOTE = ("Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, ke
 
 # document -> [(source under output/, caption)]
 FIGURES: dict[str, list[tuple[str, str]]] = {
-    "VEHICLE_MODELS.md": [
+    "02_vehicle_models.md": [
         ("demo_7dof/seven_dof_maneuver.png",
          "7-DOF-Zweispurmodell mit Hinterachslenkung und Torque Vectoring auf Split-µ: Bahn, Längs- und Querbewegung, "
          "Gierrate und Lenkwinkel, Raddrehzahlen, Längsschlupf, Radlasten, Antriebs- und Bremsmomente, Reifenkräfte. "
          "Quelle: `examples/seven_dof_4ws_tv_demo.py`."),
     ],
-    "TYRE_MODELS.md": [
+    "03_tyre_models.md": [
         ("tyres/tyre_models_overview.png",
          "Magic-Formula-Reifen (synthetisch) gegen Fiala: Seitenkraft und Rückstellmoment bei drei Radlasten, kombinierter "
          "Schlupf, Selbstähnlichkeit in µ, Relaxation und Lenkwinkelsprung des 7-DOF-Modells mit Relaxationslängen. "
          "Quelle: `examples/tyre_models_demo.py`."),
     ],
-    "HANDLING_ANALYSIS.md": [
+    "06_handling_analysis.md": [
         ("handling_analysis/reference_vehicle_handling.png",
          "Lineare Fahrdynamik des Referenzfahrzeugs: stationäre Gierverstärkung (charakteristische Geschwindigkeit "
          "≈ 194 km/h), Eigenfrequenz, Dämpfung, Frequenzgang der Gierrate und Lenkwinkelsprung 7-DOF gegen linear. "
          "Quelle: `examples/handling_analysis_reference_vehicle.py`."),
     ],
-    "CHASSIS_KINEMATICS.md": [
+    "04_chassis_kinematics.md": [
         ("kc_analysis/kc_understeer.png",
          "Eigenlenken mit K&C: Untersteuerwinkel und lokaler Eigenlenkgradient mit schrittweise zugeschalteten "
          "Rollzentren/Ackermann, Rolllenken und Elastokinematik; lineares Budget 2,19 °/g; Parameterempfindlichkeit. "
          "Quelle: `examples/kc_understeer_analysis.py`."),
     ],
-    "HANDLING_LIMITS.md": [
+    "07_handling_limits.md": [
         ("handling_limits/steady_state_handling_characteristics.png",
          "Stationäre Kreisfahrt nach dem Vorbild von ISO 4138 (Simulation): Lenkwinkel und lokaler Eigenlenkgradient "
          "über der Querbeschleunigung, dynamischer Schwimmwinkel und g-g-Diagramm für vier Konfigurationen. "
          "Quelle: `examples/handling_limits_and_understeer_demo.py`."),
     ],
-    "CONTROL_ALLOCATION.md": [
+    "10_control_allocation.md": [
         ("m5/slip_and_allocation.png",
          "Schlupfregelung und beschränkte Allokation: mittlere Verzögerung bezogen auf µg ohne ABS, mit Alt-ABS und mit "
          "PI-Schlupfregelung (Werte über 1, weil die Spitzenreibung des MF-Reifens bei geringer Radlast über µ liegt); "
          "Split-µ-Bremsung mit fester Lenkung; Lenkwinkelsprung mit TV; Bremsenausfall vorn links. "
          "Quelle: `examples/slip_and_allocation_demo.py`."),
     ],
-    "MOTION_CONTROL.md": [
+    "11_motion_control.md": [
         ("controller_benchmark/controller_benchmark.png",
          "Gierrate im Sine with Dwell (80 km/h, 8°) für alle Regler auf derselben Strecke, nominal und auf zwei "
          "Streckenvarianten (+15 % Masse/Trägheit, Hinterachs-Schräglaufsteifigkeit −20 %). Quelle: "
@@ -75,13 +75,13 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Allokation, die das Bremsmoment auf der Hoch-µ-Seite reduziert, bleibt gerade. Quelle: "
          "`examples/split_mu_matrix_demo.py`."),
     ],
-    "ESTIMATION_ROBUSTNESS.md": [
+    "19_estimation_robustness.md": [
         ("monte_carlo/monte_carlo.png",
          "Monte Carlo über 25 Streckenstichproben (Seed 2026), Sine with Dwell 80 km/h: Gierratenverhältnis 1 s nach "
          "Lenkende und Querversatz, passiv gegen PI (TV), mit den nach FMVSS 126 nachgebildeten Grenzen. "
          "Quelle: `examples/monte_carlo_robustness.py`."),
     ],
-    "STATE_ESTIMATION.md": [
+    "18_state_estimation.md": [
         ("estimation/estimation_and_pso_validation.png",
          "EKF-Schwimmwinkelbeobachter und RLS-Reibwertschätzer gegen die Wahrheit, IMU-Biasschätzung, PSO-Konvergenz. "
          "**Ehrlicher Befund:** Der EKF verfehlt die Schwimmwinkelspitzen deutlich (≈ 3° statt 6°), und der "
@@ -89,18 +89,18 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "konvergiert er nicht. Das war der Anlass für den sensorbasierten Schätzer `estimation/sensor_friction.py`. "
          "Quelle: `examples/estimation_and_pso_demo.py`."),
     ],
-    "VERTICAL_DYNAMICS.md": [
+    "08_vertical_dynamics.md": [
         ("vertical_dynamics/vertical_dynamics.png",
          "Viertelfahrzeug: analytischer gegen simulierten Frequenzgang von Aufbaubeschleunigung und dynamischer Radlast, "
          "Skyhook und Groundhook, Straßenklassen A–E nach ISO 8608 mit erzeugtem Klasse-C-Profil. "
          "Quelle: `examples/vertical_dynamics_demo.py`."),
     ],
-    "SUSPENSION_DYNAMICS.md": [
+    "09_suspension_dynamics.md": [
         ("suspension/suspension_and_14dof_validation.png",
          "Viertelfahrzeug (passiv, Skyhook, Groundhook) über eine Schwelle und 14-DOF-Fahrzeug bei Bremsen mit Lenken: "
          "Nick-, Hub- und Wankbewegung, Radlasten, Bahn. Quelle: `examples/suspension_dynamics_demo.py`."),
     ],
-    "EXPERIMENTS.md": [
+    "34_experiments.md": [
         ("experiments/sine_with_dwell_comparison/base.png",
          "Ausgabe des YAML-Experiments `sine_with_dwell_comparison`: Gierrate, Schwimmwinkel und Bahn für passiv, PI, "
          "GS-LQR (4WS+TV) und LTV-MPC mit Beobachter. Quelle: "
@@ -112,7 +112,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Lösungen erreichen teils Werte um 1. Quelle: "
          "`python -m vehicle_model.experiments run configs/experiments/dynamic_nmpc_solver_benchmark.yaml`."),
     ],
-    "NONLINEAR_STABILITY.md": [
+    "20_nonlinear_stability.md": [
         ("experiments/equilibrium_steer_sweep/equilibria.png",
          "Gleichgewichte über dem Vorderachslenkwinkel bei 90 km/h, µ = 1,0 und 0,6 (Linie: Hauptast, gefüllt: stabil, "
          "offen: instabil). Bei µ = 0,6 sättigt a_y bei 5,85 m/s², die Dämpfung des Quer-/Giermodes fällt von 0,98 auf "
@@ -149,7 +149,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
         ("experiments/stability_map_cornering/phase_portraits.png",
          "Phasenporträts (β–r, β–β̇, r–ṙ) für passiv, TV und IVMC; Farbe = Klasse, Punkt = Start. Quelle: wie oben."),
     ],
-    "ROBUST_CONTROL.md": [
+    "21_robust_control.md": [
         ("experiments/robust_benchmark_sine_with_dwell/matrix_max_sideslip_deg.png",
          "Maximaler Schwimmwinkel je Regler und Unsicherheitsfall in den drei Rückführmodi (logarithmische Farbskala; "
          "≈ 90° = Kontrollverlust). Die Aktuatorverzögerung destabilisiert alle Gesetze mit hoher Verstärkung; der "
@@ -164,7 +164,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "der Stellgröße). Quelle: "
          "`python -m vehicle_model.experiments run configs/experiments/dynamic_nmpc_solver_benchmark.yaml`."),
     ],
-    "CRITICAL_SCENARIOS.md": [
+    "36_critical_scenarios.md": [
         ("experiments/critical_search_sine_with_dwell/search.png",
          "Suche nach kritischen Sine-with-Dwell-Bedingungen für den baseline GS-LQR: Verlauf (links oben, gestrichelt: "
          "Kriterium) und Stichproben je Parameterpaar (rot kritisch, blau nicht kritisch, grau verworfen; Stern: "
@@ -180,7 +180,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Fall 01 als Animation aus den aufgezeichneten Daten: kritischer Lauf (rot) gegen Nominalparameter (blau). "
          "Quelle: wie oben."),
     ],
-    "DESIGN_OPTIMIZATION.md": [
+    "37_design_optimization.md": [
         ("experiments/design_chassis_tv/pareto_fronts.png",
          "Pareto-Analyse der Fahrwerks-, Lenk- und TV-Auslegung: alle Zielpaare (grau gültige Entwürfe, blau die "
          "Pareto-Menge über alle vier Ziele, Kreuz Referenzfahrzeug, Sterne ausgewählte Entwürfe). Quelle: "
@@ -191,12 +191,12 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
         ("experiments/design_chassis_tv/objective_distributions.png",
          "Verteilung der Zielwerte über alle gültigen Entwürfe, Referenz grün. Quelle: wie oben."),
     ],
-    "DRIFT_MODEL_VALIDITY.md": [
+    "22_drift_model_validity.md": [
         ("drift/tyre_audit/tyre_audit.png",
          "Reifenaudit bis ±45° Schräglauf: Seitenkraft (grau: außerhalb der erklärten Gültigkeit), Längskraft und "
          "Ausnutzung im kombinierten Schlupf für MF, Simplified Combined und Fiala. Quelle: `python examples/drift_tyre_audit.py`."),
     ],
-    "DRIFT_RESULTS.md": [
+    "24_drift_results.md": [
         ("drift/runs/full_sequence/supervised/drift_animation.gif",
          "Überwachter Drift aus der Geradeausfahrt (13 m/s, µ 0,9, Ziel β −20°): Annäherung, Einleitung durch den LQR, "
          "Halten, Austritt mit Gegenlenken, Normalfahrt. Nur aufgezeichnete Daten der 7-DOF-Strecke; doppelte "
@@ -215,7 +215,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Kreisbahnen bei ±2 m Startversatz (offen, ESC, Drift-LQR fest, mit Außenschleife) und die Acht-Sequenz "
          "(Geometrie nicht erreicht). Quelle: `python examples/drift_circle_demo.py`."),
     ],
-    "REAR_WHEEL_STEERING.md": [
+    "13_rear_wheel_steering.md": [
         ("four_wheel_steering/parking/u_turn.gif",
          "Wenden auf schmaler Straße, 2WS (grau) gegen 4WS (türkis): unten die Radlenkwinkel über der Zeit. Die "
          "Hinterachse lenkt mit −8° gegen die Vorderachse; die überstrichene Breite sinkt von 12,75 m auf 11,10 m. "
@@ -240,14 +240,14 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Neun 4WS-Szenarien im Überblick (2WS, drehzahlgeführte Kennlinie, Lookup-Tabelle, mit Gierdämpfung). "
          "Quelle: `examples/four_wheel_steering_benchmark.py`."),
     ],
-    "SPLIT_MU_DYNAMICS.md": [
+    "14_split_mu_dynamics.md": [
         ("split_mu_scenarios/scenario_1_split_mu_braking.gif",
          "Split-µ-Bremsung aus 100 km/h mit Fahrermodell, das die Spur hält, und 1600 N m *gesamtem* Bremsmoment (60/40), "
          "also einer moderaten Bremsung (im Bild als „Emergency Braking“ bezeichnet). "
          "Quelle: `examples/split_mu_scenarios_demo.py`."),
         ("split_mu_scenarios/scenario_1_split_mu_braking.png",
          "Dieselbe Bremsung als Dashboard: Bahnen, Gierrate, Querabweichung und Störgiermoment. Der lenkende Fahrer ist "
-         "der Unterschied zur Konfigurationsmatrix in MOTION_CONTROL.md, in der die Lenkung gerade gehalten wird und "
+         "der Unterschied zur Konfigurationsmatrix in 11_motion_control.md, in der die Lenkung gerade gehalten wird und "
          "IVMC mit der alten additiven Stellkette sich eindreht (über die gemeinsame Allokation, Standard, "
          "bleibt er gerade). Quelle: `examples/split_mu_scenarios_demo.py`."),
         ("split_mu_scenarios/split_mu_friction_sweep_analysis.png",
@@ -257,7 +257,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Multi-µ-Matrix: Kennwerte von acht Manövern über dem Reibwert für vier Konfigurationen. "
          "Quelle: `examples/multi_mu_scenarios_benchmark.py`."),
     ],
-    "CHASSIS_CONTROL.md": [
+    "12_chassis_control.md": [
         ("benchmark/double_lane_change_comparison.png",
          "Doppelspurwechsel 80 km/h bei µ = 0,75: passiv, 4WS und IVMC. Quelle: `examples/integrated_control_benchmark.py`."),
         ("benchmark/mu_split_comparison.png",
@@ -275,7 +275,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "14-DOF-Fishhook: Wankwinkel, Lastverlagerungsverhältnis, Radlasten und dynamische Wanksteifigkeitsverteilung "
          "passiv gegen Wankregelung. Quelle: `examples/advanced_chassis_control_demo.py`."),
     ],
-    "NMPC_CONTROL.md": [
+    "16_nmpc_control.md": [
         ("advanced_control/dynamic_two_track_nmpc_tracking.png",
          "Dynamisches Zweispur-NMPC, Ausweichen bei 90 km/h: Bahn, Lenkwinkel vorn/hinten, Reibkreisausnutzung bezogen "
          "auf µF_z. Die Bahn schießt auf 4,8 m über (Ziel 3,5 m). Werte knapp über 1 sind keine Verletzung: Die "
@@ -285,7 +285,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "NMPC-Spurwechsel 90 km/h (E2E-Test): Bahn, koordinierte Lenkwinkel, Radmomente und Reibkreisausnutzung. "
          "Quelle: `examples/e2e_deep_analysis_and_benchmarking.py`."),
     ],
-    "NMPC_PATH_TRACKING.md": [
+    "17_nmpc_path_tracking.md": [
         ("animations/nmpc_slalom.gif",
          "Kinematisches Pfadfolge-NMPC im Slalom mit Hinterachslenkung aus der Lookup-Tabelle. "
          "Quelle: `examples/generate_maneuver_animations.py`."),
@@ -293,7 +293,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Pfadfolge-NMPC (Maßstabsmodell): Bahn, Lenkwinkel, Querfehler und Geschwindigkeit. Quelle: "
          "`python examples/nmpc_path_tracking_simulation.py --headless`."),
     ],
-    "DRIVER_MODEL.md": [
+    "15_driver_model.md": [
         ("advanced_control/driver_closed_loop_workload.png",
          "Fahrermodell im Doppelspurwechsel: Bahn, Zerlegung von Totzeit und Verzögerung, Lenkaufwand und Lenkumkehrungen "
          "passiv gegen IVMC-unterstützt. Quelle: `examples/driver_and_nmpc_dynamics_demo.py`."),
@@ -301,7 +301,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Fahrer im geschlossenen Kreis beim Reibwertübergang: Basis- gegen verbesserten Fahrer (Prädiktion, Adaption). "
          "Der verbesserte Fahrer lenkt stärker und schwingt mehr. Quelle: `examples/e2e_deep_analysis_and_benchmarking.py`."),
     ],
-    "VALIDATION_PLATFORM.md": [
+    "38_validation_platform.md": [
         ("animations/iso_3888_dlc.gif",
          "Doppelspurwechsel nach dem Vorbild von ISO 3888-2 mit allen vier Konfigurationen. "
          "Quelle: `python examples/run_validation_platform.py --animations`."),
@@ -315,13 +315,13 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Split-µ-Bremsung mit gerader Lenkung und 1450 N m *gesamtem* Bremsmoment, also etwa 12 % Pedal: eine moderate "
          "Bremsung, keine Vollbremsung. Mit der alten additiven Stellkette bleibt IVMC hier unter der 15°-Grenze (≈ 10°) und "
          "dreht sich ab etwa 20 % Pedal ein; über die gemeinsame Allokation (Standard) bleibt er bei jedem "
-         "Pedal gerade (Konfigurationsmatrix in MOTION_CONTROL.md, Test "
+         "Pedal gerade (Konfigurationsmatrix in 11_motion_control.md, Test "
          "`test_additive_esc_holds_only_at_the_moderate_brake_level_of_the_validation_matrix`). "
          "Quelle: `examples/run_validation_platform.py`."),
         ("validation_report/figures/fishhook_ncap.png",
          "Fishhook nach NCAP-Vorbild. Quelle: `examples/run_validation_platform.py`."),
     ],
-    "VISUALIZATION_GUIDE.md": [
+    "39_visualization_guide.md": [
         ("animations/multi_mu_lane_change_comparison.gif",
          "Spurwechsel auf mehreren Reibwerten mit Nahkamera-Panel und HUD. Quelle: `examples/multi_mu_scenarios_benchmark.py`."),
         ("four_wheel_steering/parking/tight_alley.gif",

@@ -2,7 +2,7 @@
 
 # Actuation path: "allocation" = shared bounded wheel-force allocation + slip control
 #; "legacy" = original additive chain (TV adds differential torque,
-# legacy ABS/TCS, heuristic split-mu limiter). See docs/MOTION_CONTROL.md 1.1.
+# legacy ABS/TCS, heuristic split-mu limiter). See docs/11_motion_control.md 1.1.
 actuation: allocation
 
 subsystems_enabled:

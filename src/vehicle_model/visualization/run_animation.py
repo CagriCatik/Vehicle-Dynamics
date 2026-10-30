@@ -232,6 +232,31 @@ def load_history(path) -> dict:
 __all__ = ("animate_runs", "animate_side_view", "animate_slope", "frame_indices", "load_history")
 
 
+# one side-view vehicle for every side animation (ride, grade): outline in the body frame, x from the rear axle, z up
+_SIDE_OUTLINE = ((-0.9, 0.25), (3.75, 0.25), (3.75, 0.75), (3.4, 1.25), (1.6, 1.25), (-0.9, 0.85))
+_SIDE_WHEELBASE, _SIDE_WHEEL_RADIUS = 2.8, 0.33
+
+
+def _side_vehicle(ax, colour):
+    """Add the shared side-view vehicle to ``ax``; returns (body patch, rear wheel, front wheel)."""
+    from matplotlib.patches import Circle, Polygon
+
+    from vehicle_model.visualization.theme import TEXT_PRIMARY
+    body = Polygon(np.array(_SIDE_OUTLINE), closed=True, fc=colour, ec=colour, alpha=0.85)
+    ax.add_patch(body)
+    wheels = [Circle((0.0, 0.0), _SIDE_WHEEL_RADIUS, fc="#1e1e24", ec=TEXT_PRIMARY, lw=1.2) for _ in range(2)]
+    for w in wheels:
+        ax.add_patch(w)
+    return body, wheels[0], wheels[1]
+
+
+def _place_side_body(body, x_rear: float, z_rear: float, angle: float) -> None:
+    """Pose the outline with its rear axle at (x_rear, z_rear) and the body tilted by ``angle``."""
+    c, s = math.cos(angle), math.sin(angle)
+    pts = np.array(_SIDE_OUTLINE)
+    body.set_xy(np.c_[x_rear + c * pts[:, 0] - s * pts[:, 1], z_rear + s * pts[:, 0] + c * pts[:, 1]])
+
+
 def animate_side_view(runs: list, path: str | Path, title: str, traces: list, fps: int = 15, playback: float = 1.0,
                       dpi: int = 75, gain: float = 5.0, window: float = 8.0, max_frames: int = 220) -> Path:
     """Side view of 14-DOF ride runs (``simulation.ride`` histories): one panel per run, body heave and pitch and
@@ -241,14 +266,11 @@ def animate_side_view(runs: list, path: str | Path, title: str, traces: list, fp
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation, PillowWriter
-    from matplotlib.patches import Circle, Polygon
 
-    from vehicle_model.vehicle_models.fourteen_dof import FourteenDOFConfig
-    from vehicle_model.visualization.theme import TEXT_MUTED, TEXT_PRIMARY, apply_dark_theme, style_axis
+    from vehicle_model.visualization.theme import TEXT_MUTED, apply_dark_theme, style_axis
 
     apply_dark_theme()
-    cfg = FourteenDOFConfig()
-    a, b, R = cfg.a, cfg.b, cfg.wheel_radius
+    a, b, R = 1.4, 1.4, _SIDE_WHEEL_RADIUS       # drawing geometry of the shared side-view vehicle
     h0 = runs[0][1]
     t = np.asarray(h0["t"], float)
     n = min(len(h["t"]) for _, h in runs)
@@ -268,11 +290,7 @@ def animate_side_view(runs: list, path: str | Path, title: str, traces: list, fp
         road_x = np.asarray(h["s_road"], float) + a
         road_z = np.asarray(h["zr_FL"], float) * gain
         line, = ax.plot([], [], color=TEXT_MUTED, lw=1.5)
-        body = Polygon(np.zeros((4, 2)), closed=True, fc=col, ec=col, alpha=0.6)
-        ax.add_patch(body)
-        wf, wr = Circle((0, 0), R, fc="#1e1e24", ec=TEXT_PRIMARY, lw=1.2), Circle((0, 0), R, fc="#1e1e24", ec=TEXT_PRIMARY, lw=1.2)
-        ax.add_patch(wf)
-        ax.add_patch(wr)
+        body, wr, wf = _side_vehicle(ax, col)
         sf, = ax.plot([], [], color="#c98500", lw=2)
         sr, = ax.plot([], [], color="#c98500", lw=2)
         ax.set_ylim(-0.5, 2.2)
@@ -299,14 +317,13 @@ def animate_side_view(runs: list, path: str | Path, title: str, traces: list, fp
             sel = (road_x > s - window) & (road_x < s + window)
             line.set_data(road_x[sel], road_z[sel])
             zs, th = float(h["zs"][i]) * gain, float(h["theta"][i]) * gain
-            xc, zc = s, 0.75 + zs
-            pts = np.array([[-b - 0.9, 0.0], [a + 0.9, 0.0], [a + 0.9, 0.55], [-b - 0.9, 0.55]])
+            xc, zc = s, R + zs
             c_, s_ = math.cos(th), math.sin(th)
-            body.set_xy(np.c_[xc + c_ * pts[:, 0] - s_ * pts[:, 1], zc + s_ * pts[:, 0] + c_ * pts[:, 1]])
+            _place_side_body(body, xc - c_ * b, zc - s_ * b, th)
             zf, zr = R + float(h["zu_FL"][i]) * gain, R + float(h["zu_RL"][i]) * gain
             wf.center, wr.center = (s + a, zf), (s - b, zr)
-            sf.set_data([s + a, s + a], [zf, zc + a * s_])
-            sr.set_data([s - b, s - b], [zr, zc - b * s_])
+            sf.set_data([s + a, s + a], [zf, zc + 0.3 + a * s_])
+            sr.set_data([s - b, s - b], [zr, zc + 0.3 - b * s_])
             ax = line.axes
             ax.set_xlim(s - window, s + window)
         for cur in cursors:
@@ -329,12 +346,12 @@ def animate_slope(runs: list, path: str | Path, title: str, traces: list, v_set_
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation, PillowWriter
-    from matplotlib.patches import Circle, Polygon
+    from matplotlib.patches import Polygon
 
     from vehicle_model.visualization.theme import TEXT_MUTED, TEXT_PRIMARY, apply_dark_theme, style_axis
 
     apply_dark_theme()
-    lf, lr, R = 1.3, 1.5, 0.33
+    lf, lr, R = 1.4, 1.4, _SIDE_WHEEL_RADIUS     # drawing geometry of the shared side-view vehicle
     t_all = [np.asarray(h["t"], float) for _, h in runs]
     longest = int(np.argmax([len(t) for t in t_all]))
     t = t_all[longest]
@@ -354,11 +371,8 @@ def animate_slope(runs: list, path: str | Path, title: str, traces: list, v_set_
         X, Z = np.asarray(h["X"], float), np.asarray(h["Z"], float)
         ground = Polygon(np.zeros((3, 2)), closed=True, fc="#2a2a33", ec=TEXT_MUTED, lw=1.2)
         ax.add_patch(ground)
-        body = Polygon(np.zeros((6, 2)), closed=True, fc=col, ec=col, alpha=0.85)
-        ax.add_patch(body)
-        wheels = [Circle((0, 0), R, fc="#1e1e24", ec=TEXT_PRIMARY, lw=1.2) for _ in range(2)]
-        for w in wheels:
-            ax.add_patch(w)
+        body, wheel_r, wheel_f = _side_vehicle(ax, col)
+        wheels = [wheel_r, wheel_f]
         hud = ax.text(0.01, 0.95, "", transform=ax.transAxes, va="top", fontsize=9, color=TEXT_PRIMARY, family="monospace")
         ax.set_aspect("equal", adjustable="box")
         style_axis(ax, lab, None, "Z [m]")
@@ -397,8 +411,7 @@ def animate_slope(runs: list, path: str | Path, title: str, traces: list, v_set_
                 w.center = cen
                 w.set_edgecolor("#e5484d" if red else TEXT_PRIMARY)
                 w.set_linewidth(2.4 if red else 1.2)
-            shape = np.array([[-lr - 0.9, 0.25], [lf + 0.95, 0.25], [lf + 0.95, 0.75], [0.6, 1.25], [-1.2, 1.25], [-lr - 0.9, 0.85]])
-            body.set_xy(np.c_[xr + lr * c_ + c_ * shape[:, 0] - s_ * shape[:, 1], zr + lr * s_ + s_ * shape[:, 0] + c_ * shape[:, 1]])
+            _place_side_body(body, xr, zr, ang)
             ax.set_xlim(x0 - window, x0 + window)
             ax.set_ylim(float(np.interp(x0, X, Z)) - 5.0, float(np.interp(x0, X, Z)) + 5.0)
             status = "INFEASIBLE" if h.get("hdc_infeasible") is not None and h["hdc_infeasible"][i] > 0 else (

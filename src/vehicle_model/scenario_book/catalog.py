@@ -315,10 +315,10 @@ def run_entry(name: str, out_dir: str | Path | None = None, overrides: dict | No
 
 
 def book_markdown() -> str:
-    """The scenario book as Markdown (docs/SCENARIO_BOOK.md is generated from this)."""
+    """The scenario book as Markdown (docs/35_scenario_book.md is generated from this)."""
     L = ["# Scenario book", "",
          "Generated from `src/vehicle_model/scenario_book/catalog.py` "
-         "(`python -m vehicle_model.scenario_book book --write docs/SCENARIO_BOOK.md`). Do not edit by hand.", "",
+         "(`python -m vehicle_model.scenario_book book --write docs/35_scenario_book.md`). Do not edit by hand.", "",
          "```bash",
          "python -m vehicle_model.scenario_book list [--category parking]",
          "python -m vehicle_model.scenario_book info u_turn",

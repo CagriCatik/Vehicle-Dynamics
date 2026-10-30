@@ -233,7 +233,7 @@ def test_stability_map_runs_and_writes_every_output(tmp_path):
     assert "not a proven region of attraction" in (tmp_path / "report.md").read_text()
 
 
-def test_cli_lists_the_m11_types(capsys):
+def test_cli_lists_the_stability_types(capsys):
     assert cli(["list"]) == 0
     out = capsys.readouterr().out
     assert "[equilibrium_analysis]" in out and "[stability_map]" in out

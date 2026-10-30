@@ -65,8 +65,8 @@ def main() -> None:
     plt.close(fig)
     meta = {"topic": "G-vectoring", "provenance": provenance(),
             "experiments": {d: json.loads((OUT / d / "results.json").read_text())["provenance"]
-                            for d in ("steer_ramp", "lane_change", "lift_off", "emergency")},
-            "configs": [str(p) for p in sorted(Path("configs/experiments").glob("v4_m20_*.yaml"))]}
+                            for d in ("steer_ramp", "lane_change", "lift_off", "emergency_braking")},
+            "configs": [str(p) for p in sorted(Path("configs/experiments").glob("g_vectoring_*.yaml"))]}
     (OUT / "metadata.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     print(f"wrote {OUT / 'gvc.png'}")
 

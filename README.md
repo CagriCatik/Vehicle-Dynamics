@@ -1,11 +1,14 @@
 # Vehicle Dynamics & Integrated Chassis Control Development Platform
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Standards](https://img.shields.io/badge/standards-ISO%208855%20%7C%20ISO%203888--2%20%7C%20FMVSS%20126-orange.svg)](docs/ARCHITECTURE.md)
-[![Test Suite](https://img.shields.io/badge/tests-607%20passed-brightgreen.svg)](tests/)
+[![Standards](https://img.shields.io/badge/standards-ISO%208855%20%7C%20ISO%203888--2%20%7C%20FMVSS%20126-orange.svg)](docs/01_architecture.md)
+[![Test Suite](https://img.shields.io/badge/tests-830%2B%20passed-brightgreen.svg)](tests/)
+[![Documentation](https://img.shields.io/badge/docs-website-blue.svg)](https://cagricatik.github.io/Vehicle-Dynamics/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 A modular, physically consistent Python research and engineering platform for non-linear vehicle dynamics, interchangeable tyre models, physical actuator dynamics, four-wheel steering (4WS), torque vectoring, and integrated vehicle motion control (ABS, TCS, ESC, IVMC).
+
+**Documentation website:** <https://cagricatik.github.io/Vehicle-Dynamics/>
 
 ### Results at a glance
 
@@ -14,11 +17,11 @@ All results are simulations with synthetic parameters, not measurements. Each do
 | Rear-axle steering at walking pace (U-turn) | Double lane change, four configurations |
 | :---: | :---: |
 | ![U-turn 2WS vs 4WS](docs/assets/rear_wheel_steering/u_turn.gif) | ![Double lane change](docs/assets/validation_platform/iso_3888_dlc.gif) |
-| The rear axle steers −8° against the front; the street width needed drops from 12.75 m to 11.10 m ([details](docs/REAR_WHEEL_STEERING.md)). | Passive, 4WS, IVMC and IVMC + 4WS in a lane change modelled on ISO 3888-2 ([details](docs/VALIDATION_PLATFORM.md)). |
+| The rear axle steers −8° against the front; the street width needed drops from 12.75 m to 11.10 m ([details](docs/13_rear_wheel_steering.md)). | Passive, 4WS, IVMC and IVMC + 4WS in a lane change modelled on ISO 3888-2 ([details](docs/38_validation_platform.md)). |
 
 ![Split-mu braking matrix](docs/assets/motion_control/split_mu_matrix.png)
 
-*Split-µ full braking with the steering held straight: only the wheel-force allocation, which reduces brake torque on the high-friction side, keeps the car straight; rear steering and additive ESC cannot ([details](docs/MOTION_CONTROL.md)).*
+*Split-µ full braking with the steering held straight: only the wheel-force allocation, which reduces brake torque on the high-friction side, keeps the car straight; rear steering and additive ESC cannot ([details](docs/11_motion_control.md)).*
 
 ---
 
@@ -107,27 +110,19 @@ All validation maneuvers, animation engines, and telemetry comparisons evaluate 
 
 ## Comprehensive Technical Documentation
 
-All detailed theoretical formulations, mathematical derivations, component guides, and validation specifications are organized inside the [docs/](docs/) folder:
+The documentation is published as a website: <https://cagricatik.github.io/Vehicle-Dynamics/>. It is written in [docs/](docs/) as numbered chapters, built with [Zensical](https://zensical.org/) and deployed by [.github/workflows/docs.yml](.github/workflows/docs.yml). Most chapters are in German. Start at the [Documentation Hub](docs/index.md).
 
-| Chapter | Document | Core Topics & Methodologies |
-| :---: | :--- | :--- |
-| **Index** | [Documentation Hub](docs/index.md) | Complete documentation index, architectural sitemap, thematic index, and A–Z master index |
-| **01** | [System Architecture & ISO 8855](docs/ARCHITECTURE.md) | Intermediate vehicle axis system, coordinate frames, sign conventions, and config schemas |
-| **02** | [Multi-Body Vehicle Models](docs/VEHICLE_MODELS.md) | 7-DOF two-track non-linear plant, 14-DOF full chassis, dynamic load transfer, and bicycle models |
-| **03** | [Interchangeable Tyre Models](docs/TYRE_MODELS.md) | Mandatory `TyreProvenance`; linear, Fiala brush, simplified combined slip, Magic Formula 5.2 subset (with aligning moment) and first-order relaxation |
-| **04** | [Actuator Physics & Braking Systems](docs/ACTUATORS.md) | EPS steering lag/rate limits, 4-motor EV inverter envelope, and BBW regen blending |
-| **05** | [Integrated Chassis Control](docs/CHASSIS_CONTROL.md) | IVMC architecture, active torque vectoring, phase-plane envelope control, and ARSDC |
-| **06** | [Allradlenkung & Hinterachslenkung (4WS)](docs/REAR_WHEEL_STEERING.md) | Counter-phase, in-phase, analytical zero-sideslip condition ($\beta \to 0$), 2D LUT map |
-| **07** | [Non-Linear Model Predictive Control](docs/NMPC_CONTROL.md) & [NMPC Path Tracking](docs/NMPC_PATH_TRACKING.md) | SLSQP single-shooting path tracker and Dynamic Two-Track NMPC with friction-circle penalty |
-| **08** | [Neuromuscular Driver Model](docs/DRIVER_MODEL.md) | Closed-loop preview guidance (MacAdam/Salvucci), human delay ($\tau_d$), and workload metrics |
-| **09** | [Suspension Dynamics & Ride Comfort](docs/SUSPENSION_DYNAMICS.md) | 2-DOF quarter-car modal analysis, Skyhook/Groundhook damping, and 14-DOF coupled ride |
-| **10** | [State Estimation & Optimization](docs/STATE_ESTIMATION.md) | Sensor noise models, EKF sideslip observer, RLS real-time friction, and PSO gain tuning |
-| **11** | [Automotive Virtual Validation Platform](docs/VALIDATION_PLATFORM.md) | Automated 10-maneuver validation matrix, standardized KPIs, and acceptance criteria |
-| **12** | [Handling Limits & Understeer Dynamics](docs/HANDLING_LIMITS.md) | ISO 4138 steady-state circular test, Understeer Gradient $K_{\text{us}}$, $v_{\text{char}}$, and G-G diagram |
-| **13** | [Split-μ Dynamics & Benchmark Suite](docs/SPLIT_MU_DYNAMICS.md) | 5 standardized split-$\mu$ scenarios, multi-$\mu$ matrix ($\mu = 0.2 \dots 1.0$), and 2D surfaces |
-| **14** | [Visualization & Animation Guide](docs/VISUALIZATION_GUIDE.md) | 2D Planar vehicle renderer, real-time 20 FPS GIF generator, HUD, and tracking camera |
-| **–** | [Scenario Book](docs/SCENARIO_BOOK.md) | Catalogue of runnable scenarios with parameters, runtime and outputs; CLI `python -m vehicle_model.scenario_book` |
-| **15** | [Literatur- & Quellenverzeichnis](docs/REFERENCES.md) | Academic textbooks & standards (Küçükay, Mitschke, Heißing, Isermann, Pacejka, Rajamani) |
+| Part | Chapters |
+| :--- | :--- |
+| **Fundamentals** | [01 Architecture](docs/01_architecture.md), [02 Vehicle models](docs/02_vehicle_models.md), [03 Tyre models](docs/03_tyre_models.md), [04 Chassis kinematics](docs/04_chassis_kinematics.md), [05 Actuators](docs/05_actuators.md), [06 Handling analysis](docs/06_handling_analysis.md), [07 Handling limits](docs/07_handling_limits.md), [08 Vertical dynamics](docs/08_vertical_dynamics.md), [09 Suspension dynamics](docs/09_suspension_dynamics.md) |
+| **Control** | [10 Control allocation](docs/10_control_allocation.md), [11 Motion control](docs/11_motion_control.md), [12 Chassis control](docs/12_chassis_control.md), [13 Rear-wheel steering](docs/13_rear_wheel_steering.md), [14 Split-µ dynamics](docs/14_split_mu_dynamics.md), [15 Driver model](docs/15_driver_model.md), [16 NMPC](docs/16_nmpc_control.md), [17 NMPC path tracking](docs/17_nmpc_path_tracking.md) |
+| **Estimation and stability** | [18 State estimation](docs/18_state_estimation.md), [19 Estimation robustness](docs/19_estimation_robustness.md), [20 Nonlinear stability](docs/20_nonlinear_stability.md), [21 Robust control](docs/21_robust_control.md) |
+| **Drift** | [22 Model validity](docs/22_drift_model_validity.md), [23 Drift controller](docs/23_drift_controller.md), [24 Drift results](docs/24_drift_results.md) |
+| **Integrated motion control** | [25 Actuation chain](docs/25_actuation_chain.md), [26 Brake functions](docs/26_brake_functions.md), [27 Traction control](docs/27_traction_control.md), [28 Roll stability and active steering](docs/28_roll_stability_active_steering.md), [29 G-vectoring](docs/29_g_vectoring.md), [30 Preview damping and active pitch](docs/30_preview_damping_active_pitch.md), [31 Hill descent control](docs/31_hill_descent_control.md), [32 Fault tolerance](docs/32_fault_tolerance.md), [33 Motion management benchmark](docs/33_motion_management_benchmark.md) |
+| **Tools** | [34 Experiments](docs/34_experiments.md), [35 Scenario book](docs/35_scenario_book.md), [36 Critical scenarios](docs/36_critical_scenarios.md), [37 Design optimisation](docs/37_design_optimization.md), [38 Validation platform](docs/38_validation_platform.md), [39 Visualisation guide](docs/39_visualization_guide.md), [40 Workbench](docs/40_workbench.md) |
+| **Appendix** | [41 Audit](docs/41_audit.md), [42 Baseline audit](docs/42_baseline_audit.md), [43 Traceability](docs/43_traceability.md), [44 References](docs/44_references.md), [plans](docs/plans/) |
+
+Book and paper references in chapter 44 are checked against Crossref. [Chapter 43](docs/43_traceability.md) is the only place that maps plan milestones to today's topic names.
 
 ---
 
@@ -142,6 +137,12 @@ All detailed theoretical formulations, mathematical derivations, component guide
 - **Nonlinear Model Predictive Control (NMPC):** SLSQP single-shooting kinematic path tracker and Dynamic Two-Track NMPC with a soft friction-circle penalty (no C/GMRES implementation).
 - **Closed-Loop Driver-in-the-Loop Dynamics:** MacAdam/Salvucci preview driver with human neural latency ($\tau_d \approx 160\text{ ms}$) and neuromuscular lag ($\tau_n \approx 100\text{ ms}$) for driver workload evaluation.
 - **State Estimation Suite:** Extended Kalman Filter (EKF) sideslip observer, Recursive Least Squares (RLS) real-time friction estimator, and Particle Swarm Optimization (PSO) tuning engine.
+- **Integrated Motion Control:** One shared chain (motion controller, wheel-force allocation, ABS/TCS, actuator models) carrying EBD, cornering brake control, integrated brake control, regenerative slip control, virtual eLSD, integrated traction control, active front steering, a G-Vectoring-like load-transfer strategy and hill descent control on graded roads.
+- **14-DOF Functions:** Roll stability control, preview damping from a modelled road sensor, active pitch control and vertical force allocation.
+- **Fault Tolerance:** Deterministic fault catalogue, health monitor working only from corrupted signals and actuator self-reports, degraded modes and recovery; fail-operational behaviour is not claimed.
+- **Motion Management Benchmark:** Function registry, deterministic arbitration and a matrix of eight configuration levels (`passive` to `fault_tolerant`) over 15 manoeuvres with paired parameter variations.
+- **Drift Control:** Stationary drift equilibria, LQR hold, initiation, exit and recovery, circle and figure-eight tracking.
+- **Research Tooling:** Nonlinear stability maps, robust control benchmarks, critical scenario search, NSGA-II design optimisation and an optional web workbench.
 - **Automated Validation Platform:** Executes 10 standardized ISO and NHTSA maneuvers, compiling interactive HTML dashboards, markdown validation reports, and synchronized 20 FPS real-time 2D planar animations (GIFs).
 
 ---
@@ -150,65 +151,36 @@ All detailed theoretical formulations, mathematical derivations, component guide
 
 ```text
 Vehicle-Dynamics/
-├── README.md                          # Executive overview & documentation hub
-├── chassis_control_platform_plan.md                            # Platform plan (moved to docs/plans/)
-├── pyproject.toml                     # Package metadata, dependencies & build config
-├── LICENSE                            # MIT License
-│
-├── configs/                           # Centralized YAML configuration repository
-│   ├── vehicles/                      # Vehicle mass, geometry, inertia specifications
-│   ├── tyres/                         # Tyre parameter YAMLs with strict provenance
-│   ├── steering/                      # 4WS, EPS actuators, and 2D rear steering LUT (lut.json)
-│   ├── powertrains/                   # 4-motor electric powertrain and inverter parameters
-│   ├── braking/                       # Brake-by-wire and ABS/TCS slip controller parameters
-│   ├── controllers/                   # IVMC, torque vectoring, driver model, and NMPC YAMLs
-│   ├── estimators/                    # EKF observer, sensor noise, and RLS friction configs
-│   ├── suspension/                    # Quarter-car and 14-DOF suspension parameters
-│   ├── validation/                    # Validation matrix scenarios and regression criteria
-│   └── default.yaml                   # Master simulation configuration
-│
-├── docs/                              # Comprehensive technical documentation suite
-│   ├── index.md                       # Master documentation index and sitemap
-│   ├── ARCHITECTURE.md                # System architecture, ISO 8855, and coordinate conventions
-│   ├── VEHICLE_MODELS.md              # 7-DOF two-track, 14-DOF full vehicle, and bicycle equations
-│   ├── TYRE_MODELS.md                 # Tyre models, combined slip, MF 5.2 subset, relaxation
-│   ├── ACTUATORS.md                   # EPS steering, 4-motor EV powertrain, and brake-by-wire
-│   ├── CHASSIS_CONTROL.md             # IVMC, 4WS speed scheduling, phase-plane envelope & ARSDC
-│   ├── REAR_WHEEL_STEERING.md         # Coordinated 4WS, virtual wheelbase, counter/in-phase
-│   ├── NMPC_CONTROL.md                # Dynamic Two-Track NMPC with 4-wheel Kamm circle bounds
-│   ├── NMPC_PATH_TRACKING.md          # SLSQP NMPC path tracker (formulation & limits)
-│   ├── DRIVER_MODEL.md                # Closed-loop neuromuscular preview driver dynamics
-│   ├── SUSPENSION_DYNAMICS.md         # Quarter-car modal analysis, Skyhook/Groundhook & 14-DOF ride
-│   ├── STATE_ESTIMATION.md            # Sensor models, EKF sideslip observer, RLS friction & PSO
-│   ├── VALIDATION_PLATFORM.md         # Virtual validation matrix, KPIs, and pass/fail thresholds
-│   ├── HANDLING_LIMITS.md             # ISO 4138 understeer gradient, characteristic speed, G-G diagram
-│   ├── SPLIT_MU_DYNAMICS.md           # 5 split-mu handling maneuvers & friction transition maps
-│   ├── VISUALIZATION_GUIDE.md         # 2D Planar vehicle rendering engine & 20 FPS GIF generator
-│   └── REFERENCES.md                  # Literature citations & academic automotive textbooks
-│
-├── src/vehicle_model/                 # Consolidated Python source package
-│   ├── core/                          # State vectors, parameters, telemetry, and base protocols
-│   ├── vehicle_models/                # 7-DOF two-track, single-track dynamic and kinematic models
-│   ├── tire_model/                    # Linear, Fiala, Simplified Combined, and Pacejka tyres
-│   ├── actuators/                     # EPS steering, electric powertrain, and brake-by-wire
-│   ├── steering/                      # 4WS coordinator & calibrated rear-axle steering LUT
-│   ├── controllers/                   # IVMC, phase-plane, active roll, driver, and NMPC controllers
-│   ├── suspension/                    # Quarter-car, Skyhook, Groundhook, and 14-DOF full vehicle
-│   ├── estimation/                    # Sensor noise, EKF sideslip observer, RLS friction, and PSO
-│   ├── simulation/                    # ScenarioRunner, validation platform, and report generator
-│   └── visualization/                 # Plan-view polygon renderer, animation engine, and HUD
-│
-├── examples/                          # Flagship engineering demonstrations and benchmarks
-│   ├── advanced_chassis_control_demo.py # Phase-plane envelope & 14-DOF active roll stability
-│   ├── driver_and_nmpc_dynamics_demo.py # Closed-loop driver model & dynamic two-track NMPC
-│   ├── seven_dof_4ws_tv_demo.py       # 7-DOF chassis simulation (4WS + TV + split-mu braking)
-│   ├── split_mu_scenarios_demo.py     # 5 split-mu handling maneuvers & friction sweeps
-│   ├── integrated_control_benchmark.py # ISO 3888-2 DLC 4-vehicle benchmark comparison
-│   ├── four_wheel_steering_benchmark.py # Multi-maneuver 4WS LUT and yaw damping benchmark
-│   ├── run_validation_platform.py     # Automated execution of 10 validation matrix scenarios
-│   └── generate_maneuver_animations.py# 20 FPS real-time 2D planar animation GIF generator
-│
-└── tests/vehicle_model/               # Full automated pytest test suite (142 tests)
+├── README.md                 # This overview
+├── pyproject.toml            # Package metadata; extras: test, workbench, docs
+├── zensical.toml             # Documentation website configuration
+├── .github/workflows/        # ci.yml (tests), docs.yml (GitHub Pages)
+├── configs/
+│   ├── experiments/          # YAML experiments named by topic and scenario,
+│   │                         #   e.g. brake_functions_split_mu, hill_descent_control
+│   ├── critical/             # Frozen critical scenarios (regression cases)
+│   └── vehicles/ tyres/ steering/ powertrains/ braking/ controllers/
+│       estimators/ suspension/ validation/ visualization/ drift/ roads/ scenarios/
+├── docs/
+│   ├── index.md              # Website start page
+│   ├── 01_architecture.md … 44_references.md
+│   ├── plans/                # Platform, integrated motion control and drift plans
+│   └── assets/               # Figures and GIFs published from output/
+├── src/vehicle_model/
+│   ├── core/ vehicle_models/ tire_model/ roads/ actuators/ steering/ suspension/
+│   ├── allocation/           # Wheel-force and vertical force allocation
+│   ├── controllers/          # Yaw laws, brake, traction, stability, HDC, health monitor, supervisor
+│   ├── drift/                # Drift equilibria, control and supervisor
+│   ├── estimation/           # Sensors, observers, friction estimation
+│   ├── simulation/           # Scenarios, actuator chain, ride, fault injection
+│   ├── experiments/          # YAML experiment engine and benchmark types
+│   ├── scenario_book/        # Catalogue of runnable scenarios
+│   ├── visualization/        # Unified plan-view and side-view rendering, animations
+│   └── workbench/            # Optional FastAPI web interface
+├── examples/                 # Demonstrations, figure scripts, chassis_control_animations.py
+├── tools/                    # run_all_results.py, publish_doc_figures.py
+├── tests/vehicle_model/      # Automated test suite
+└── output/                   # Generated results (not tracked)
 ```
 
 ---
@@ -237,7 +209,7 @@ python -m vehicle_model.experiments list
 python -m vehicle_model.experiments run configs/experiments/sine_with_dwell_comparison.yaml
 ```
 
-For a catalogue of all runnable scenarios (parking with rear-axle steering, 4WS benchmark manoeuvres, split-µ, YAML experiments, validation matrix) and a command line to start them one by one, see the [Scenario Book](docs/SCENARIO_BOOK.md):
+For a catalogue of all runnable scenarios (parking with rear-axle steering, 4WS benchmark manoeuvres, split-µ, YAML experiments, validation matrix) and a command line to start them one by one, see the [Scenario Book](docs/35_scenario_book.md):
 
 ```bash
 python -m vehicle_model.scenario_book list
@@ -246,7 +218,7 @@ python -m vehicle_model.scenario_book run u_turn --no-gif
 python -m vehicle_model.scenario_book run --category parking
 ```
 
-Each YAML experiment run checks the configured model first (parameter consistency, static loads, tyre symmetry, linear reference, mirror symmetry, determinism) and writes `results.json`, `kpis.csv`, time histories, figures and an engineering report (`report.md`) to `output/experiments/<name>/`. See [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
+Each YAML experiment run checks the configured model first (parameter consistency, static loads, tyre symmetry, linear reference, mirror symmetry, determinism) and writes `results.json`, `kpis.csv`, time histories, figures and an engineering report (`report.md`) to `output/experiments/<name>/`. See [docs/34_experiments.md](docs/34_experiments.md).
 
 Nonlinear stability: steady-state equilibria of the 7-DOF model with residuals, eigenvalues and a check against the nonlinear dynamics, and numerically determined recovery regions per controller in the (sideslip, yaw rate) plane with their numerical uncertainty. Both are experiment types:
 
@@ -255,9 +227,29 @@ python -m vehicle_model.experiments run configs/experiments/equilibrium_steer_sw
 python -m vehicle_model.experiments run configs/experiments/stability_map_cornering.yaml   # ~7 min, parallel
 ```
 
-See [docs/NONLINEAR_STABILITY.md](docs/NONLINEAR_STABILITY.md). The recovery regions are numerical results for the grid, step and duration used, not proven regions of attraction.
+See [docs/20_nonlinear_stability.md](docs/20_nonlinear_stability.md). The recovery regions are numerical results for the grid, step and duration used, not proven regions of attraction.
 
 ### 3. Running Flagship Demonstrations
+
+#### Regenerate All Results
+```bash
+python tools/run_all_results.py                 # all experiments, demos, figures and GIFs; log: output/run_all_log.csv
+python tools/run_all_results.py --only traction # only items whose name contains "traction"
+```
+Results are written to `output/<topic>/<scenario>/`, for example `output/brake_functions/split_mu/`. A full run takes well over an hour.
+
+#### Comparison Animations by Topic
+```bash
+python examples/chassis_control_animations.py                               # all topics
+python examples/chassis_control_animations.py brake_functions hill_descent  # selected topics
+```
+
+#### Documentation Website
+```bash
+pip install -e ".[docs]"
+zensical serve                   # local preview at http://localhost:8000
+python tools/publish_doc_figures.py   # refresh docs/assets from output/
+```
 
 #### Automated Virtual Validation Platform (10 Standardized Scenarios)
 ```bash
@@ -317,18 +309,18 @@ python examples/integrated_control_benchmark.py
 | **2. Active 4WS (speed scheduled)** | 21.2°/s | 1.26° (−40 %) | 0.05° | 0.87 m | 0.59 g | 100.7 % |
 | **3. Integrated IVMC (4WS + TV + ESC)** | 21.0°/s | 1.23° (−41 %) | 0.07° | 0.85 m | 0.61 g | 103.2 % |
 
-IVMC acts through the shared wheel-force allocation (default; see [MOTION_CONTROL.md](docs/MOTION_CONTROL.md) 1.2). Generated with the default tyre `magic_formula_passenger_synthetic` (since controller library; the table before controller library used the legacy Pacejka adapter). Tyre utilisation is relative to the road friction $\mu F_z$; values above 100 % are possible because the MF tyre's peak friction exceeds $\mu$ at light wheel loads (load sensitivity). Synthetic vehicle and tyre parameters: the numbers compare controllers on the virtual vehicle, they are not predictions for a real car.
+IVMC acts through the shared wheel-force allocation (default; see [11_motion_control.md](docs/11_motion_control.md) 1.2). Generated with the default tyre `magic_formula_passenger_synthetic` (since controller library; the table before controller library used the legacy Pacejka adapter). Tyre utilisation is relative to the road friction $\mu F_z$; values above 100 % are possible because the MF tyre's peak friction exceeds $\mu$ at light wheel loads (load sensitivity). Synthetic vehicle and tyre parameters: the numbers compare controllers on the virtual vehicle, they are not predictions for a real car.
 
 ---
 
 ## Automated Test Suite
 
 ```bash
-pytest -m "not slow"     # quick run (about one minute)
-pytest                   # full suite incl. long scenario tests (10-15 minutes)
+pytest -m "not slow"     # quick run (about 3.5 minutes)
+pytest                   # full suite incl. long scenario tests (about 25 minutes)
 ```
 
-The suite combines analytical reference tests (closed-form handling characteristics, Riccati equation, quarter-car frequency responses, energy balances, Ackermann geometry), invariant tests (force and moment balances, symmetry, convergence order), regression baselines and scenario tests. Continuous integration (`.github/workflows/ci.yml`) runs the quick suite on every push and the full suite weekly. Current status and the per-topic verification are listed in [docs/AUDIT.md](docs/AUDIT.md).
+The suite combines analytical reference tests (closed-form handling characteristics, Riccati equation, quarter-car frequency responses, energy balances, Ackermann geometry), invariant tests (force and moment balances, symmetry, convergence order), regression baselines and scenario tests. Continuous integration (`.github/workflows/ci.yml`) runs the quick suite on every push and the full suite weekly. Current status and the per-topic verification are listed in [docs/41_audit.md](docs/41_audit.md).
 
 ---
 

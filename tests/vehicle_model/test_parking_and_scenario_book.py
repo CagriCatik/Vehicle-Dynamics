@@ -98,9 +98,9 @@ def test_scenario_book_runs_an_entry_into_its_directory(tmp_path):
 
 def test_generated_scenario_book_document_is_up_to_date():
     from pathlib import Path
-    doc = Path(__file__).resolve().parents[2] / "docs" / "SCENARIO_BOOK.md"
+    doc = Path(__file__).resolve().parents[2] / "docs" / "35_scenario_book.md"
     assert doc.read_text(encoding="utf-8") == book_markdown() + "\n", \
-        "regenerate: python -m vehicle_model.scenario_book book --write docs/SCENARIO_BOOK.md"
+        "regenerate: python -m vehicle_model.scenario_book book --write docs/35_scenario_book.md"
 
 
 def test_all_image_links_in_the_documentation_resolve():

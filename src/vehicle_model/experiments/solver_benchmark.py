@@ -320,7 +320,7 @@ def _report(spec: SolverBenchmarkSpec, summary: dict) -> str:
         L.append(f"| {r['variant']} | {over} | " + " | ".join(_fmt(r["kpis"].get(k, float("nan"))) for k, _ in cols) + " |")
     L += ["", "## Measures and limits", "",
           "- Status classes (nominal / suboptimal / fallback / degraded) and the KKT residuals are defined in",
-          "  `controllers/solver_diagnostics.py` (docs/MOTION_CONTROL.md 3, 3.2). SLSQP reports convergence when the",
+          "  `controllers/solver_diagnostics.py` (docs/11_motion_control.md 3, 3.2). SLSQP reports convergence when the",
           "  relative cost change falls below `tolerance`; the KKT stationarity shows how far that is from a",
           "  first-order optimum.",
           "- Plan feasibility (hard limits) is checked separately from the solver status.",
