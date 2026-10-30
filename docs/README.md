@@ -47,3 +47,4 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **32** | V4.0 M17: EBD, CBC, IBC, regenerative Schlupfregelung (MSR) | [V4_BRAKING.md](V4_BRAKING.md) |
 | **33** | V4.0 M18: virtuelles eLSD, Traktionsverteilung, Motorhüllkurve, Integrated Traction Control | [V4_TRACTION.md](V4_TRACTION.md) |
 | **34** | V4.0 M19: Roll Stability Control (14-DOF) und Active Front Steering | [V4_STABILITY_STEERING.md](V4_STABILITY_STEERING.md) |
+| **35** | V4.0 M20: GVC-artige Lasttransferregelung (eigene Referenzstrategie) | [V4_GVC.md](V4_GVC.md) |

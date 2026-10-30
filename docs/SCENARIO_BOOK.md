@@ -62,6 +62,10 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 | `exp_v4_m18_split_mu_launch` | **YAML experiment v4_m18_split_mu_launch** – Runs configs/experiments/v4_m18_split_mu_launch.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 | `exp_v4_m19_afs_step` | **YAML experiment v4_m19_afs_step** – Runs configs/experiments/v4_m19_afs_step.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 | `exp_v4_m19_afs_swd` | **YAML experiment v4_m19_afs_swd** – Runs configs/experiments/v4_m19_afs_swd.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m20_gvc_emergency` | **YAML experiment v4_m20_gvc_emergency** – Runs configs/experiments/v4_m20_gvc_emergency.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m20_gvc_lane_change` | **YAML experiment v4_m20_gvc_lane_change** – Runs configs/experiments/v4_m20_gvc_lane_change.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m20_gvc_lift_off` | **YAML experiment v4_m20_gvc_lift_off** – Runs configs/experiments/v4_m20_gvc_lift_off.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m20_gvc_steer_ramp` | **YAML experiment v4_m20_gvc_steer_ramp** – Runs configs/experiments/v4_m20_gvc_steer_ramp.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 
 ## solver
 

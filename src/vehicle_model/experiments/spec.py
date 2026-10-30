@@ -53,7 +53,11 @@ MANOEUVRES = {
     "coast": {"speed_kph", "duration_s"},
     "launch": {"speed_kph", "accel_pedal", "duration_s"},
     "corner_exit": {"speed_kph", "steer_deg", "accel_pedal", "accel_start_s", "duration_s"},
+    "steer_ramp": {"speed_kph", "steer_deg", "steer_rate_degps", "accel_pedal", "duration_s"},
+    "lane_change": {"speed_kph", "amplitude_deg", "frequency_hz", "accel_pedal", "duration_s"},
+    "lift_off": {"speed_kph", "steer_deg", "accel_pedal", "lift_s", "duration_s"},
 }
+GVC_KEYS = {"enabled", "c_xy", "max_decel_g"}           # Plan V4.0 M20
 FORMATS = ("csv", "json", "png", "md", "gif")
 DEFAULT_FORMATS = ("csv", "json", "png", "md")  # gif is opt-in (rendering time)
 _TOP = {"type", "name", "description", "vehicle", "tyres", "kc", "road", "manoeuvre", "controllers", "sweep", "dt",
@@ -69,6 +73,7 @@ class ControllerSpec:
     brake: tuple = ()               # Plan V4.0 M17: sorted (key, value) pairs of the brake-function block
     traction: tuple = ()            # Plan V4.0 M18: sorted (key, value) pairs of the traction block
     steering: tuple = ()            # Plan V4.0 M19.2: sorted (key, value) pairs of the steering block
+    gvc: tuple = ()                 # Plan V4.0 M20: sorted (key, value) pairs of the GVC block
 
     @property
     def estimated_state(self) -> bool:
@@ -93,6 +98,10 @@ class ControllerSpec:
         st = dict(self.steering)
         tags += [t for t, on in (("variable ratio", st.get("ratio") == "variable"), ("AFS failed", st.get("afs_failed")))
                  if on]
+        gv = dict(self.gvc)
+        if gv:
+            tags.append("GVC" + ("" if gv.get("enabled", True) else " off")
+                        + (f" C_xy {gv['c_xy']}" if "c_xy" in gv else ""))
         act += f" [{', '.join(tags)}]" if tags else ""
         if self.law == "passive":
             return "passive" + act
@@ -136,7 +145,8 @@ class ExperimentSpec:
                               **({"brake": dict(c.brake)} if c.brake else {}),
                               **({"traction": {k: (list(v) if k == "failed" else v) for k, v in c.traction}}
                                  if c.traction else {}),
-                              **({"steering": dict(c.steering)} if c.steering else {})} for c in self.controllers]}
+                              **({"steering": dict(c.steering)} if c.steering else {}),
+                              **({"gvc": dict(c.gvc)} if c.gvc else {})} for c in self.controllers]}
         if self.kc:
             d["kc"] = self.kc
         if self.sweep:
@@ -192,6 +202,9 @@ def parse_controller_comparison(data: dict, source: str = "<dict>") -> Experimen
     _require(5.0 <= float(man["speed_kph"]) <= 250.0, f"{source}: manoeuvre.speed_kph must lie in [5, 250]")
     if "accel_pedal" in man:
         _require(0.0 <= float(man["accel_pedal"]) <= 1.0, f"{source}: manoeuvre.accel_pedal must lie in [0, 1]")
+    for k in ("steer_rate_degps", "frequency_hz", "lift_s"):
+        if k in man:
+            _require(0.0 < float(man[k]) <= 1000.0, f"{source}: manoeuvre.{k} must be > 0")
     if "accel_start_s" in man:
         _require(0.0 <= float(man["accel_start_s"]) <= 120.0, f"{source}: manoeuvre.accel_start_s must lie in [0, 120] s")
     if "brake_pedal" in man:
@@ -204,7 +217,7 @@ def parse_controller_comparison(data: dict, source: str = "<dict>") -> Experimen
     _require(isinstance(ctrls, list) and ctrls, f"{source}: controllers must be a non-empty list")
     specs = []
     for i, c in enumerate(ctrls):
-        _keys(c, {"law", "inputs", "estimated_state", "feedback", "actuators", "brake", "traction", "steering"},
+        _keys(c, {"law", "inputs", "estimated_state", "feedback", "actuators", "brake", "traction", "steering", "gvc"},
               f"{source}: controllers[{i}]", {"law"})
         _require(c["law"] in LAWS, f"{source}: controllers[{i}].law must be one of {LAWS}")
         inputs = c.get("inputs", "tv")
@@ -231,8 +244,19 @@ def parse_controller_comparison(data: dict, source: str = "<dict>") -> Experimen
             _require(not steering.get("afs_failed") or inputs.startswith("afs"), f"{where}.afs_failed needs inputs afs or afs_tv")
         _require(not (inputs.startswith("afs") and c["law"] not in ("lqr", "gs_lqr", "ltv_mpc")),
                  f"{source}: controllers[{i}]: AFS inputs need an LQR/GS-LQR/LTV-MPC law")
+        gvc = c.get("gvc")
+        if gvc is not None:
+            where = f"{source}: controllers[{i}].gvc"
+            _require(isinstance(gvc, dict), f"{where} must be a mapping")
+            _keys(gvc, GVC_KEYS, where)
+            _require(c["law"] != "passive", f"{where}: the passive car has no longitudinal control chain")
+            _require(isinstance(gvc.get("enabled", True), bool), f"{where}.enabled must be true or false")
+            for k, lo, hi in (("c_xy", 0.0, 1.0), ("max_decel_g", 0.0, 0.3)):
+                if k in gvc:
+                    _require(isinstance(gvc[k], (int, float)) and not isinstance(gvc[k], bool) and lo <= gvc[k] <= hi,
+                             f"{where}.{k} must lie in [{lo}, {hi}]")
         specs.append(ControllerSpec(c["law"], inputs, feedback, actuators, brake, traction,
-                                    tuple(sorted((steering or {}).items()))))
+                                    tuple(sorted((steering or {}).items())), tuple(sorted((gvc or {}).items()))))
     labels = [c.label for c in specs]
     _require(len(set(labels)) == len(labels), f"{source}: controllers must differ (duplicate entry: {labels})")
 

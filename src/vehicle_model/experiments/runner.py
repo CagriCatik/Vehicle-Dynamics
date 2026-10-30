@@ -38,6 +38,9 @@ from vehicle_model.simulation.controller_benchmark import (
     brake_in_turn_scenario,
     coast_scenario,
     corner_exit_scenario,
+    lane_change_scenario,
+    lift_off_scenario,
+    steer_ramp_scenario,
     launch_scenario,
     run_scenario,
     sine_with_dwell_scenario,
@@ -92,6 +95,15 @@ def make_scenario(spec: ExperimentSpec):
                                     float(m.get("brake_start_s", 2.0)), float(m.get("duration_s", 6.0)))
     elif m["type"] == "coast":
         sc = coast_scenario(v, float(m.get("duration_s", 8.0)))
+    elif m["type"] == "steer_ramp":
+        sc = steer_ramp_scenario(v, math.radians(float(m.get("steer_deg", 3.0))), math.radians(float(m.get("steer_rate_degps", 20.0))),
+                                 float(m.get("accel_pedal", 0.05)), float(m.get("duration_s", 4.0)))
+    elif m["type"] == "lane_change":
+        sc = lane_change_scenario(v, math.radians(float(m.get("amplitude_deg", 2.5))), float(m.get("frequency_hz", 0.5)),
+                                  float(m.get("accel_pedal", 0.05)), float(m.get("duration_s", 5.0)))
+    elif m["type"] == "lift_off":
+        sc = lift_off_scenario(v, math.radians(float(m.get("steer_deg", 3.0))), float(m.get("accel_pedal", 0.3)),
+                               float(m.get("lift_s", 2.0)), float(m.get("duration_s", 5.0)))
     elif m["type"] == "launch":
         sc = launch_scenario(v, float(m.get("accel_pedal", 1.0)), float(m.get("duration_s", 6.0)))
     elif m["type"] == "corner_exit":
@@ -127,7 +139,7 @@ def controller_factories(spec: ExperimentSpec) -> dict:
             if yt is not None:                    # ITC: the yaw law only acts outside a yaw-rate band (M18.2)
                 from vehicle_model.controllers.integrated_traction import YawToleranceLaw
                 law = YawToleranceLaw(law, math.radians(float(yt)))
-            ctrl = MotionController(p, law, _with_steering(_motion_config(c), c), _health(c))
+            ctrl = MotionController(p, law, _with_gvc(_with_steering(_motion_config(c), c), c), _health(c))
             if c.feedback == "ideal":
                 return ctrl
             return EstimatedStateFeedback(ctrl, BlendedSideslipObserver(p), seed=spec.seed,
@@ -146,6 +158,20 @@ def _with_steering(cfg, c):
     overlay = SteeringOverlayConfig(ratio_gains=gains, max_overlay=0.0 if not c.inputs.startswith("afs") else math.radians(5.0),
                                     failed=bool(st.get("afs_failed", False)))
     return dataclasses.replace(cfg, steering=overlay)
+
+
+def _with_gvc(cfg, c):
+    """Add the GVC-like load-transfer control of the entry (Plan V4.0 M20; enabled: false makes it vanish)."""
+    gv = dict(c.gvc)
+    if not gv:
+        return cfg
+    from vehicle_model.controllers.g_vectoring import GVCConfig
+    kw = {"enabled": bool(gv.get("enabled", True))}
+    if "c_xy" in gv:
+        kw["c_xy"] = float(gv["c_xy"])
+    if "max_decel_g" in gv:
+        kw["max_decel"] = float(gv["max_decel_g"]) * 9.81
+    return dataclasses.replace(cfg, gvc=GVCConfig(**kw))
 
 
 def _health(c):

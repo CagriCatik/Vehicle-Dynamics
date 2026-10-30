@@ -1,0 +1,18 @@
+# Plan V4.0 M20: GVC-like load-transfer control (own simplified reference strategy, not Mazda's algorithm).
+# Steer ramp to 3 deg at 20 deg/s, 80 km/h, constant pedal (identical driver for GVC off/on), mu 1.0 and 0.5.
+type: controller_comparison
+name: v4_m20_gvc_steer_ramp
+description: GVC off/on on a steer ramp, mu 1.0 and 0.5.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+road: {type: uniform, mu: 1.0}
+manoeuvre: {type: steer_ramp, speed_kph: 80, steer_deg: 3.0, steer_rate_degps: 20, accel_pedal: 0.05, duration_s: 4.0}
+controllers:
+  - {law: no_yaw}
+  - {law: no_yaw, gvc: {enabled: false}}
+  - {law: no_yaw, gvc: {enabled: true}}
+  - {law: no_yaw, gvc: {enabled: true, c_xy: 0.3, max_decel_g: 0.1}}
+  - {law: pi}
+  - {law: pi, gvc: {enabled: true}}
+sweep: {parameter: road.mu, values: [1.0, 0.5]}
+outputs: {directory: output/v4/m20/steer_ramp, formats: [csv, json, png, md]}

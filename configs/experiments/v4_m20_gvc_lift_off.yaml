@@ -1,0 +1,16 @@
+# Plan V4.0 M20: GVC off/on when the driver lifts the accelerator abruptly in a turn (80 km/h, 3 deg, pedal 0.3 -> 0).
+type: controller_comparison
+name: v4_m20_gvc_lift_off
+description: GVC off/on with an abrupt lift-off in a turn.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+road: {type: uniform, mu: 1.0}
+manoeuvre: {type: lift_off, speed_kph: 80, steer_deg: 3.0, accel_pedal: 0.3, lift_s: 2.0, duration_s: 5.0}
+controllers:
+  - {law: no_yaw}
+  - {law: no_yaw, gvc: {enabled: false}}
+  - {law: no_yaw, gvc: {enabled: true}}
+  - {law: no_yaw, gvc: {enabled: true, c_xy: 0.3, max_decel_g: 0.1}}
+  - {law: pi}
+  - {law: pi, gvc: {enabled: true}}
+outputs: {directory: output/v4/m20/lift_off, formats: [csv, json, md]}
