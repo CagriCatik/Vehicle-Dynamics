@@ -44,11 +44,11 @@ function paramInputs(div, keys, values = {}) {
   div.innerHTML = keys.map((k) => `<label>${LABELS[k] || k}<input data-key="${k}" type="number" step="any" value="${values[k] ?? DEFAULTS[k] ?? ""}"></label>`).join("");
   div.oninput = buildYaml;
 }
-function ctrlRow(c = { law: "pi", inputs: "tv", feedback: "ideal" }) {
+function ctrlRow(c = { law: "pi", inputs: "tv", feedback: "ideal", actuators: "ideal" }) {
   const d = document.createElement("div");
   d.className = "ctrl-row";
   const sel = (name, vals, v) => `<label>${name}<select data-k="${name}">${vals.map((x) => `<option ${x === v ? "selected" : ""}>${x}</option>`).join("")}</select></label>`;
-  d.innerHTML = sel("law", OPT.laws, c.law) + sel("inputs", OPT.inputs, c.inputs || "tv") + sel("feedback", OPT.feedback, c.feedback || "ideal")
+  d.innerHTML = sel("law", OPT.laws, c.law) + sel("inputs", OPT.inputs, c.inputs || "tv") + sel("feedback", OPT.feedback, c.feedback || "ideal") + sel("actuators", OPT.actuators, c.actuators || "ideal")
     + `<button type="button" class="small">remove</button>`;
   d.querySelector("button").onclick = () => { d.remove(); buildYaml(); };
   d.oninput = buildYaml;
@@ -67,7 +67,8 @@ function formData() {
     outputs: { formats: $$("#formats input:checked").map((i) => i.value) } };
   if (v("description")) d.description = v("description");
   if (v("kc")) d.kc = v("kc");
-  d.controllers.forEach((c) => { if (c.inputs === "tv") delete c.inputs; if (c.feedback === "ideal") delete c.feedback; });
+  d.controllers.forEach((c) => { if (c.inputs === "tv") delete c.inputs; if (c.feedback === "ideal") delete c.feedback;
+    if (c.actuators === "ideal") delete c.actuators; });
   if (v("sweep_param") && v("sweep_values").trim())
     d.sweep = { parameter: v("sweep_param"), values: v("sweep_values").split(",").map((x) => Number(x.trim())).filter((x) => !Number.isNaN(x)) };
   return d;

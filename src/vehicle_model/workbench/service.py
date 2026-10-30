@@ -64,6 +64,7 @@ class Workbench:
             "tyres": available_tyres(),
             "kc": [rel(p) for p in sorted((self.repo / "configs" / "suspension").glob("kc_*.yaml"))],
             "laws": list(S.LAWS), "inputs": list(S.INPUT_SETS), "feedback": list(S.FEEDBACK_MODES),
+            "actuators": list(S.ACTUATOR_MODES),
             "roads": {k: sorted(v) for k, v in S.ROADS.items()},
             "manoeuvres": {k: sorted(v) for k, v in S.MANOEUVRES.items()},
             "sweep_parameters": [f"manoeuvre.{k}" for k in sorted(set().union(*S.MANOEUVRES.values()))]

@@ -48,6 +48,7 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 | `exp_sine_with_dwell_comparison` | **YAML experiment sine_with_dwell_comparison** – Runs configs/experiments/sine_with_dwell_comparison.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 | `exp_split_mu_braking` | **YAML experiment split_mu_braking** – Runs configs/experiments/split_mu_braking.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 | `exp_step_steer_speed_sweep` | **YAML experiment step_steer_speed_sweep** – Runs configs/experiments/step_steer_speed_sweep.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m16_split_mu_actuators` | **YAML experiment v4_m16_split_mu_actuators** – Runs configs/experiments/v4_m16_split_mu_actuators.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 
 ## solver
 

@@ -43,3 +43,4 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **28** | Adversarial Virtual Testing: kritische Szenarien suchen, prüfen, minimieren, als Regressionstest einfrieren (M13) | [CRITICAL_SCENARIOS.md](CRITICAL_SCENARIOS.md) |
 | **29** | Fahrzeugauslegung und Mehrzieloptimierung: NSGA-II, Pareto-Analyse, unabhängige Nachprüfung (M14) | [DESIGN_OPTIMIZATION.md](DESIGN_OPTIMIZATION.md) |
 | **30** | Interactive Engineering Workbench: Weboberfläche über der Experiment-Engine (M15) | [WORKBENCH.md](WORKBENCH.md) |
+| **31** | V4.0: Ausgangsstand, Blocker A–H, M16 Stellgrößenkette und Aktuatordynamik | [V4_BASELINE.md](V4_BASELINE.md) |

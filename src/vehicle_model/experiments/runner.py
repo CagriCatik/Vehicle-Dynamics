@@ -27,6 +27,7 @@ from pathlib import Path
 import numpy as np
 
 from vehicle_model.controllers.estimated_feedback import EstimatedStateFeedback
+from vehicle_model.controllers.framework import PassiveBaselineController
 from vehicle_model.controllers.motion_control import MotionController
 from vehicle_model.controllers.yaw_laws import INPUTS_4WS_TV, INPUTS_TV, LQRYawLaw, LTVMPCYawLaw, YawRatePI
 from vehicle_model.estimation.blended_sideslip import BlendedSideslipObserver
@@ -46,7 +47,9 @@ from .verification import verify_model
 
 SCHEDULE_SPEEDS = (5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0)
 _HISTORY_KEYS = ("t", "X", "Y", "psi", "vx", "vy", "speed", "r", "r_ref", "beta", "ax", "ay", "steer_f", "steer_r",
-                 "Mz_demand", "Mz_allocated", "tyre_utilisation", "max_abs_slip", "T_brake_total", "status",
+                 "Mz_demand", "Mz_allocated", "Mz_requested", "Mz_alloc_pre_slip", "Mz_issued", "Mz_realised",
+                 "T_issued_abs", "T_realised_abs", "regen_power_w", "tyre_utilisation", "max_abs_slip", "T_brake_total",
+                 "status",
                  *(f"{q}_{w}" for q in ("Fz", "Fx", "Fy") for w in ("FL", "FR", "RL", "RR")))
 
 
@@ -82,7 +85,7 @@ def controller_factories(spec: ExperimentSpec) -> dict:
     out = {}
     for c in spec.controllers:
         if c.law == "passive":
-            out[c.label] = None
+            out[c.label] = None if c.actuators == "ideal" else _with_actuators(lambda p: PassiveBaselineController(p))
             continue
         inputs = INPUTS_4WS_TV if c.inputs == "4ws_tv" else INPUTS_TV
 
@@ -100,8 +103,17 @@ def controller_factories(spec: ExperimentSpec) -> dict:
                 return ctrl
             return EstimatedStateFeedback(ctrl, BlendedSideslipObserver(p), seed=spec.seed,
                                           mode="C" if c.feedback == "sensor_constrained" else "B", params=p)
-        out[c.label] = factory
+        out[c.label] = factory if c.actuators == "ideal" else _with_actuators(factory)
     return out
+
+
+def _with_actuators(factory):
+    """Factory of the same controller behind the actuator models (Plan V4.0 M16; configs/braking, powertrains)."""
+    from vehicle_model.simulation.actuator_chain import ActuatorChain, ActuatorChainConfig
+
+    def build(p):
+        return ActuatorChain(factory(p), p, ActuatorChainConfig.from_yaml())
+    return build
 
 
 def run_experiment(spec, out_dir: str | Path | None = None, verify: bool | None = None) -> dict:
