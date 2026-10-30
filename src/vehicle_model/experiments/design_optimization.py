@@ -74,7 +74,7 @@ import numpy as np
 import yaml
 
 from .spec import _keys, _require
-from .types import provenance, write_json
+from .types import provenance, report_progress, write_json
 
 KIND = "design_optimization"
 SUSPENSION = {"spring_front": "k_spring_front", "spring_rear": "k_spring_rear", "damper_front": "c_damper_front",
@@ -602,6 +602,7 @@ def nsga2(spec, pool=None) -> list:
     evals = []
 
     def run(Xs, gen):
+        report_progress(gen, int(s["generations"]) + 1, f"generation {gen}")
         tasks = [(spec, {p["name"]: float(x[j]) for j, p in enumerate(spec.design)}, "optimisation") for x in Xs]
         res = list(pool.map(_eval_task, tasks)) if pool is not None else [_eval_task(t) for t in tasks]
         for r in res:
@@ -644,6 +645,7 @@ def nsga2(spec, pool=None) -> list:
         rank, crowd = _rank(F2, V2)
         order = sorted(range(len(X2)), key=lambda i: (rank[i], -crowd[i]))[:N]
         X, F, V = X2[order], F2[order], V2[order]
+    report_progress(int(s["generations"]) + 1, int(s["generations"]) + 1, "search done; re-check")
     return evals
 
 

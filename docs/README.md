@@ -42,3 +42,4 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **27** | Drift-Regler: Ergebnisse und Gate-Abnahme | [DRIFT_RESULTS.md](DRIFT_RESULTS.md) |
 | **28** | Adversarial Virtual Testing: kritische Szenarien suchen, prüfen, minimieren, als Regressionstest einfrieren (M13) | [CRITICAL_SCENARIOS.md](CRITICAL_SCENARIOS.md) |
 | **29** | Fahrzeugauslegung und Mehrzieloptimierung: NSGA-II, Pareto-Analyse, unabhängige Nachprüfung (M14) | [DESIGN_OPTIMIZATION.md](DESIGN_OPTIMIZATION.md) |
+| **30** | Interactive Engineering Workbench: Weboberfläche über der Experiment-Engine (M15) | [WORKBENCH.md](WORKBENCH.md) |

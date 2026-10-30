@@ -77,7 +77,7 @@ import numpy as np
 import yaml
 
 from .spec import _keys, _require
-from .types import provenance, slug, write_json
+from .types import provenance, report_progress, slug, write_json
 
 KIND = "critical_scenario_search"
 MANOEUVRES = {
@@ -450,6 +450,7 @@ def search(spec, pool=None) -> list:
     d = len(spec.parameters)
     evals = []
     for si, st in enumerate(spec.search):
+        report_progress(si, len(spec.search), st["method"])
         if st["method"] == "sweep":
             grid = np.linspace(0.0, 1.0, st["points"])
             rows = list(itertools.product(grid, repeat=d))

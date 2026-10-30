@@ -38,6 +38,7 @@ from vehicle_model.vehicle_models import SevenDOFModel
 
 PlantFactory = Callable[[RoadSurface], SevenDOFModel]
 ControllerFactory = Callable[[object], object]  # params -> VehicleController
+WHEELS = ("FL", "FR", "RL", "RR")
 
 
 @dataclass(frozen=True)
@@ -188,7 +189,8 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
     tel = None
     keys = ("t", "X", "Y", "psi", "vx", "r", "beta", "r_ref", "steer_f", "steer_r", "Mz_demand",
             "Mz_allocated", "computation_ms", "status", "T_brake_total", "max_abs_slip", "Mz_tyre_longitudinal",
-            "Mz_tyre_lateral", "speed", "feasibility", "solver", "tyre_utilisation", "supervisor_mode")
+            "Mz_tyre_lateral", "speed", "feasibility", "solver", "tyre_utilisation", "supervisor_mode", "vy", "ax", "ay",
+            *(f"{q}_{w}" for q in ("Fz", "Fx", "Fy") for w in WHEELS))
     pos = model.wheel_positions
     h = {k: [] for k in keys}
     t = 0.0
@@ -210,6 +212,13 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
         util = np.hypot(tel.Fx_wheel, tel.Fy_wheel)[loaded] / np.maximum(tel.mu * tel.Fz, 1e-9)[loaded]
         h["tyre_utilisation"].append(float(np.max(util)) if util.size else float("nan"))
         h["supervisor_mode"].append((out.diagnostics or {}).get("supervisor_mode"))
+        # body accelerations from the tyre forces (drag and rolling resistance not included) and per-wheel forces
+        h["vy"].append(s.vy)
+        h["ax"].append(float(np.sum(tel.Fx_body)) / p.mass)
+        h["ay"].append(float(np.sum(tel.Fy_body)) / p.mass)
+        for q, arr in (("Fz", tel.Fz), ("Fx", tel.Fx_wheel), ("Fy", tel.Fy_wheel)):
+            for i, w in enumerate(WHEELS):
+                h[f"{q}_{w}"].append(float(arr[i]))
         for k, v in (("T_brake_total", float(np.sum(out.T_brake))), ("max_abs_slip", float(np.max(np.abs(tel.kappa)))),
                      ("Mz_tyre_longitudinal", mz_long), ("Mz_tyre_lateral", mz_lat), ("speed", math.hypot(s.vx, s.vy))):
             h[k].append(v)

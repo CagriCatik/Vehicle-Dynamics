@@ -41,11 +41,13 @@ from vehicle_model.simulation.controller_benchmark import (
 from vehicle_model.vehicle_models import SevenDOFModel
 
 from .spec import ExperimentSpec
-from .types import get_type, provenance, slug as _slug, write_json
+from .types import get_type, provenance, report_progress, slug as _slug, write_json
 from .verification import verify_model
 
 SCHEDULE_SPEEDS = (5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0)
-_HISTORY_KEYS = ("t", "X", "Y", "psi", "vx", "r", "r_ref", "beta", "steer_f", "steer_r", "Mz_demand", "Mz_allocated")
+_HISTORY_KEYS = ("t", "X", "Y", "psi", "vx", "vy", "speed", "r", "r_ref", "beta", "ax", "ay", "steer_f", "steer_r",
+                 "Mz_demand", "Mz_allocated", "tyre_utilisation", "max_abs_slip", "T_brake_total", "status",
+                 *(f"{q}_{w}" for q in ("Fz", "Fx", "Fy") for w in ("FL", "FR", "RL", "RR")))
 
 
 def make_road(spec: ExperimentSpec):
@@ -122,6 +124,7 @@ def run_controller_comparison(spec: ExperimentSpec, out: Path, verify: bool | No
     verification = []
     if spec.verification if verify is None else verify:
         verification = verify_model(lambda: plant_factory(spec)(UniformRoad(mu=1.0)))
+    total = len(points) * len(spec.controllers)
 
     results = []
     for value, sp in points:
@@ -129,6 +132,7 @@ def run_controller_comparison(spec: ExperimentSpec, out: Path, verify: bool | No
         runs = []
         point = "base" if value is None else "{}={}".format(spec.sweep["parameter"], value)
         for label, factory in controller_factories(sp).items():
+            report_progress(len(results), total, f"{point} / {label}")
             r = run_scenario(plant_factory(sp), factory, sc, sp.dt)
             runs.append((label, r))
             results.append({"point": point, "sweep_value": value, "controller": label, "kpis": r.kpis})
@@ -144,6 +148,7 @@ def run_controller_comparison(spec: ExperimentSpec, out: Path, verify: bool | No
         if "gif" in formats:
             _animate(runs, out / (_slug(point) + ".gif"), sp)
 
+    report_progress(total, total, "writing outputs")
     summary = {"experiment": spec.to_dict(), "source": spec.source, "provenance": provenance(),
                "verification": verification, "results": results}
     if "json" in formats:

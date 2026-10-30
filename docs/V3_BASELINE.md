@@ -180,3 +180,19 @@ Stand: 2026-10-30. Grundlage: [DESIGN_OPTIMIZATION.md](DESIGN_OPTIMIZATION.md), 
   Auslegungsparameter verdrahtet.
 - Kleines Optimierungsbudget; die Front ist eine Näherung.
 
+## 11. Abnahme M15 (Plan §10.6)
+
+Stand: 2026-10-30. Grundlage: [WORKBENCH.md](WORKBENCH.md), Paket `vehicle_model.workbench`, Test `test_workbench.py`.
+Technologie nach Plan 10.5 gewählt (FastAPI + Browseroberfläche, optionales Extra `workbench`).
+
+| Kriterium | Bewertung | Nachweis |
+|---|---|---|
+| Versuch vollständig grafisch konfigurieren | erfüllt | Formular für Fahrzeug, Reifen, Fahrwerk, Regler, Fahrbahn, Manöver, Anfangsgeschwindigkeit, Sweep, Numerik; Optionen aus `experiments.spec`; YAML-Editor mit derselben Validierung für alle anderen Typen |
+| Ausführung über die vorhandene Experiment-Engine | erfüllt | Lauf = CLI-Befehl im eigenen Prozess; Fortschritt, Abbruch, Log; Server bleibt bedienbar (Test) |
+| Ergebnisse vergleichen | erfüllt | Kennzahlvergleich mit relativen Abweichungen, überlagerte Zeitverläufe, Differenzdiagramm, Animation |
+| Technischen Bericht exportieren | erfüllt | ZIP mit Markdown, Konfigurationen, Provenienz, Reproduktionsbefehlen, Bildern, Kennzahlvergleich (Test) |
+| Derselbe Versuch über die CLI reproduzierbar | erfüllt | Befehlszeile je Lauf gespeichert und angezeigt; CLI-Lauf derselben Konfiguration ergibt identische Kennzahlen (Test) |
+
+**Offene Punkte aus M15:** Formulare nur für den Reglervergleich; Fortschritt nicht für alle Typen; kein automatischer
+Browser-Test der Oberfläche.
+

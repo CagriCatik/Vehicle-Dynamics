@@ -91,6 +91,11 @@ def provenance() -> dict:
             "scipy": scipy.__version__, "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds")}
 
 
+def report_progress(done: int, total: int, label: str = "") -> None:
+    """One machine-readable progress line on stdout (``[progress] done/total label``), read by the workbench."""
+    print(f"[progress] {int(done)}/{int(total)} {label}".rstrip(), flush=True)
+
+
 def json_default(o):
     if isinstance(o, (np.floating, np.integer, np.bool_)):
         return o.item()
