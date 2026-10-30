@@ -14,6 +14,21 @@ are compared on equal terms. Laws see the vehicle state and the telemetry
 (wheel loads, lateral forces, slips, road friction): this is an idealised
 full-state-feedback setting and is declared as such in ``information``.
 
+Actuation trace (Plan V4.0 M16): ``diagnostics["trace"]`` holds the generalised forces
+``(F_x [N], M_z [N m])`` at each stage of one control step,
+
+    requested   the law's demand and the pedal force demand (before any limit)
+    allocated   the bounded allocation (``AllocationResult.achieved``), before ABS/TCS
+    issued      the wheel torques this controller outputs (after ABS/TCS), through the same
+                effectiveness matrix
+
+``ControlOutput.allocated_yaw_moment`` is the *issued* yaw moment (name kept for compatibility).
+The controller evaluates the effectiveness with the wheel steer angles it knows (plant
+telemetry of the previous step); the simulation evaluates *realised* with the steer of the
+current command, so without actuator dynamics the two agree up to that one-step steer change.
+What the plant receives after actuator dynamics (``realised``) is added outside the
+controller (:mod:`vehicle_model.simulation.actuator_chain`).
+
 Output status: the law's solver status if it is not nominal (see
 solver_diagnostics), otherwise the allocation status (nominal / saturated /
 infeasible); both are in the diagnostics. A law that checks its plan against declared
@@ -106,11 +121,13 @@ class ActuationLayer:
         self.abs = WheelSlipController(self.config.abs_config)
         self.tcs = WheelSlipController(self.config.tcs_config)
         self.last_allocation = None
+        self.last_issued = np.zeros(2)                # (F_x, M_z) of the last issued wheel torques
 
     def reset(self) -> None:
         self.abs.reset()
         self.tcs.reset()
         self.last_allocation = None
+        self.last_issued = np.zeros(2)
 
     def actuate(self, Fx_des: float, Mz_des: float, wheel_steer, Fz, mu, Fy, telemetry, vx, dt):
         alloc = self.allocator.allocate(Fx_des, Mz_des, wheel_steer, Fz, mu, Fy, self.health)
@@ -120,7 +137,8 @@ class ActuationLayer:
             T_brake = self.abs.update(T_brake, telemetry, vx, dt)
             T_drive = self.tcs.update(T_drive, telemetry, vx, dt)
         F = (T_drive - T_brake) / self.params.Reff
-        achieved_Mz = float(self.allocator.effectiveness(wheel_steer)[1] @ F)
+        self.last_issued = self.allocator.effectiveness(wheel_steer) @ F      # (F_x, M_z) of the issued torques
+        achieved_Mz = float(self.last_issued[1])
         slip_active = bool(np.any(self.abs.active) or np.any(self.tcs.active))
         return T_drive, T_brake, alloc, achieved_Mz, slip_active
 
@@ -214,6 +232,8 @@ class MotionController:
                 "abs_active": self.actuation.abs.active.copy(), "tcs_active": self.actuation.tcs.active.copy(),
                 "information": self.law.information,
                 "feasibility": req.diagnostics.get("feasibility"),
+                "trace": {"requested": [float(Fx_des), Mz_des], "allocated": [float(x) for x in alloc.achieved],
+                          "issued": [float(x) for x in self.actuation.last_issued]},
             },
         )
 

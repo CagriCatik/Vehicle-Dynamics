@@ -152,6 +152,9 @@ def compute_kpis(h: dict, sc: Scenario) -> dict:
             out[k] = float((sc.v0 - h["speed"][-1]) / t[-1])
         else:
             raise ValueError(f"unknown KPI {k!r}")
+    if "T_issued_abs" in h and len(h["t"]) > 2:   # actuation trace (Plan V4.0 M16)
+        out["issued_to_realised_lag_ms"] = actuation_lag(h["t"], h["T_issued_abs"], h["T_realised_abs"]) * 1e3
+        out["regen_energy_kj"] = float(np.sum(h["regen_power_w"]) * (h["t"][1] - h["t"][0]) / 1e3)
     out["computation_ms_mean"] = float(np.mean(h["computation_ms"]))
     out["computation_ms_max"] = float(np.max(h["computation_ms"]))
     statuses, counts = np.unique(h["status"], return_counts=True)
@@ -173,6 +176,24 @@ def compute_kpis(h: dict, sc: Scenario) -> dict:
     return out
 
 
+def actuation_lag(t, issued, realised, max_lag: float = 0.3) -> float:
+    """Delay [s] between the issued and the realised actuation (shift of maximal cross-correlation, 0..max_lag).
+
+    0 if both are identical (ideal actuators) or the issued signal does not vary.
+    """
+    t, a, b = np.asarray(t, float), np.asarray(issued, float), np.asarray(realised, float)
+    if np.allclose(a, b) or np.std(a) < 1e-9:
+        return 0.0
+    dt = t[1] - t[0]
+    a, b = a - a.mean(), b - b.mean()
+    best, lag = -np.inf, 0
+    for k in range(0, min(int(max_lag / dt), len(a) - 2) + 1):
+        c = float(np.dot(a[:len(a) - k], b[k:])) / (len(a) - k)
+        if c > best:
+            best, lag = c, k
+    return lag * dt
+
+
 # ----------------------------------------------------------------------------- runner
 def _solver_report(diag: dict) -> dict | None:
     """The SolverReport of an optimisation-based controller, directly or from its yaw law."""
@@ -190,7 +211,9 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
     keys = ("t", "X", "Y", "psi", "vx", "r", "beta", "r_ref", "steer_f", "steer_r", "Mz_demand",
             "Mz_allocated", "computation_ms", "status", "T_brake_total", "max_abs_slip", "Mz_tyre_longitudinal",
             "Mz_tyre_lateral", "speed", "feasibility", "solver", "tyre_utilisation", "supervisor_mode", "vy", "ax", "ay",
-            *(f"{q}_{w}" for q in ("Fz", "Fx", "Fy") for w in WHEELS))
+            *(f"{q}_{w}" for q in ("Fz", "Fx", "Fy") for w in WHEELS),
+            "Mz_requested", "Mz_alloc_pre_slip", "Mz_issued", "Mz_realised", "T_issued_abs", "T_realised_abs",
+            "regen_power_w")
     pos = model.wheel_positions
     h = {k: [] for k in keys}
     t = 0.0
@@ -200,6 +223,20 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
         out = ctrl.compute_control(s, target, tel, dt)
         mu_hat = float(np.mean(tel.mu)) if tel is not None else 1.0
         r_ref = ref.yaw_rate(target.driver_steer_f, s.vx, mu_hat)
+        # actuation trace (Plan V4.0 M16): requested -> allocated -> issued -> realised (what the plant gets now)
+        trace = (out.diagnostics or {}).get("trace") or {}
+        steer_w = np.array([out.steer_f, out.steer_f, out.steer_r, out.steer_r])
+        F_real = (np.asarray(out.T_drive, float) - np.asarray(out.T_brake, float)) / p.Reff
+        mz_real = float(np.sum((pos[:, 0] * np.sin(steer_w) - pos[:, 1] * np.cos(steer_w)) * F_real))
+        nan = float("nan")
+        h["Mz_requested"].append(float(trace["requested"][1]) if "requested" in trace else float(out.desired_yaw_moment))
+        h["Mz_alloc_pre_slip"].append(float(trace["allocated"][1]) if "allocated" in trace else nan)
+        h["Mz_issued"].append(float(trace["issued"][1]) if "issued" in trace else mz_real)
+        h["Mz_realised"].append(mz_real)
+        T_iss = np.asarray(trace["issued_torque"], float) if "issued_torque" in trace else F_real * p.Reff
+        h["T_issued_abs"].append(float(np.sum(np.abs(T_iss))))
+        h["T_realised_abs"].append(float(np.sum(np.abs(F_real * p.Reff))))
+        h["regen_power_w"].append(float(trace.get("regen_power_w", 0.0)))
         s, tel = model.step(s, SevenDOFControlInput(steer_f=out.steer_f, steer_r=out.steer_r,
                                                     T_drive=out.T_drive, T_brake=out.T_brake), dt)
         t += dt
