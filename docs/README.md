@@ -51,3 +51,4 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **36** | V4.0 M21: prädiktive Dämpfung, aktive Nickregelung, vertikale Kraftallokation (14-DOF) | [V4_SUSPENSION.md](V4_SUSPENSION.md) |
 | **37** | V4.0 M22: Straßenneigung im Plant, Hill Descent Control | [V4_HDC.md](V4_HDC.md) |
 | **38** | V4.0 M23: Fehlerkatalog, Health-Monitor, degradierte Modi | [V4_FAULT_TOLERANCE.md](V4_FAULT_TOLERANCE.md) |
+| **39** | V4.0 M24: Vehicle Motion Supervisor, Arbitrierung, Benchmark-Matrix P0–P7 | [V4_VMM.md](V4_VMM.md) |

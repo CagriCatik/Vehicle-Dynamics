@@ -127,6 +127,8 @@ def controller_factories(spec: ExperimentSpec) -> dict:
         def factory(p, c=c, inputs=inputs):
             if c.law == "pi":
                 law = YawRatePI()
+            elif c.law == "esc":                  # ESC-like: PI acting only outside a 3 deg/s yaw-rate band (M24 P1)
+                law = YawRatePI(deadband=math.radians(3.0), name="ESC (PI, deadband 3 deg/s)")
             elif c.law == "lqr":
                 law = LQRYawLaw(design, inputs, design_speed=20.0)
             elif c.law == "gs_lqr":
@@ -138,8 +140,8 @@ def controller_factories(spec: ExperimentSpec) -> dict:
             yt = dict(c.traction).get("yaw_tolerance")
             if yt is not None:                    # ITC: the yaw law only acts outside a yaw-rate band (M18.2)
                 from vehicle_model.controllers.integrated_traction import YawToleranceLaw
-                law = YawToleranceLaw(law, math.radians(float(yt)))
-            ctrl = MotionController(p, law, _with_gvc(_with_steering(_motion_config(c), c), c), _health(c))
+                law = YawToleranceLaw(law, math.radians(float(yt)), dict(c.traction).get("itc_scope", "always"))
+            ctrl = MotionController(p, law, _with_hdc(_with_gvc(_with_steering(_motion_config(c), c), c), c), _health(c))
             if c.feedback == "ideal":
                 return ctrl
             return EstimatedStateFeedback(ctrl, BlendedSideslipObserver(p), seed=spec.seed,
@@ -172,6 +174,15 @@ def _with_gvc(cfg, c):
     if "max_decel_g" in gv:
         kw["max_decel"] = float(gv["max_decel_g"]) * 9.81
     return dataclasses.replace(cfg, gvc=GVCConfig(**kw))
+
+
+def _with_hdc(cfg, c):
+    """Add hill descent control of the entry (Plan V4.0 M22; enabled: false makes it vanish)."""
+    hd = dict(c.hdc)
+    if not hd:
+        return cfg
+    from vehicle_model.experiments.hill_descent import _hdc_config
+    return dataclasses.replace(cfg, hdc=_hdc_config(hd))
 
 
 def _health(c):

@@ -28,11 +28,13 @@ from dataclasses import replace
 
 
 class YawToleranceLaw:
-    def __init__(self, inner, tolerance: float):
+    def __init__(self, inner, tolerance: float, scope: str = "always"):
         if tolerance < 0.0:
             raise ValueError("yaw tolerance must be >= 0")
-        self.inner, self.tolerance = inner, float(tolerance)
-        self.name = f"{inner.name} + ITC band {math.degrees(self.tolerance):.1f} deg/s"
+        if scope not in ("always", "traction"):
+            raise ValueError("ITC scope must be always or traction")
+        self.inner, self.tolerance, self.scope = inner, float(tolerance), scope
+        self.name = f"{inner.name} + ITC band {math.degrees(self.tolerance):.1f} deg/s" + (" (traction)" if scope == "traction" else "")
         self.information = getattr(inner, "information", None)
         self.passed = False
 
@@ -42,6 +44,9 @@ class YawToleranceLaw:
 
     def request(self, state, ctx):
         req = self.inner.request(state, ctx)
+        if self.scope == "traction" and getattr(ctx, "fx_demand", 0.0) <= 0.0:
+            self.passed = True                 # outside a traction phase the yaw law acts unchanged (M24)
+            return req
         self.passed = abs(ctx.r_ref - state.r) >= self.tolerance
         if self.passed:
             return req

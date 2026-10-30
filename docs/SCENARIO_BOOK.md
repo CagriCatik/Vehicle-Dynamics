@@ -126,6 +126,12 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 |---|---|---|---|---|
 | `exp_v4_m23_faults` | **Fault tolerance benchmark v4_m23_faults** – Runs configs/experiments/v4_m23_faults.yaml (edit the YAML to change manoeuvres, fault sets, controllers). | – | ~5-10 min (parallel, 7-DOF) | report.md, kpis.csv, results.json, histories |
 
+## integration
+
+| name | scenario | parameters (defaults) | runtime | outputs |
+|---|---|---|---|---|
+| `exp_v4_m24_vmm` | **Vehicle motion benchmark matrix v4_m24_vmm** – Runs configs/experiments/v4_m24_vmm.yaml (edit the YAML to change levels, manoeuvres, paired variations). | – | ~25 min (parallel, 7-DOF and 14-DOF) | report.md, kpis.csv, stats.csv, results.json, matrix.png, histories |
+
 ## validation
 
 | name | scenario | parameters (defaults) | runtime | outputs |

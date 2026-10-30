@@ -153,7 +153,27 @@ def m23():
         [health, ("yaw rate", "r", D, "deg/s"), ("speed", "speed", 3.6, "km/h")])
 
 
-MILESTONES = {"m16": m16, "m17": m17, "m18": m18, "m19": m19, "m20": m20, "m21": m21, "m22": m22, "m23": m23}
+def m24():
+    H = "vmm"
+    gif("m24", "levels_sine_with_dwell", H,
+        [("05_sine_with_dwell__P0.csv", "P0 passive"), ("05_sine_with_dwell__P2.csv", "P2 4WS+TV (ideal actuators)"),
+         ("05_sine_with_dwell__P3.csv", "P3 + brake functions, actuator dynamics"), ("05_sine_with_dwell__P5.csv", "P5 + AFS, GVC")],
+        "M24: sine with dwell 80 km/h, 6 deg across configuration levels (nominal draw)",
+        [("sideslip", "beta", D, "deg"), ("yaw rate", "r", D, "deg/s"), ("rear road-wheel angle", "steer_r", D, "deg")])
+    gif("m24", "levels_actuator_fault", H,
+        [("14_actuator_fault__P0.csv", "P0 passive"), ("14_actuator_fault__P5.csv", "P5 (no health monitor)"),
+         ("14_actuator_fault__P7.csv", "P7 (health monitor)")],
+        "M24: split-mu braking 90 km/h, brakes RR and FL fail at 0.5 s, across levels",
+        [("yaw rate", "r", D, "deg/s"), ("speed", "speed", 3.6, "km/h"), ("sideslip", "beta", D, "deg")], road=SPLIT, playback=2.0)
+    gif("m24", "levels_corner_exit", H,
+        [("10_corner_exit__P1.csv", "P1 ESC-like"), ("10_corner_exit__P3.csv", "P3 4WS+TV + brake functions"),
+         ("10_corner_exit__P5.csv", "P5 + eLSD, ITC (traction), AFS")],
+        "M24: corner exit on mu 0.6, full throttle from 2 s, across levels",
+        [("speed", "speed", 3.6, "km/h"), ("sideslip", "beta", D, "deg"), ("yaw rate", "r", D, "deg/s")],
+        road={"type": "uniform", "mu": 0.6})
+
+
+MILESTONES = {"m16": m16, "m17": m17, "m18": m18, "m19": m19, "m20": m20, "m21": m21, "m22": m22, "m23": m23, "m24": m24}
 
 
 def main(argv=None) -> int:

@@ -34,11 +34,13 @@ from pathlib import Path
 
 import yaml
 
-LAWS = ("passive", "pi", "lqr", "gs_lqr", "ltv_mpc", "no_yaw", "brakes")   # no_yaw (alias brakes): chain without yaw control
+LAWS = ("passive", "pi", "esc", "lqr", "gs_lqr", "ltv_mpc", "no_yaw", "brakes")   # no_yaw (alias brakes): chain without yaw control
+# esc: the yaw-rate PI with a deadband (intervenes only on large yaw-rate errors, ESC-like; Plan V4.0 M24 P1)
 FEEDBACK_MODES = ("ideal", "estimated", "sensor_constrained")
 ACTUATOR_MODES = ("ideal", "dynamic")
-_LAW_NAMES = {"pi": "PI", "lqr": "LQR", "gs_lqr": "GS-LQR", "ltv_mpc": "LTV-MPC", "brakes": "Brakes", "no_yaw": "no yaw control"}
-TRACTION_KEYS = {"distribution", "lock_torque", "tcs", "envelope", "driven", "failed", "yaw_tolerance"}   # Plan V4.0 M18
+_LAW_NAMES = {"pi": "PI", "esc": "ESC", "lqr": "LQR", "gs_lqr": "GS-LQR", "ltv_mpc": "LTV-MPC", "brakes": "Brakes", "no_yaw": "no yaw control"}
+TRACTION_KEYS = {"distribution", "lock_torque", "tcs", "envelope", "driven", "failed", "yaw_tolerance",   # Plan V4.0 M18
+                 "itc_scope"}   # M24: always (M18 behaviour) | traction (band only while the driver demands drive)
 WHEEL_NAMES = ("FL", "FR", "RL", "RR")
 BRAKE_KEYS = {"distribution", "ibc", "cbc", "regen", "coast_torque"}   # Plan V4.0 M17
 INPUT_SETS = ("tv", "4ws_tv", "afs", "afs_tv")
@@ -58,6 +60,7 @@ MANOEUVRES = {
     "lift_off": {"speed_kph", "steer_deg", "accel_pedal", "lift_s", "duration_s"},
 }
 GVC_KEYS = {"enabled", "c_xy", "max_decel_g"}           # Plan V4.0 M20
+HDC_KEYS = {"enabled", "v_set_kph", "max_decel_g"}      # Plan V4.0 M22 (in controller_comparison since M24)
 FORMATS = ("csv", "json", "png", "md", "gif")
 DEFAULT_FORMATS = ("csv", "json", "png", "md")  # gif is opt-in (rendering time)
 _TOP = {"type", "name", "description", "vehicle", "tyres", "kc", "road", "manoeuvre", "controllers", "sweep", "dt",
@@ -74,6 +77,7 @@ class ControllerSpec:
     traction: tuple = ()            # Plan V4.0 M18: sorted (key, value) pairs of the traction block
     steering: tuple = ()            # Plan V4.0 M19.2: sorted (key, value) pairs of the steering block
     gvc: tuple = ()                 # Plan V4.0 M20: sorted (key, value) pairs of the GVC block
+    hdc: tuple = ()                 # Plan V4.0 M22/M24: sorted (key, value) pairs of the HDC block
 
     @property
     def estimated_state(self) -> bool:
@@ -93,7 +97,8 @@ class ControllerSpec:
                                  ("no TCS", tr.get("tcs") is False), ("envelope", tr.get("envelope")),
                                  (str(tr.get("driven", "")).upper(), tr.get("driven") not in (None, "awd")),
                                  ("failed " + "+".join(tr.get("failed", ())), bool(tr.get("failed"))),
-                                 (f"ITC band {tr.get('yaw_tolerance')} deg/s", "yaw_tolerance" in tr))
+                                 (f"ITC band {tr.get('yaw_tolerance')} deg/s" + (" (traction)" if tr.get("itc_scope") == "traction" else ""),
+                                  "yaw_tolerance" in tr))
                  if on]
         st = dict(self.steering)
         tags += [t for t, on in (("variable ratio", st.get("ratio") == "variable"), ("AFS failed", st.get("afs_failed")))
@@ -102,6 +107,8 @@ class ControllerSpec:
         if gv:
             tags.append("GVC" + ("" if gv.get("enabled", True) else " off")
                         + (f" C_xy {gv['c_xy']}" if "c_xy" in gv else ""))
+        if self.hdc:
+            tags.append("HDC" + ("" if dict(self.hdc).get("enabled", True) else " off"))
         act += f" [{', '.join(tags)}]" if tags else ""
         if self.law == "passive":
             return "passive" + act
@@ -146,7 +153,8 @@ class ExperimentSpec:
                               **({"traction": {k: (list(v) if k == "failed" else v) for k, v in c.traction}}
                                  if c.traction else {}),
                               **({"steering": dict(c.steering)} if c.steering else {}),
-                              **({"gvc": dict(c.gvc)} if c.gvc else {})} for c in self.controllers]}
+                              **({"gvc": dict(c.gvc)} if c.gvc else {}),
+                              **({"hdc": dict(c.hdc)} if c.hdc else {})} for c in self.controllers]}
         if self.kc:
             d["kc"] = self.kc
         if self.sweep:
@@ -217,12 +225,12 @@ def parse_controller_comparison(data: dict, source: str = "<dict>") -> Experimen
     _require(isinstance(ctrls, list) and ctrls, f"{source}: controllers must be a non-empty list")
     specs = []
     for i, c in enumerate(ctrls):
-        _keys(c, {"law", "inputs", "estimated_state", "feedback", "actuators", "brake", "traction", "steering", "gvc"},
+        _keys(c, {"law", "inputs", "estimated_state", "feedback", "actuators", "brake", "traction", "steering", "gvc", "hdc"},
               f"{source}: controllers[{i}]", {"law"})
         _require(c["law"] in LAWS, f"{source}: controllers[{i}].law must be one of {LAWS}")
         inputs = c.get("inputs", "tv")
         _require(inputs in INPUT_SETS, f"{source}: controllers[{i}].inputs must be one of {INPUT_SETS}")
-        _require(not (c["law"] == "pi" and inputs != "tv"), f"{source}: controllers[{i}]: the PI law has yaw-moment input only")
+        _require(not (c["law"] in ("pi", "esc") and inputs != "tv"), f"{source}: controllers[{i}]: the PI law (also as ESC) has yaw-moment input only")
         est = c.get("estimated_state", False)
         _require(isinstance(est, bool), f"{source}: controllers[{i}].estimated_state must be true or false")
         feedback = c.get("feedback", "estimated" if est else "ideal")
@@ -255,8 +263,19 @@ def parse_controller_comparison(data: dict, source: str = "<dict>") -> Experimen
                 if k in gvc:
                     _require(isinstance(gvc[k], (int, float)) and not isinstance(gvc[k], bool) and lo <= gvc[k] <= hi,
                              f"{where}.{k} must lie in [{lo}, {hi}]")
+        hdc = c.get("hdc")
+        if hdc is not None:
+            where = f"{source}: controllers[{i}].hdc"
+            _require(isinstance(hdc, dict), f"{where} must be a mapping")
+            _keys(hdc, HDC_KEYS, where)
+            _require(c["law"] != "passive", f"{where}: the passive car has no longitudinal control chain")
+            _require(isinstance(hdc.get("enabled", True), bool), f"{where}.enabled must be true or false")
+            for k, lo, hi in (("v_set_kph", 3.0, 40.0), ("max_decel_g", 0.05, 1.0)):
+                if k in hdc:
+                    _require(isinstance(hdc[k], (int, float)) and not isinstance(hdc[k], bool) and lo <= hdc[k] <= hi,
+                             f"{where}.{k} must lie in [{lo}, {hi}]")
         specs.append(ControllerSpec(c["law"], inputs, feedback, actuators, brake, traction,
-                                    tuple(sorted((steering or {}).items())), tuple(sorted((gvc or {}).items()))))
+                                    tuple(sorted((steering or {}).items())), _block(gvc), _block(hdc)))
     labels = [c.label for c in specs]
     _require(len(set(labels)) == len(labels), f"{source}: controllers must differ (duplicate entry: {labels})")
 
@@ -286,6 +305,14 @@ def parse_controller_comparison(data: dict, source: str = "<dict>") -> Experimen
         for v in sweep["values"]:
             spec.with_parameter(sweep["parameter"], v)
     return spec
+
+
+def _block(d) -> tuple:
+    """A function block as sorted pairs; a given but empty block means "enabled with defaults" (``gvc: {}`` must not
+    vanish silently: the empty tuple is reserved for "no block")."""
+    if d is None:
+        return ()
+    return tuple(sorted({"enabled": True, **d}.items()))
 
 
 def _brake_block(b, law: str, actuators: str, feedback: str, where: str) -> tuple:
@@ -326,6 +353,9 @@ def _traction_block(t, law: str, where: str) -> tuple:
     for k in ("tcs", "envelope"):
         _require(isinstance(t.get(k, True), bool), f"{where}.{k} must be true or false")
     _require(t.get("driven", "awd") in ("awd", "fwd", "rwd"), f"{where}.driven must be awd, fwd or rwd")
+    if "itc_scope" in t:
+        _require(t["itc_scope"] in ("always", "traction"), f"{where}.itc_scope must be always or traction")
+        _require("yaw_tolerance" in t, f"{where}.itc_scope needs yaw_tolerance")
     if "yaw_tolerance" in t:
         yt = t["yaw_tolerance"]
         _require(isinstance(yt, (int, float)) and not isinstance(yt, bool) and 0.0 <= yt <= 30.0,

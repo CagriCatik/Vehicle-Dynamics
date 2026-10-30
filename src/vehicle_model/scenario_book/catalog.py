@@ -19,6 +19,7 @@ Categories:
     ride_comfort          YAML ride and pitch benchmarks on the 14-DOF model (V4 M21): preview damping, active pitch
     hill_descent          YAML hill descent benchmarks on graded roads (V4 M22): HDC, grade x surface matrix
     fault_tolerance       YAML fault catalogues on the 7-DOF loop (V4 M23): health monitor, degraded modes
+    integration           YAML benchmark matrices P0-P7 (V4 M24): all functions, paired variations, statistics
     validation            the validation matrix (configs/validation/matrix.yaml), one scenario at a time
 """
 
@@ -31,7 +32,7 @@ from typing import Callable
 
 CATEGORIES = ("parking", "four_wheel_steering", "split_mu", "yaw_stability", "solver", "nonlinear_stability",
               "robust_control", "critical_scenarios", "design", "roll_stability", "ride_comfort", "hill_descent",
-              "fault_tolerance", "validation")
+              "fault_tolerance", "integration", "validation")
 VEHICLE = "configs/vehicles/seven_dof_passenger.yaml"
 
 
@@ -263,6 +264,12 @@ def _build() -> dict[str, ScenarioEntry]:
                              f"Runs {path} (edit the YAML to change manoeuvres, fault sets, controllers).",
                              _experiment(str(path)), {}, "~5-10 min (parallel, 7-DOF)",
                              "report.md, kpis.csv, results.json, histories"))
+            continue
+        if kind == "vmm_benchmark":
+            entries.append(E(f"exp_{path.stem}", "integration", f"Vehicle motion benchmark matrix {path.stem}",
+                             f"Runs {path} (edit the YAML to change levels, manoeuvres, paired variations).",
+                             _experiment(str(path)), {}, "~25 min (parallel, 7-DOF and 14-DOF)",
+                             "report.md, kpis.csv, stats.csv, results.json, matrix.png, histories"))
             continue
         if kind == "stability_map":
             entries.append(E(f"exp_{path.stem}", "nonlinear_stability", f"Stability map {path.stem}",

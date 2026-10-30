@@ -21,6 +21,7 @@ existing specifications stay valid.
     ride_benchmark         :mod:`.ride`                             predictive damping and active pitch, 14-DOF (V4 M21)
     hill_descent_benchmark :mod:`.hill_descent`                     hill descent control on graded roads, 7-DOF (V4 M22)
     fault_tolerance_benchmark :mod:`.fault_tolerance`               fault catalogue, health monitor, degraded modes (V4 M23)
+    vmm_benchmark          :mod:`.vmm_benchmark`                    integrated benchmark matrix P0-P7 (V4 M24)
 
 Interface of a type (:class:`ExperimentType`):
 
@@ -55,7 +56,7 @@ class ExperimentType:
 
 def _registry() -> dict[str, ExperimentType]:
     # imported here: the type modules import the shared helpers of this module
-    from . import critical_search, design_optimization, equilibrium_analysis, fault_tolerance, hill_descent, ride, rollover, robust_benchmark, runner, solver_benchmark, spec, stability_map
+    from . import critical_search, design_optimization, equilibrium_analysis, fault_tolerance, hill_descent, ride, rollover, robust_benchmark, runner, solver_benchmark, spec, stability_map, vmm_benchmark
 
     types = (
         ExperimentType(DEFAULT_TYPE, spec.parse_controller_comparison, runner.run_controller_comparison,
@@ -72,6 +73,7 @@ def _registry() -> dict[str, ExperimentType]:
         ExperimentType(ride.KIND, ride.parse, ride.run, ride.describe),
         ExperimentType(hill_descent.KIND, hill_descent.parse, hill_descent.run, hill_descent.describe),
         ExperimentType(fault_tolerance.KIND, fault_tolerance.parse, fault_tolerance.run, fault_tolerance.describe),
+        ExperimentType(vmm_benchmark.KIND, vmm_benchmark.parse, vmm_benchmark.run, vmm_benchmark.describe),
     )
     return {t.name: t for t in types}
 

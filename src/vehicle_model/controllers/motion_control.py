@@ -86,6 +86,7 @@ class MotionContext:
     max_yaw_moment: float   # [N m]
     max_rear_steer: float   # [rad]
     max_front_overlay: float = 0.0   # [rad] AFS: largest front-steer overlay (0: no AFS)
+    fx_demand: float = 0.0           # [N] the driver's longitudinal demand this step (> 0: traction phase; M24)
 
 
 @dataclass(frozen=True)
@@ -277,7 +278,7 @@ class MotionController:
                   - target.driver_brake_pedal * 4.0 * acfg.max_brake_torque) / p.Reff
         if abs(state.vx) >= c.min_speed:
             ctx = MotionContext(steer, r_ref, mu_hat, dt, c.max_yaw_moment, p.max_steer_r,
-                                0.0 if self.steering is None else self.steering.authority)
+                                0.0 if self.steering is None else self.steering.authority, Fx_des)
             req = self.law.request(state, ctx)
         else:
             # law inactive at low speed. Braking to a stop: M_z = 0 (symmetric, no yaw jerk before standstill).
@@ -294,17 +295,18 @@ class MotionController:
         else:
             overlay = 0.0
         gvc_ax = 0.0
+        long_requests = [LongitudinalRequest("driver", "driver", "base", Fx_des)]
         if self.gvc is not None:   # small deceleration on turn-in, added to the longitudinal demand (M20)
             gvc_ax = self.gvc.request(steer, state.vx, target.driver_brake_pedal,
                                       bool(np.any(self.actuation.abs.active)), dt)
-            Fx_des += p.mass * gvc_ax
+            long_requests.append(LongitudinalRequest("gvc", "agility", "add", p.mass * gvc_ax))
         if self.hdc is not None:   # hill descent (M22): the stronger braking of driver and HDC, never a sum
             last = self.actuation.last_allocation     # previous step: braking demand cut at the grip limit?
             grip_cut = last is not None and bool(np.any(last.grip_limited)) and float(last.residual[0]) > 1.0
             hdc_ax = self.hdc.request(state.vx, target.driver_accel_pedal, min(0.0, Fx_des / p.mass),
                                       bool(np.any(self.actuation.abs.active)) or grip_cut, dt)
-            if hdc_ax < 0.0:
-                Fx_des = min(Fx_des, p.mass * hdc_ax)
+            long_requests.append(LongitudinalRequest("hdc", "safety", "brake_min", p.mass * hdc_ax))
+        Fx_des, long_arb = arbitrate_longitudinal(long_requests)
         law_mz = None if req.yaw_moment is None else float(req.yaw_moment)
         cbc_mz = self.cbc.request(state, r_ref, Fx_des, mu_hat) if (self.cbc is not None and abs(state.vx) >= c.min_speed) else None
         Mz_raw, winner = arbitrate_yaw(law_mz, cbc_mz)
@@ -329,6 +331,7 @@ class MotionController:
                 "information": self.law.information,
                 "feasibility": req.diagnostics.get("feasibility"),
                 "arbitration": {"law": law_mz, "cbc": cbc_mz, "winner": winner},
+                "longitudinal_arbitration": long_arb,
                 "steering": {"driver": steer_drv, "overlay": overlay, "final": steer},
                 "gvc": None if self.gvc is None else {"ax_cmd": gvc_ax, "phase": self.gvc.phase},
                 "hdc": None if self.hdc is None else {"ax_cmd": self.hdc.ax_cmd, "status": self.hdc.status,
@@ -338,6 +341,41 @@ class MotionController:
                           "issued": [float(x) for x in self.actuation.last_issued]},
             },
         )
+
+
+@dataclass(frozen=True)
+class LongitudinalRequest:
+    """One function's longitudinal force request (Plan V4.0 M24.1)."""
+    source: str           # driver, hdc, gvc, ...
+    priority: str         # safety | driver | stability | agility | comfort
+    kind: str             # base (the driver's pedal demand) | brake_min (a braking floor) | add (small additive)
+    force: float          # [N]
+
+
+def arbitrate_longitudinal(requests) -> tuple[float, dict]:
+    """Deterministic longitudinal arbitration (Plan V4.0 M24.1): no unbounded summation of interventions.
+
+    The driver's pedal demand is the base. Active braking floors (``brake_min`` < 0, e.g. HDC) take the strongest
+    braking of base and floors (``min``), never a sum. Additive agility/comfort requests (``add``, e.g. GVC) are
+    granted only while no braking floor is active; otherwise they are suppressed and logged as a conflict.
+    """
+    base = next((r for r in requests if r.kind == "base"), None)
+    fx = float(base.force) if base is not None else 0.0
+    winner = "driver" if base is not None else "none"
+    floors = [r for r in requests if r.kind == "brake_min" and r.force < 0.0]
+    adds = [r for r in requests if r.kind == "add" and r.force != 0.0]
+    suppressed = []
+    if floors:
+        f = min(floors, key=lambda r: r.force)
+        if f.force < fx:
+            fx, winner = float(f.force), f.source
+        suppressed = [r.source for r in adds]
+    else:
+        for r in adds:
+            fx += float(r.force)
+        if adds:
+            winner = "+".join([winner] + [r.source for r in adds])
+    return fx, {"requests": {r.source: float(r.force) for r in requests}, "winner": winner, "suppressed": suppressed}
 
 
 def arbitrate_yaw(law_mz: float | None, cbc_mz: float | None) -> tuple[float | None, str]:
@@ -359,7 +397,9 @@ def arbitrate_yaw(law_mz: float | None, cbc_mz: float | None) -> tuple[float | N
 
 
 __all__ = (
+    "arbitrate_longitudinal",
     "arbitrate_yaw",
+    "LongitudinalRequest",
     "INFORMATION_FULL_STATE",
     "ActuationConfig",
     "ActuationLayer",
