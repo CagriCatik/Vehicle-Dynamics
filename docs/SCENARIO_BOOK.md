@@ -72,6 +72,12 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 |---|---|---|---|---|
 | `exp_robust_benchmark_sine_with_dwell` | **Robust benchmark robust_benchmark_sine_with_dwell** – Runs configs/experiments/robust_benchmark_sine_with_dwell.yaml (edit the YAML to change controllers, feedback modes, uncertainty cases). | – | ~3-5 min (parallel) | report.md, kpis.csv, results.json, KPI matrices, yaw-rate histories |
 
+## critical_scenarios
+
+| name | scenario | parameters (defaults) | runtime | outputs |
+|---|---|---|---|---|
+| `exp_critical_search_sine_with_dwell` | **Critical scenario search critical_search_sine_with_dwell** – Runs configs/experiments/critical_search_sine_with_dwell.yaml (edit the YAML to change parameter space, constraints, criterion, search). | – | ~5-10 min (parallel search, serial verification) | report.md, evaluations.csv, results.json, search.png, critical/<id>/ (replay YAML, metadata, CSV, PNG, GIF, report) |
+
 ## validation
 
 | name | scenario | parameters (defaults) | runtime | outputs |

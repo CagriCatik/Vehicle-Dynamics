@@ -136,3 +136,26 @@ und `dynamic_nmpc_solver_benchmark`, Tests `test_robust_control.py` und `test_ex
 - Benchmark nur mit Sine with Dwell; weitere Manöver (Lenkwinkelsprung, Split-µ) sind mit derselben Spezifikation
   möglich, aber noch nicht gerechnet.
 
+## 9. Abnahme M13 (Plan §8.5)
+
+Stand: 2026-10-30. Grundlage: [CRITICAL_SCENARIOS.md](CRITICAL_SCENARIOS.md), Experiment
+`critical_search_sine_with_dwell`, Regressionsfälle `configs/critical/`, Tests `test_critical_search.py`.
+
+| # | Kriterium | Bewertung | Nachweis |
+|---|---|---|---|
+| 1 | Kritische Szenarien lassen sich mit gleichem Seed reproduzieren | erfüllt | gleiche Stichproben bei gleicher Spezifikation (Test); Wiederholung jedes Falls mit gleichem Seed bitgleich (Prüfung `same_seed`, relative Änderung 0) |
+| 2 | Zielfunktion messbar und dokumentiert | erfüllt | `objective`/`criterion` aus den Benchmark-KPIs (M12), im Modul und in CRITICAL_SCENARIOS.md 2 beschrieben |
+| 3 | Solver- oder Numerikfehler nicht als physikalisches Versagen | erfüllt | Ausnahme oder nicht endlicher Zustand: Klasse `numerical`, nie kritisch (Test); Verifikation trennt `numerical_artefact` ab und hat beim Aufbau zwei schrittweitenabhängige Minimalfälle abgewiesen |
+| 4 | Kritische Ergebnisse bestehen eine zusätzliche Schrittweiten- oder Solverprüfung | erfüllt | halbe Schrittweite und 1000-fach engere Radlasttoleranz je Fall; die Minimierung akzeptiert nur Punkte, die auch bei Δt/2 kritisch sind |
+| 5 | Bestehende Szenarien bleiben ausführbar | erfüllt | neuer Experimenttyp, bestehende Typen und Konfigurationen unverändert; schnelle Testsuite grün |
+| 6 | Mindestens ein kritischer Fall automatisiert gefunden und als Regressionstest gesichert | erfüllt | zwei bestätigte Fälle des V2.0 GS-LQR (64 ms Totzeit im Standardmanöver; 3,7° bei 88,5 km/h mit 24 ms), eingefroren in `configs/critical/`, Tests schnell (Kriterium) und `slow` (volle Verifikation, PI-Baseline bleibt stabil) |
+
+**Offene Punkte aus M13:**
+
+- Ein Regler je Suche; eine Suche über die M12-Regler und andere Manöver (Bremsen in der Kurve, Niedrigreibwertzone)
+  ist mit derselben Spezifikation möglich, aber noch nicht gerechnet.
+- Particle Swarm und Bayes'sche Optimierung nicht umgesetzt (keine Notwendigkeit gezeigt); eigene KPIs für Stabilitäts-
+  und Aktuatorreserve fehlen.
+- Der Befund verschärft den offenen Punkt aus M12: Der V2.0 GS-LQR mit Hinterachslenkung verliert das Fahrzeug schon
+  bei 24 ms Totzeit und kleiner Lenkamplitude; verzögerungsbewusster Entwurf und Begrenzung der Hinterachslenkung fehlen.
+

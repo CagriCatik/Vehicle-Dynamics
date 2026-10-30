@@ -40,3 +40,4 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **25** | Drift-Regler: Modellgültigkeit, Konventionen, Reifenaudit, deterministische Auswertung (Drift-Plan D0/D1) | [DRIFT_MODEL_VALIDITY.md](DRIFT_MODEL_VALIDITY.md) |
 | **26** | Drift-Regler: Verfahren (Gleichgewichte, Linearisierung, LQR, Halten) | [DRIFT_CONTROLLER.md](DRIFT_CONTROLLER.md) |
 | **27** | Drift-Regler: Ergebnisse und Gate-Abnahme | [DRIFT_RESULTS.md](DRIFT_RESULTS.md) |
+| **28** | Adversarial Virtual Testing: kritische Szenarien suchen, prüfen, minimieren, als Regressionstest einfrieren (M13) | [CRITICAL_SCENARIOS.md](CRITICAL_SCENARIOS.md) |

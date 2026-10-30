@@ -13,6 +13,8 @@ existing specifications stay valid.
     equilibrium_analysis   :mod:`.equilibrium_analysis`             nonlinear equilibria, Jacobians, modes over a sweep
     stability_map          :mod:`.stability_map`                    recovery regions per controller with uncertainty
     robust_benchmark       :mod:`.robust_benchmark`                 controllers x feedback modes x uncertainty cases
+    critical_scenario_search :mod:`.critical_search`                offline search for critical scenarios, verified
+                                                                    and minimised counterexamples, replay
 
 Interface of a type (:class:`ExperimentType`):
 
@@ -47,7 +49,7 @@ class ExperimentType:
 
 def _registry() -> dict[str, ExperimentType]:
     # imported here: the type modules import the shared helpers of this module
-    from . import equilibrium_analysis, robust_benchmark, runner, solver_benchmark, spec, stability_map
+    from . import critical_search, equilibrium_analysis, robust_benchmark, runner, solver_benchmark, spec, stability_map
 
     types = (
         ExperimentType(DEFAULT_TYPE, spec.parse_controller_comparison, runner.run_controller_comparison,
@@ -57,6 +59,7 @@ def _registry() -> dict[str, ExperimentType]:
                        equilibrium_analysis.describe),
         ExperimentType("stability_map", stability_map.parse, stability_map.run, stability_map.describe),
         ExperimentType("robust_benchmark", robust_benchmark.parse, robust_benchmark.run, robust_benchmark.describe),
+        ExperimentType(critical_search.KIND, critical_search.parse, critical_search.run, critical_search.describe),
     )
     return {t.name: t for t in types}
 

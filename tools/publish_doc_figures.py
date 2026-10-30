@@ -164,6 +164,22 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "der Stellgröße). Quelle: "
          "`python -m vehicle_model.experiments run configs/experiments/dynamic_nmpc_solver_benchmark.yaml`."),
     ],
+    "CRITICAL_SCENARIOS.md": [
+        ("experiments/critical_search_sine_with_dwell/search.png",
+         "Suche nach kritischen Sine-with-Dwell-Bedingungen für den V2.0 GS-LQR: Verlauf (links oben, gestrichelt: "
+         "Kriterium) und Stichproben je Parameterpaar (rot kritisch, blau nicht kritisch, grau verworfen; Stern: "
+         "minimale Fälle, Kreuz: nominal). Quelle: "
+         "`python -m vehicle_model.experiments run configs/experiments/critical_search_sine_with_dwell.yaml`."),
+        ("experiments/critical_search_sine_with_dwell/critical/01_max_sideslip_deg/timeseries.png",
+         "Fall 01, minimal: nur 64 ms Aktuatortotzeit, sonst nominal (80 km/h, 5°, µ 1). GS-LQR (rot) dreht sich, "
+         "gleicher Regler ohne Totzeit (blau) und V2.0 PI im selben Fall (grün) bleiben stabil. Quelle: wie oben."),
+        ("experiments/critical_search_sine_with_dwell/critical/02_max_sideslip_deg/timeseries.png",
+         "Fall 02, minimal: 88,5 km/h, 3,7° Amplitude (kleiner als nominal), 24 ms Totzeit. Die Hinterachslenkung "
+         "schwingt auf +9,6° und bleibt an der Grenze −10°. Quelle: wie oben."),
+        ("experiments/critical_search_sine_with_dwell/critical/01_max_sideslip_deg/scenario.gif",
+         "Fall 01 als Animation aus den aufgezeichneten Daten: kritischer Lauf (rot) gegen Nominalparameter (blau). "
+         "Quelle: wie oben."),
+    ],
     "DRIFT_MODEL_VALIDITY.md": [
         ("drift/tyre_audit/tyre_audit.png",
          "Reifenaudit bis ±45° Schräglauf: Seitenkraft (grau: außerhalb der erklärten Gültigkeit), Längskraft und "

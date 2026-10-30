@@ -1,0 +1,33 @@
+type: critical_scenario_search
+name: critical_search_sine_with_dwell
+description: >
+  M13: offline search for the sine-with-dwell conditions under which the V2.0 GS-LQR (4WS + TV) loses
+  the vehicle (max sideslip >= 15 deg), over speed, steer amplitude, friction, rear cornering stiffness
+  and actuator delay. Critical cases are verified (same seed, half step, tight load-transfer tolerance),
+  minimised towards the nominal values and compared with the V2.0 PI on the same case.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+manoeuvre: sine_with_dwell
+controller: {name: V2.0 GS-LQR, law: gs_lqr, inputs: 4ws_tv}
+baseline: {name: V2.0 PI, law: pi}
+feedback: ideal
+parameters:
+  - {name: speed_kph, low: 60, high: 120, nominal: 80}
+  - {name: amplitude_deg, low: 3, high: 10, nominal: 5}
+  - {name: mu, low: 0.3, high: 1.0, nominal: 1.0}
+  - {name: cornering_scale_rear, low: 0.6, high: 1.0, nominal: 1.0}
+  - {name: actuator_delay_s, low: 0.0, high: 0.1, nominal: 0.0}
+constraints:
+  # beyond five times the friction limit the steer input no longer tests the controller, only the tyres
+  # (the standard sine with dwell, 6 deg at 80 km/h on mu 1, asks for about 1.6 times the limit)
+  - {type: lateral_demand, max_factor: 5.0, reason: steady lateral demand of the steer input above 5 mu g}
+objective: {kpi: max_sideslip_deg, sense: max}
+criterion: {kpi: max_sideslip_deg, threshold: 15.0, direction: above}
+search:
+  - {method: lhs, samples: 48}
+  - {method: differential_evolution, maxiter: 5, popsize: 4}
+minimise: [actuator_delay_s, cornering_scale_rear, amplitude_deg, speed_kph, mu]
+max_critical_cases: 2
+seed: 7
+dt: 0.005
+verification_tolerance: 0.15
+outputs: {directory: output/experiments/critical_search_sine_with_dwell}

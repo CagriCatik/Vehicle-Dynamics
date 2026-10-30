@@ -13,6 +13,7 @@ Categories:
     solver                YAML solver benchmarks: NMPC status, KKT residuals, computation time
     nonlinear_stability   YAML equilibrium analyses and recovery maps (equilibria, eigenvalues, stability regions)
     robust_control        YAML robust benchmarks: controllers x feedback modes x uncertainty cases
+    critical_scenarios    YAML critical scenario searches (M13): search, verification, minimal cases, replay
     validation            the validation matrix (configs/validation/matrix.yaml), one scenario at a time
 """
 
@@ -24,7 +25,7 @@ from pathlib import Path
 from typing import Callable
 
 CATEGORIES = ("parking", "four_wheel_steering", "split_mu", "yaw_stability", "solver", "nonlinear_stability",
-              "robust_control", "validation")
+              "robust_control", "critical_scenarios", "validation")
 VEHICLE = "configs/vehicles/seven_dof_passenger.yaml"
 
 
@@ -218,6 +219,13 @@ def _build() -> dict[str, ScenarioEntry]:
                              f"Runs {path} (edit the YAML to change controllers, feedback modes, uncertainty cases).",
                              _experiment(str(path)), {}, "~3-5 min (parallel)",
                              "report.md, kpis.csv, results.json, KPI matrices, yaw-rate histories"))
+            continue
+        if kind == "critical_scenario_search":
+            entries.append(E(f"exp_{path.stem}", "critical_scenarios", f"Critical scenario search {path.stem}",
+                             f"Runs {path} (edit the YAML to change parameter space, constraints, criterion, search).",
+                             _experiment(str(path)), {}, "~5-10 min (parallel search, serial verification)",
+                             "report.md, evaluations.csv, results.json, search.png, critical/<id>/ (replay YAML, "
+                             "metadata, CSV, PNG, GIF, report)"))
             continue
         if kind == "stability_map":
             entries.append(E(f"exp_{path.stem}", "nonlinear_stability", f"Stability map {path.stem}",
