@@ -1,0 +1,27 @@
+# Plan V4.0 M22: Hill Descent Control on graded roads (7-DOF with gravity in the plant).
+# Synthetic test matrix (dry/wet/snow/ice x 5/10/20 % downhill) plus named cases; synthetic friction values.
+type: hill_descent_benchmark
+name: v4_m22_hdc
+description: >
+  Hill descent at 10 km/h set speed: grade x surface matrix, grade change, split-mu, driver brake and accelerator
+  override, entry at 30 km/h, single brake failure, actuator dynamics. Ice at 20 % is physically infeasible
+  (mu < tan(grade)) and must be reported as infeasible.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+dt: 0.005
+matrix:
+  grades_percent: [5, 10, 20]
+  surfaces: {dry: 1.0, wet: 0.6, snow: 0.3, ice: 0.12}
+  speed_kph: 10
+  duration: 20
+scenarios:
+  - {name: grade_change_dry, profile: [[15, -5], [45, -20], [85, -5]], surface: {mu: 1.0}, duration: 45}
+  - {name: split_mu_10pct, profile: [[15, -10]], surface: {mu_left: 1.0, mu_right: 0.2}, duration: 20}
+  - {name: driver_brakes_10pct, profile: [[15, -10]], surface: {mu: 1.0}, duration: 20, driver: [{t0: 8, t1: 11, brake_pedal: 0.1}]}
+  - {name: driver_accelerates_10pct, profile: [[15, -10]], surface: {mu: 1.0}, duration: 20, driver: [{t0: 8, t1: 10, accel_pedal: 0.15}]}
+  - {name: entry_30kph_20pct, profile: [[15, -20]], surface: {mu: 1.0}, speed_kph: 30, duration: 20}
+controllers:
+  - {name: HDC off, hdc: {enabled: false}}
+  - {name: HDC, hdc: {v_set_kph: 10}}
+  - {name: HDC + actuator dynamics, hdc: {v_set_kph: 10}, actuators: dynamic}
+  - {name: "HDC, RR brake failed", hdc: {v_set_kph: 10}, brake_failed: [RR]}
+outputs: {directory: output/v4/m22/hdc, formats: [csv, json, md]}

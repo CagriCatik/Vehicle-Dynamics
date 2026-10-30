@@ -5,6 +5,7 @@ from .surface import (
     CurvedSplitRoad,
     DiagonalSplitRoad,
     FrictionPatchRoad,
+    GradedRoad,
     MuSplitRoad,
     RoadSurface,
     TransitionRoad,
@@ -20,4 +21,5 @@ __all__ = [
     "DiagonalSplitRoad",
     "CurvedSplitRoad",
     "CheckerboardRoad",
+    "GradedRoad",
 ]

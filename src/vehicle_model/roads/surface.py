@@ -163,3 +163,60 @@ class CheckerboardRoad(RoadSurface):
         is_high = ((idx_x + idx_y) % 2 == 0)
         return float(self.mu_high if is_high else self.mu_low)
 
+
+
+@dataclass
+class GradedRoad(RoadSurface):
+    """Friction surface ``base`` with a longitudinal road grade along the world X axis (Plan V4.0 M22).
+
+    Convention: ``segments`` are ``(x_start, grade)`` pairs sorted by ``x_start``; ``grade`` is the rise per metre
+    in the +X direction (``-0.10`` = 10 % downhill when driving towards +X); the road is level before the first
+    segment. Each grade change is a smooth (half-cosine) transition of ``transition`` metres, so slope and height
+    ``Z(X)`` are continuous. No cross slope: ``dZ/dY = 0``. The vehicle model reads ``slope`` only from roads with
+    ``has_grade``; every other road is level and its results are unchanged.
+    """
+
+    base: RoadSurface = field(default_factory=UniformRoad)
+    segments: tuple = ()
+    transition: float = 10.0
+    has_grade = True
+
+    def __post_init__(self):
+        xs = [float(x) for x, _ in self.segments]
+        if xs != sorted(xs):
+            raise ValueError("grade segments must be sorted by x_start")
+        if self.transition <= 0.0:
+            raise ValueError("grade transition must be > 0")
+        g_prev, steps = 0.0, []
+        for x0, g in self.segments:
+            steps.append((float(x0), float(g) - g_prev))
+            g_prev = float(g)
+        self._steps = tuple(steps)
+
+    def get_friction(self, X: float, Y: float) -> float:
+        return self.base.get_friction(X, Y)
+
+    def get_friction_batch(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
+        return self.base.get_friction_batch(X, Y)
+
+    def grade(self, X: float) -> float:
+        """Rise per metre in +X at ``X``."""
+        T, s = self.transition, 0.0
+        for x0, dg in self._steps:
+            u = min(max((X - x0) / T, 0.0), 1.0)
+            s += dg * (0.5 - 0.5 * np.cos(np.pi * u))
+        return float(s)
+
+    def slope(self, X: float, Y: float) -> tuple[float, float]:
+        """``(dZ/dX, dZ/dY)`` at the point."""
+        return self.grade(X), 0.0
+
+    def height(self, X: float) -> float:
+        """Road height ``Z(X)`` [m], 0 on the level start."""
+        T, z = self.transition, 0.0
+        for x0, dg in self._steps:
+            d = X - x0
+            if d <= 0.0:
+                continue
+            z += dg * (T * (0.5 * min(d / T, 1.0) - np.sin(np.pi * min(d / T, 1.0)) / (2.0 * np.pi)) + max(d - T, 0.0))
+        return float(z)

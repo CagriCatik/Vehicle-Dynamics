@@ -196,6 +196,7 @@ class MotionControllerConfig:
     cbc: object = None                        # CorneringBrakeConfig (Plan V4.0 M17.2) or None
     steering: object = None                   # SteeringOverlayConfig (AFS: variable ratio, overlay limits; M19.2) or None
     gvc: object = None                        # GVCConfig (GVC-like load-transfer control, M20) or None
+    hdc: object = None                        # HDCConfig (hill descent control, M22) or None
 
 
 class MotionController:
@@ -217,6 +218,10 @@ class MotionController:
         if c.gvc is not None:
             from vehicle_model.controllers.g_vectoring import GVectoringControl
             self.gvc = GVectoringControl(params, c.gvc)
+        self.hdc = None
+        if c.hdc is not None:
+            from vehicle_model.controllers.hill_descent import HillDescentControl
+            self.hdc = HillDescentControl(c.hdc)
         self.cbc = None
         if c.cbc is not None:
             from vehicle_model.controllers.cornering_brake import CorneringBrakeControl
@@ -245,6 +250,8 @@ class MotionController:
             self.steering.reset()
         if self.gvc is not None:
             self.gvc.reset()
+        if self.hdc is not None:
+            self.hdc.reset()
 
     def reference_yaw_rate(self, steer: float, vx: float, mu_hat: float) -> float:
         return self.reference.yaw_rate(steer, vx, mu_hat)
@@ -291,6 +298,13 @@ class MotionController:
             gvc_ax = self.gvc.request(steer, state.vx, target.driver_brake_pedal,
                                       bool(np.any(self.actuation.abs.active)), dt)
             Fx_des += p.mass * gvc_ax
+        if self.hdc is not None:   # hill descent (M22): the stronger braking of driver and HDC, never a sum
+            last = self.actuation.last_allocation     # previous step: braking demand cut at the grip limit?
+            grip_cut = last is not None and bool(np.any(last.grip_limited)) and float(last.residual[0]) > 1.0
+            hdc_ax = self.hdc.request(state.vx, target.driver_accel_pedal, min(0.0, Fx_des / p.mass),
+                                      bool(np.any(self.actuation.abs.active)) or grip_cut, dt)
+            if hdc_ax < 0.0:
+                Fx_des = min(Fx_des, p.mass * hdc_ax)
         law_mz = None if req.yaw_moment is None else float(req.yaw_moment)
         cbc_mz = self.cbc.request(state, r_ref, Fx_des, mu_hat) if (self.cbc is not None and abs(state.vx) >= c.min_speed) else None
         Mz_raw, winner = arbitrate_yaw(law_mz, cbc_mz)
@@ -317,6 +331,9 @@ class MotionController:
                 "arbitration": {"law": law_mz, "cbc": cbc_mz, "winner": winner},
                 "steering": {"driver": steer_drv, "overlay": overlay, "final": steer},
                 "gvc": None if self.gvc is None else {"ax_cmd": gvc_ax, "phase": self.gvc.phase},
+                "hdc": None if self.hdc is None else {"ax_cmd": self.hdc.ax_cmd, "status": self.hdc.status,
+                                                      "cause": self.hdc.cause, "integral": self.hdc.integral},
+                "function_status": None if self.hdc is None else {"hdc": self.hdc.status},
                 "trace": {"requested": [float(Fx_des), float("nan") if Mz_des is None else Mz_des], "allocated": [float(x) for x in alloc.achieved],
                           "issued": [float(x) for x in self.actuation.last_issued]},
             },

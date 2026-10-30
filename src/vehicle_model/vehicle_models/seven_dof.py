@@ -7,7 +7,11 @@ Navigation states (3, integrated, not extra DOFs):
   X, Y [m], psi [rad]
 
 Modelling assumptions (documented in docs/VEHICLE_MODELS.md, section 2):
-  * Planar motion on a level road, ISO 8855 axes (x forward, y left, z up).
+  * Planar motion on a level road, ISO 8855 axes (x forward, y left, z up). A road with ``has_grade``
+    (:class:`~vehicle_model.roads.surface.GradedRoad`, Plan V4.0 M22) adds gravity along the heading and across
+    it, scales the normal load and rolling resistance by ``cos`` of the grade and shifts the load transfer by
+    the gravity component (it acts at the CoG, the tyre forces at the ground); the body stays parallel to the
+    road (no pitch/heave DOF). Any other road gives exactly the level-road equations.
   * Quasi-static longitudinal/lateral load transfer; no suspension dynamics.
     The algebraic loop ``ax, ay -> Fz -> tyre forces -> ax, ay`` is solved by
     fixed-point iteration, so the derivative is a pure function of the state.
@@ -221,6 +225,13 @@ class SevenDOFModel:
 
         F_aero = 0.5 * p.rho * p.Cd * p.Af * vx * abs(vx)
         F_roll = p.c_rr * p.mass * p.g * math.tanh(vx / 0.5)
+        graded = getattr(road, "has_grade", False)
+        if graded:   # road grade (M22): gravity in body axes, normal load g cos
+            sX, sY = road.slope(state.X, state.Y)
+            th, ph = math.atan(sX * c_psi + sY * s_psi), math.atan(-sX * s_psi + sY * c_psi)
+            g_x, g_y = -p.g * math.sin(th), -p.g * math.cos(th) * math.sin(ph)
+            c_n = math.cos(th) * math.cos(ph)
+            F_roll *= c_n
 
         # Fixed-point solution of the quasi-static load-transfer loop
         ax, ay = self._accel_guess
@@ -232,13 +243,19 @@ class SevenDOFModel:
                 steer = steer_geo + chassis.steer_change(ax, ay, *Fy_axle)
                 steer, cos_d, sin_d, v_wx, v_wy = self.wheel_velocities(state, u, steer)
                 kappa, alpha = self._slips(state, v_wx, v_wy, v_wheel)
-            loads = quasi_static_normal_loads(self._load_params, ax, ay)
-            Fz = loads.Fz
+            if graded:   # loads are linear in (g, a): solve with (a - g_body)/c_n and scale by c_n
+                loads = quasi_static_normal_loads(self._load_params, (ax - g_x) / c_n, (ay - g_y) / c_n)
+                Fz = loads.Fz * c_n
+            else:
+                loads = quasi_static_normal_loads(self._load_params, ax, ay)
+                Fz = loads.Fz
             Fx_w, Fy_w = self._tyre_forces(kappa, alpha, Fz, mu)
             Fx_b = Fx_w * cos_d - Fy_w * sin_d
             Fy_b = Fx_w * sin_d + Fy_w * cos_d
             ax_new = (Fx_b.sum() - F_aero - F_roll) / p.mass
             ay_new = Fy_b.sum() / p.mass
+            if graded:
+                ax_new, ay_new = ax_new + g_x, ay_new + g_y
             tol = self.load_transfer_tol
             converged = abs(ax_new - ax) < tol and abs(ay_new - ay) < tol
             if chassis is not None:
