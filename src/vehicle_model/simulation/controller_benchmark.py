@@ -122,6 +122,40 @@ TRACTION_KPIS = ("speed_gain_kph", "mean_acceleration", "time_to_speed_s", "max_
                  "drive_energy_kj", "alloc_residual_fx_max_n", "torque_slew_max_knmps")
 
 
+GVC_KPIS = ("yaw_rate_rms_error", "max_yaw_rate_error_degps", "yaw_rate_t63_s", "max_ax_jerk", "front_axle_load_gain_n",
+            "speed_loss_kph", "max_sideslip_deg", "max_lateral_offset")
+
+
+def steer_ramp_scenario(v0: float = 22.0, steer: float = math.radians(3.0), rate: float = math.radians(20.0),
+                        pedal: float = 0.05, duration: float = 4.0) -> Scenario:
+    """Steer ramp to a hold with a constant accelerator pedal (identical driver for GVC on/off; Plan V4.0 M20)."""
+    t0 = 0.5
+    st = lambda t: 0.0 if t < t0 else math.copysign(min(abs(steer), rate * (t - t0)), steer)
+    return Scenario("steer_ramp", lambda: UniformRoad(mu=1.0), v0, duration,
+                    lambda t, s: ControlTarget(driver_steer_f=st(t), driver_accel_pedal=pedal), kpis=GVC_KPIS,
+                    params={"steer_start": t0})
+
+
+def lane_change_scenario(v0: float = 22.0, amplitude: float = math.radians(2.5), freq: float = 0.5, pedal: float = 0.05,
+                         duration: float = 5.0) -> Scenario:
+    """Single-period sine steer (lane change, open loop) with a constant pedal (Plan V4.0 M20)."""
+    t0 = 0.5
+    st = lambda t: amplitude * math.sin(2 * math.pi * freq * (t - t0)) if t0 <= t < t0 + 1.0 / freq else 0.0
+    return Scenario("lane_change", lambda: UniformRoad(mu=1.0), v0, duration,
+                    lambda t, s: ControlTarget(driver_steer_f=st(t), driver_accel_pedal=pedal), kpis=GVC_KPIS,
+                    params={"steer_start": t0})
+
+
+def lift_off_scenario(v0: float = 22.0, steer: float = math.radians(3.0), pedal: float = 0.3, lift: float = 2.0,
+                      duration: float = 5.0) -> Scenario:
+    """Steady turn with the accelerator pressed, abrupt lift-off at ``lift`` (Plan V4.0 M20)."""
+    t0 = 0.5
+    st = lambda t: 0.0 if t < t0 else math.copysign(min(abs(steer), math.radians(20.0) * (t - t0)), steer)
+    return Scenario("lift_off", lambda: UniformRoad(mu=1.0), v0, duration,
+                    lambda t, s: ControlTarget(driver_steer_f=st(t), driver_accel_pedal=pedal if t < lift else 0.0),
+                    kpis=GVC_KPIS, params={"steer_start": t0})
+
+
 def launch_scenario(v0: float = 2.0, accel_pedal: float = 1.0, duration: float = 6.0, target_gain: float = 50 / 3.6) -> Scenario:
     """Straight full-acceleration launch from (nearly) standstill (Plan V4.0 M18)."""
     return Scenario("launch", lambda: UniformRoad(mu=1.0), v0, duration,
@@ -208,6 +242,21 @@ def compute_kpis(h: dict, sc: Scenario) -> dict:
             i0 = int(np.searchsorted(t, t0))
             v_start = sc.v0 if i0 == 0 else h["speed"][max(i0 - 1, 0)]
             out[k] = float((v_start - h["speed"][-1]) / max(t[-1] - t0, 1e-9))
+        elif k == "yaw_rate_t63_s":      # time from steer start to 63 % of the largest |r|
+            t0 = sc.params.get("steer_start", 0.0)
+            rr = np.abs(r)
+            idx = np.flatnonzero((t >= t0) & (rr >= 0.63 * np.max(rr)))
+            out[k] = float(t[idx[0]] - t0) if idx.size and np.max(rr) > 1e-6 else float("nan")
+        elif k == "max_ax_jerk":         # longitudinal jerk from the tyre-force acceleration, from the steer start [m/s^3]
+            sel = t >= sc.params.get("steer_start", 0.0) + 0.05
+            ax_ = np.asarray(h["ax"])[sel]
+            out[k] = float(np.max(np.abs(np.diff(ax_))) / (t[1] - t[0])) if ax_.size > 1 else 0.0
+        elif k == "front_axle_load_gain_n":   # largest front axle load above its value at the steer start
+            t0 = sc.params.get("steer_start", 0.0)
+            fz = np.asarray(h["Fz_FL"]) + np.asarray(h["Fz_FR"])
+            out[k] = float(np.max(fz[t >= t0]) - np.interp(t0, t, fz))
+        elif k == "speed_loss_kph":
+            out[k] = float((sc.v0 - h["speed"][-1]) * 3.6)
         elif k == "speed_gain_kph":
             out[k] = float((h["speed"][-1] - np.interp(sc.params.get("accel_start", 0.0), t, h["speed"])) * 3.6)
         elif k == "time_to_speed_s":     # time from the acceleration start to a speed gain of target_gain
