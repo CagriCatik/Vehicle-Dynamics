@@ -1,0 +1,25 @@
+# Plan V4.0 M19.1: roll stability on the 14-DOF model. Four loading variants (synthetic: nominal, partly loaded,
+# fully loaded with a high centre of gravity, extreme), a fishhook-inspired manoeuvre at 80 km/h (8 deg road-wheel)
+# and a quick evasive steer at 120 km/h, mu 1.0 and 0.6; passive, active roll only, RSC (brakes through the
+# shared allocation), RSC + active roll with the active suspension healthy and failed.
+type: rollover_benchmark
+name: v4_m19_rollover
+description: Roll stability control (RSC) and active roll on the 14-DOF model.
+vehicle: configs/suspension/fourteen_dof.yaml
+variants:
+  - {name: nominal}
+  - {name: partly_loaded, cg_height: 0.75, sprung_mass: 1520}
+  - {name: loaded_high_cog, cg_height: 0.95, sprung_mass: 1520}
+  - {name: extreme_cog, cg_height: 1.1, sprung_mass: 1520}
+manoeuvres:
+  - {name: fishhook_80, type: fishhook, speed_kph: 80, amplitude_deg: 8, rate_degps: 45, hold_s: 0.25}
+  - {name: evasive_120, type: evasive, speed_kph: 120, amplitude_deg: 4, frequency_hz: 0.6}
+mu: [1.0, 0.6]
+controllers:
+  - {name: passive, controller: passive}
+  - {name: active roll, controller: active_roll}
+  - {name: RSC, controller: rsc}
+  - {name: RSC + active roll, controller: rsc_active_roll}
+  - {name: RSC + active roll (failed), controller: rsc_active_roll, active_suspension: failed}
+duration: 5.0
+outputs: {directory: output/v4/m19/rollover}

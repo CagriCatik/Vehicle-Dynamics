@@ -15,6 +15,7 @@ Categories:
     robust_control        YAML robust benchmarks: controllers x feedback modes x uncertainty cases
     critical_scenarios    YAML critical scenario searches (M13): search, verification, minimal cases, replay
     design                YAML design optimisations (M14): NSGA-II Pareto analysis, independent re-check
+    roll_stability        YAML roll stability benchmarks on the 14-DOF model (V4 M19): RSC, active roll
     validation            the validation matrix (configs/validation/matrix.yaml), one scenario at a time
 """
 
@@ -26,7 +27,7 @@ from pathlib import Path
 from typing import Callable
 
 CATEGORIES = ("parking", "four_wheel_steering", "split_mu", "yaw_stability", "solver", "nonlinear_stability",
-              "robust_control", "critical_scenarios", "design", "validation")
+              "robust_control", "critical_scenarios", "design", "roll_stability", "validation")
 VEHICLE = "configs/vehicles/seven_dof_passenger.yaml"
 
 
@@ -234,6 +235,12 @@ def _build() -> dict[str, ScenarioEntry]:
                              _experiment(str(path)), {}, "~5-10 min (parallel)",
                              "report.md, evaluations.csv, pareto_designs.csv, design_<label>.yaml, Pareto fronts, "
                              "distributions, sensitivities, results.json"))
+            continue
+        if kind == "rollover_benchmark":
+            entries.append(E(f"exp_{path.stem}", "roll_stability", f"Roll stability benchmark {path.stem}",
+                             f"Runs {path} (edit the YAML to change variants, manoeuvres, friction, controllers).",
+                             _experiment(str(path)), {}, "~3-5 min (parallel, 14-DOF at 1 ms)",
+                             "report.md, kpis.csv, results.json, histories, rollover_timeseries.png"))
             continue
         if kind == "stability_map":
             entries.append(E(f"exp_{path.stem}", "nonlinear_stability", f"Stability map {path.stem}",
