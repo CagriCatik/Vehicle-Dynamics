@@ -1,0 +1,16 @@
+# Plan V4.0 M17: full braking from 90 km/h onto a friction drop (mu 1.0 -> 0.2 at X = 20 m), information modes A
+# and C, without and with EBD + IBC (yaw left free: brake functions only).
+type: controller_comparison
+name: v4_m17_mu_step
+description: Friction-step braking with the brake functions, modes A and C.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+road: {type: mu_step, mu_before: 1.0, mu_after: 0.2, x_step: 20.0}
+manoeuvre: {type: straight_braking, speed_kph: 90, brake_pedal: 1.0}
+controllers:
+  - {law: passive}
+  - {law: brakes}
+  - {law: brakes, brake: {distribution: ebd, ibc: true}}
+  - {law: brakes, feedback: sensor_constrained}
+  - {law: brakes, feedback: sensor_constrained, brake: {distribution: ebd, ibc: true}}
+outputs: {directory: output/v4/m17/mu_step, formats: [csv, json, md]}

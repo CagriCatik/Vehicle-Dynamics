@@ -44,3 +44,4 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **29** | Fahrzeugauslegung und Mehrzieloptimierung: NSGA-II, Pareto-Analyse, unabhängige Nachprüfung (M14) | [DESIGN_OPTIMIZATION.md](DESIGN_OPTIMIZATION.md) |
 | **30** | Interactive Engineering Workbench: Weboberfläche über der Experiment-Engine (M15) | [WORKBENCH.md](WORKBENCH.md) |
 | **31** | V4.0: Ausgangsstand, Blocker A–H, M16 Stellgrößenkette und Aktuatordynamik | [V4_BASELINE.md](V4_BASELINE.md) |
+| **32** | V4.0 M17: EBD, CBC, IBC, regenerative Schlupfregelung (MSR) | [V4_BRAKING.md](V4_BRAKING.md) |

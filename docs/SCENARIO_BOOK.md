@@ -49,6 +49,13 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 | `exp_split_mu_braking` | **YAML experiment split_mu_braking** – Runs configs/experiments/split_mu_braking.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 | `exp_step_steer_speed_sweep` | **YAML experiment step_steer_speed_sweep** – Runs configs/experiments/step_steer_speed_sweep.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 | `exp_v4_m16_split_mu_actuators` | **YAML experiment v4_m16_split_mu_actuators** – Runs configs/experiments/v4_m16_split_mu_actuators.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m17_brake_in_turn` | **YAML experiment v4_m17_brake_in_turn** – Runs configs/experiments/v4_m17_brake_in_turn.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m17_brake_in_turn_low_mu` | **YAML experiment v4_m17_brake_in_turn_low_mu** – Runs configs/experiments/v4_m17_brake_in_turn_low_mu.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m17_mu_step` | **YAML experiment v4_m17_mu_step** – Runs configs/experiments/v4_m17_mu_step.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m17_regen` | **YAML experiment v4_m17_regen** – Runs configs/experiments/v4_m17_regen.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m17_regen_braking` | **YAML experiment v4_m17_regen_braking** – Runs configs/experiments/v4_m17_regen_braking.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m17_split_mu` | **YAML experiment v4_m17_split_mu** – Runs configs/experiments/v4_m17_split_mu.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m17_straight_braking` | **YAML experiment v4_m17_straight_braking** – Runs configs/experiments/v4_m17_straight_braking.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 
 ## solver
 

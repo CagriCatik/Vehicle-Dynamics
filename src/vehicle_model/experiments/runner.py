@@ -29,13 +29,16 @@ import numpy as np
 from vehicle_model.controllers.estimated_feedback import EstimatedStateFeedback
 from vehicle_model.controllers.framework import PassiveBaselineController
 from vehicle_model.controllers.motion_control import MotionController
-from vehicle_model.controllers.yaw_laws import INPUTS_4WS_TV, INPUTS_TV, LQRYawLaw, LTVMPCYawLaw, YawRatePI
+from vehicle_model.controllers.yaw_laws import INPUTS_4WS_TV, INPUTS_TV, LQRYawLaw, LTVMPCYawLaw, NoYawLaw, YawRatePI
 from vehicle_model.estimation.blended_sideslip import BlendedSideslipObserver
 from vehicle_model.handling_analysis import linear_params_from_seven_dof
 from vehicle_model.roads.surface import MuSplitRoad, UniformRoad
 from vehicle_model.simulation.controller_benchmark import (
+    brake_in_turn_scenario,
+    coast_scenario,
     run_scenario,
     sine_with_dwell_scenario,
+    straight_braking_scenario,
     split_mu_braking_scenario,
     step_steer_scenario,
 )
@@ -48,7 +51,8 @@ from .verification import verify_model
 SCHEDULE_SPEEDS = (5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0)
 _HISTORY_KEYS = ("t", "X", "Y", "psi", "vx", "vy", "speed", "r", "r_ref", "beta", "ax", "ay", "steer_f", "steer_r",
                  "Mz_demand", "Mz_allocated", "Mz_requested", "Mz_alloc_pre_slip", "Mz_issued", "Mz_realised",
-                 "T_issued_abs", "T_realised_abs", "regen_power_w", "tyre_utilisation", "max_abs_slip", "T_brake_total",
+                 "T_issued_abs", "T_realised_abs", "regen_power_w", "friction_power_w", "abs_active_n",
+                 "alloc_residual_fx", "tyre_utilisation", "max_abs_slip", "T_brake_total",
                  "status",
                  *(f"{q}_{w}" for q in ("Fz", "Fx", "Fy") for w in ("FL", "FR", "RL", "RR")))
 
@@ -57,6 +61,10 @@ def make_road(spec: ExperimentSpec):
     r = spec.road
     if r["type"] == "uniform":
         return UniformRoad(mu=float(r["mu"]))
+    if r["type"] == "mu_step":
+        from vehicle_model.roads.surface import TransitionRoad
+        return TransitionRoad(mu_before=float(r["mu_before"]), mu_after=float(r["mu_after"]), x_start=float(r["x_step"]),
+                              transition_length=0.5)
     return MuSplitRoad(mu_left=float(r["mu_left"]), mu_right=float(r["mu_right"]), split_y=0.0, transition_width=0.05)
 
 
@@ -74,6 +82,13 @@ def make_scenario(spec: ExperimentSpec):
         sc = step_steer_scenario(v, math.radians(float(m.get("steer_deg", 2.3))), float(m.get("duration_s", 3.0)))
     elif m["type"] == "sine_with_dwell":
         sc = sine_with_dwell_scenario(v, math.radians(float(m.get("amplitude_deg", 8.0))))
+    elif m["type"] == "straight_braking":
+        sc = straight_braking_scenario(v, float(m.get("brake_pedal", 1.0)))
+    elif m["type"] == "brake_in_turn":
+        sc = brake_in_turn_scenario(v, math.radians(float(m.get("steer_deg", 2.0))), float(m.get("brake_pedal", 0.4)),
+                                    float(m.get("brake_start_s", 2.0)), float(m.get("duration_s", 6.0)))
+    elif m["type"] == "coast":
+        sc = coast_scenario(v, float(m.get("duration_s", 8.0)))
     else:
         sc = split_mu_braking_scenario(v)
     return dataclasses.replace(sc, road=lambda: make_road(spec))
@@ -96,23 +111,52 @@ def controller_factories(spec: ExperimentSpec) -> dict:
                 law = LQRYawLaw(design, inputs, design_speed=20.0)
             elif c.law == "gs_lqr":
                 law = LQRYawLaw(design, inputs, design_speed=None, schedule_speeds=SCHEDULE_SPEEDS)
+            elif c.law == "brakes":
+                law = NoYawLaw()
             else:
                 law = LTVMPCYawLaw(design, inputs)
-            ctrl = MotionController(p, law)
+            ctrl = MotionController(p, law, _motion_config(c))
             if c.feedback == "ideal":
                 return ctrl
             return EstimatedStateFeedback(ctrl, BlendedSideslipObserver(p), seed=spec.seed,
                                           mode="C" if c.feedback == "sensor_constrained" else "B", params=p)
-        out[c.label] = factory if c.actuators == "ideal" else _with_actuators(factory)
+        out[c.label] = factory if c.actuators == "ideal" else _with_actuators(factory, c)
     return out
 
 
-def _with_actuators(factory):
-    """Factory of the same controller behind the actuator models (Plan V4.0 M16; configs/braking, powertrains)."""
+def _motion_config(c):
+    """MotionControllerConfig with the brake functions of the controller entry (Plan V4.0 M17; default: none)."""
+    from vehicle_model.controllers.motion_control import ActuationConfig, MotionControllerConfig
+    b = dict(c.brake)
+    dist = ibc = cbc = None
+    if not b:
+        return MotionControllerConfig()
+    from vehicle_model.controllers.brake_distribution import BrakeDistributionConfig, brake_functions_config
+    bf = brake_functions_config()                     # configs/braking/brake_functions.yaml
+    if b.get("distribution", "grip") != "grip":
+        dist = BrakeDistributionConfig(mode=b["distribution"], **bf["ebd"])
+    if b.get("ibc"):
+        from vehicle_model.controllers.integrated_brake import IntegratedBrakeConfig
+        ibc = IntegratedBrakeConfig(regen_policy=b.get("regen", "cut_on_abs"), **bf["ibc"])
+    if b.get("cbc"):
+        cbc = bf["cbc"]
+    return MotionControllerConfig(actuation=ActuationConfig(distribution=dist, ibc=ibc), cbc=cbc)
+
+
+def _with_actuators(factory, c=None):
+    """Factory of the same controller behind the actuator models (Plan V4.0 M16; configs/braking, powertrains);
+    with the regenerative slip control of the entry's brake block (M17.4)."""
     from vehicle_model.simulation.actuator_chain import ActuatorChain, ActuatorChainConfig
+    regen = None
+    b = dict(c.brake) if c is not None else {}
+    if "regen" in b or "coast_torque" in b:
+        from vehicle_model.controllers.regenerative_slip import RegenSlipConfig
+        from vehicle_model.controllers.brake_distribution import brake_functions_config
+        regen = RegenSlipConfig(policy=b.get("regen", "cut_on_abs"), coast_torque=float(b.get("coast_torque", 0.0)),
+                                **brake_functions_config()["regenerative_slip"])
 
     def build(p):
-        return ActuatorChain(factory(p), p, ActuatorChainConfig.from_yaml())
+        return ActuatorChain(factory(p), p, ActuatorChainConfig.from_yaml(regen=regen))
     return build
 
 

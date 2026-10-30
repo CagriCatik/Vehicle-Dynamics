@@ -1,0 +1,16 @@
+# Plan V4.0 M17.4: braking with the pedal (0.25, mostly recuperative) from 80 km/h onto a friction drop
+# (mu 1.0 -> 0.2 at X = 20 m), where ABS has to act: regen cut under ABS (baseline, the existing brake-by-wire
+# behaviour) against modulated regen with hand-over to the friction brake. Dynamic actuators, information mode A.
+# (On a uniform road the allocation already limits each wheel to 95 % of the known grip and ABS does not act;
+# there both policies are identical, measured.)
+type: controller_comparison
+name: v4_m17_regen_braking
+description: Regenerative braking onto a friction drop, cut-on-ABS against modulated.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+road: {type: mu_step, mu_before: 1.0, mu_after: 0.2, x_step: 20.0}
+manoeuvre: {type: straight_braking, speed_kph: 80, brake_pedal: 0.25}
+controllers:
+  - {law: brakes, actuators: dynamic, brake: {ibc: true, regen: cut_on_abs}}
+  - {law: brakes, actuators: dynamic, brake: {ibc: true, regen: modulated}}
+outputs: {directory: output/v4/m17/regen_braking, formats: [csv, json, md]}

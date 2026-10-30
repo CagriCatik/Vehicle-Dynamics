@@ -34,16 +34,20 @@ from pathlib import Path
 
 import yaml
 
-LAWS = ("passive", "pi", "lqr", "gs_lqr", "ltv_mpc")
+LAWS = ("passive", "pi", "lqr", "gs_lqr", "ltv_mpc", "brakes")   # brakes: motion chain without yaw control
 FEEDBACK_MODES = ("ideal", "estimated", "sensor_constrained")
 ACTUATOR_MODES = ("ideal", "dynamic")
-_LAW_NAMES = {"pi": "PI", "lqr": "LQR", "gs_lqr": "GS-LQR", "ltv_mpc": "LTV-MPC"}
+_LAW_NAMES = {"pi": "PI", "lqr": "LQR", "gs_lqr": "GS-LQR", "ltv_mpc": "LTV-MPC", "brakes": "Brakes"}
+BRAKE_KEYS = {"distribution", "ibc", "cbc", "regen", "coast_torque"}   # Plan V4.0 M17
 INPUT_SETS = ("tv", "4ws_tv")
-ROADS = {"uniform": {"mu"}, "split_mu": {"mu_left", "mu_right"}}
+ROADS = {"uniform": {"mu"}, "split_mu": {"mu_left", "mu_right"}, "mu_step": {"mu_before", "mu_after", "x_step"}}
 MANOEUVRES = {
     "step_steer": {"speed_kph", "steer_deg", "duration_s"},
     "sine_with_dwell": {"speed_kph", "amplitude_deg"},
     "split_mu_braking": {"speed_kph"},
+    "straight_braking": {"speed_kph", "brake_pedal"},
+    "brake_in_turn": {"speed_kph", "steer_deg", "brake_pedal", "brake_start_s", "duration_s"},
+    "coast": {"speed_kph", "duration_s"},
 }
 FORMATS = ("csv", "json", "png", "md", "gif")
 DEFAULT_FORMATS = ("csv", "json", "png", "md")  # gif is opt-in (rendering time)
@@ -57,6 +61,7 @@ class ControllerSpec:
     inputs: str = "tv"
     feedback: str = "ideal"         # Plan V3.0 M10 5.4: ideal (Mode A), estimated (B), sensor_constrained (C)
     actuators: str = "ideal"        # Plan V4.0 M16: ideal (command = plant input) or dynamic (actuator models)
+    brake: tuple = ()               # Plan V4.0 M17: sorted (key, value) pairs of the brake-function block
 
     @property
     def estimated_state(self) -> bool:
@@ -65,9 +70,16 @@ class ControllerSpec:
     @property
     def label(self) -> str:
         act = " [actuator dynamics]" if self.actuators == "dynamic" else ""
+        b = dict(self.brake)
+        tags = [t for t, on in (("EBD" if b.get("distribution") == "ebd" else f"bias {b.get('distribution')}",
+                                 b.get("distribution") not in (None, "grip")), ("IBC", b.get("ibc")), ("CBC", b.get("cbc")),
+                                (f"regen {b.get('regen')}", b.get("regen")), (f"coast {b.get('coast_torque')} N m", b.get("coast_torque")))
+                if on]
+        act += f" [{', '.join(tags)}]" if tags else ""
         if self.law == "passive":
             return "passive" + act
-        lab = f"{_LAW_NAMES[self.law]} ({self.inputs.replace('_', '+').upper()})"
+        lab = ("brake functions" if self.law == "brakes"
+               else f"{_LAW_NAMES[self.law]} ({self.inputs.replace('_', '+').upper()})")
         return lab + {"ideal": "", "estimated": " + observer", "sensor_constrained": " + sensors only"}[self.feedback] + act
 
 
@@ -102,7 +114,8 @@ class ExperimentSpec:
              "manoeuvre": dict(self.manoeuvre), "dt": self.dt, "seed": self.seed, "outputs": dict(self.outputs),
              "verification": self.verification, "description": self.description,
              "controllers": [{"law": c.law, "inputs": c.inputs, "feedback": c.feedback,
-                              **({"actuators": c.actuators} if c.actuators != "ideal" else {})} for c in self.controllers]}
+                              **({"actuators": c.actuators} if c.actuators != "ideal" else {}),
+                              **({"brake": dict(c.brake)} if c.brake else {})} for c in self.controllers]}
         if self.kc:
             d["kc"] = self.kc
         if self.sweep:
@@ -147,18 +160,26 @@ def parse_controller_comparison(data: dict, source: str = "<dict>") -> Experimen
     _require(road.get("type") in ROADS, f"{source}: road.type must be one of {sorted(ROADS)}")
     _keys(road, ROADS[road["type"]] | {"type"}, f"{source}: road", ROADS[road["type"]] | {"type"})
     for k in ROADS[road["type"]]:
-        _require(0.0 < float(road[k]) <= 2.0, f"{source}: road.{k} must lie in (0, 2]")
+        if k == "x_step":
+            _require(0.0 <= float(road[k]) <= 2000.0, f"{source}: road.x_step must lie in [0, 2000] m")
+        else:
+            _require(0.0 < float(road[k]) <= 2.0, f"{source}: road.{k} must lie in (0, 2]")
 
     man = dict(data["manoeuvre"])
     _require(man.get("type") in MANOEUVRES, f"{source}: manoeuvre.type must be one of {sorted(MANOEUVRES)}")
     _keys(man, MANOEUVRES[man["type"]] | {"type"}, f"{source}: manoeuvre", {"type", "speed_kph"})
     _require(5.0 <= float(man["speed_kph"]) <= 250.0, f"{source}: manoeuvre.speed_kph must lie in [5, 250]")
+    if "brake_pedal" in man:
+        _require(0.0 <= float(man["brake_pedal"]) <= 1.0, f"{source}: manoeuvre.brake_pedal must lie in [0, 1]")
+    for k in ("brake_start_s", "duration_s"):
+        if k in man:
+            _require(0.0 <= float(man[k]) <= 120.0, f"{source}: manoeuvre.{k} must lie in [0, 120] s")
 
     ctrls = data["controllers"]
     _require(isinstance(ctrls, list) and ctrls, f"{source}: controllers must be a non-empty list")
     specs = []
     for i, c in enumerate(ctrls):
-        _keys(c, {"law", "inputs", "estimated_state", "feedback", "actuators"}, f"{source}: controllers[{i}]", {"law"})
+        _keys(c, {"law", "inputs", "estimated_state", "feedback", "actuators", "brake"}, f"{source}: controllers[{i}]", {"law"})
         _require(c["law"] in LAWS, f"{source}: controllers[{i}].law must be one of {LAWS}")
         inputs = c.get("inputs", "tv")
         _require(inputs in INPUT_SETS, f"{source}: controllers[{i}].inputs must be one of {INPUT_SETS}")
@@ -171,7 +192,8 @@ def parse_controller_comparison(data: dict, source: str = "<dict>") -> Experimen
         _require(not (feedback != "ideal" and c["law"] == "passive"), f"{source}: controllers[{i}]: passive has no state feedback")
         actuators = c.get("actuators", "ideal")
         _require(actuators in ACTUATOR_MODES, f"{source}: controllers[{i}].actuators must be one of {ACTUATOR_MODES}")
-        specs.append(ControllerSpec(c["law"], inputs, feedback, actuators))
+        brake = _brake_block(c.get("brake"), c["law"], actuators, feedback, f"{source}: controllers[{i}].brake")
+        specs.append(ControllerSpec(c["law"], inputs, feedback, actuators, brake))
     labels = [c.label for c in specs]
     _require(len(set(labels)) == len(labels), f"{source}: controllers must differ (duplicate entry: {labels})")
 
@@ -201,6 +223,29 @@ def parse_controller_comparison(data: dict, source: str = "<dict>") -> Experimen
         for v in sweep["values"]:
             spec.with_parameter(sweep["parameter"], v)
     return spec
+
+
+def _brake_block(b, law: str, actuators: str, feedback: str, where: str) -> tuple:
+    """Validated brake-function block (Plan V4.0 M17) as sorted (key, value) pairs."""
+    if b is None:
+        return ()
+    from vehicle_model.controllers.brake_distribution import MODES
+    from vehicle_model.controllers.integrated_brake import REGEN_POLICIES
+    _require(isinstance(b, dict), f"{where} must be a mapping")
+    _keys(b, BRAKE_KEYS, where)
+    _require(law != "passive", f"{where}: the passive car has a fixed 60:40 bias and no brake functions")
+    _require(b.get("distribution", "grip") in MODES, f"{where}.distribution must be one of {MODES}")
+    for k in ("ibc", "cbc"):
+        _require(isinstance(b.get(k, False), bool), f"{where}.{k} must be true or false")
+    if "regen" in b or "coast_torque" in b:
+        _require(actuators == "dynamic", f"{where}: regen and coast_torque act in the brake actuator: need actuators: dynamic")
+        _require(b.get("regen", "cut_on_abs") in REGEN_POLICIES, f"{where}.regen must be one of {REGEN_POLICIES}")
+        ct = b.get("coast_torque", 0.0)
+        _require(isinstance(ct, (int, float)) and not isinstance(ct, bool) and 0.0 <= ct <= 500.0,
+                 f"{where}.coast_torque must lie in [0, 500] N m")
+        _require(not (b.get("regen") == "modulated" and feedback == "sensor_constrained"),
+                 f"{where}: modulated regen reads the ideal wheel slip: not allowed with feedback sensor_constrained")
+    return tuple(sorted(b.items()))
 
 
 def load_experiment(path: str | Path):
