@@ -15,7 +15,7 @@ Parameter synthetisch, nur virtuelle Modellvalidierung.
 | D4 Einleitung, Austritt, Recovery | PASS mit Grenze | End-to-End aus Geradeausfahrt ohne Zustandseingriff: 30 von 36 Läufen erfolgreich (83 %), µ 0,6 18/18, µ 0,9 12/18; nicht erreicht: 25° bei µ 0,9 (Einleitung überschwingt, korrekter Abbruch bei 13 und 15 m/s, Dreher in der Recovery bei 11 m/s → FAILED gemeldet). Überwachter Austritt ohne Überschwingen gegenüber 21–47° bei sofortiger Abschaltung |
 | D5 Kreisführung, Übergang, Acht | Kreis PASS, Übergang PASS, Acht: Ablauf PASS / Geometrie FAIL | Radiale Außenschleife beseitigt ±2 m Startversatz (0,00 / 0,06 m), fester LQR behält 1,4 m; gestufte Einleitung auf 25° bei µ 0,9 erreicht (die D4-Grenze), mit 8° Überschwingen; Acht: beide Driftkreise erreicht und symmetrisch, aber Mittelpunktabstand 1,34 × (R_l + R_r) statt 1 (Kreise berühren sich nicht) |
 | D6 Animation und Export | PASS | Vier Läufe mit je allen 13 Pflichtdateien; GIF öffnet, 280–420 Bilder, jedes Bild eine aufgezeichnete Probe; Bahn in CSV = Aufzeichnung (Test, 1e-9 m); Etiketten für gescheiterte Läufe und Abschnitte |
-| D7 Robustheit | PASS (Bericht), Grenzen benannt | Strukturierter Bericht über 19 Fälle (31 Läufe): ideal 14 held, 2 degraded (Split-µ), 0 lost; geschätzte und sensorbeschränkte Rückführung 15/15 lost mit Ursache (Beobachter für Drift ungeeignet); stationäre Abweichungen ohne Integralanteil bis 4,8°; Schrittweitenordnung 1,5; Radlastbilanz exakt |
+| D7 Robustheit | PASS (Bericht), Grenzen benannt | Strukturierter Bericht über 19 Fälle (31 Läufe): ideal 14 held, 2 degraded (Split-µ), 0 lost; geschätzte und sensorbeschränkte Rückführung mit dem allgemeinen Beobachter 15/15 lost mit Ursache; stationäre Abweichungen ohne Integralanteil bis 4,8°; Schrittweitenordnung 1,5; Radlastbilanz exakt. **Nachtrag:** driftfähiger Beobachter (Vorderräder + IMU): Sensormodi 15/15 held; mit Integralanteil alle 16 idealen Fälle held (Split-µ eingeschlossen), Endfehler ≤ 0,33° |
 
 ## D2: Driftgleichgewichte
 
@@ -170,7 +170,8 @@ vollständige Sequenz (verkleinert, 4,2 MB).
 ## D7: Robustheit
 
 `configs/drift/robustness.yaml`: nominaler Entwurf 13 m/s, β −20°, µ 0,9; Gleichgewicht + 3° Schwimmwinkel, 10 s.
-Ergebnisse: `output/drift/robustness/` (`report.md`, `kpi.json`).
+Ergebnisse: `output/drift/robustness/` (`report.md`, `kpi.json`). Die Tabelle ist der Ausgangsbefund mit dem
+D3-Entwurf und dem allgemeinen Beobachter (Commit `e1226b8`); die Behebung folgt im Nachtrag unten.
 
 | Fall | Abweichung | Klasse | β-RMSE (2. Hälfte) | Endfehler β |
 |---|---|---|---|---|
@@ -209,16 +210,61 @@ Befunde:
   5 ms liegt damit bei etwa 7e-4 im Endzustand.
 - Die bisherigen Tests des gesamten Repositories (Nicht-Drift-Funktionen) laufen unverändert (volle Suite).
 
+## D7-Nachtrag: driftfähiger Beobachter und Integralanteil
+
+Zwei Ursachen aus D7 behoben, ohne Testgrenzen zu ändern:
+
+- **`drift.DriftVelocityObserver`** (nur Sensoren): Kalman-Filter auf `[v_x, v_y]` mit der IMU-Kinematik
+  `v̇_x = a_x + r v_y`, `v̇_y = a_y − r v_x` als Prozessmodell (kein Reifenmodell) und den beiden **Vorderrädern** als
+  Messung (im Drift ohne Antriebs- und Bremsmoment, also frei rollend): `ω_i R = (v_x ∓ r b/2) cos δ + (v_y + l_v r) sin δ`.
+  Ein Rad misst nur die Geschwindigkeit entlang seiner Richtung; beide Komponenten werden über die Drehung (`r ≠ 0`)
+  beobachtbar. Start aus der ersten Vorderradmessung mit `v_y = 0` und großer Varianz: keine Annahme über den Schwimmwinkel.
+- **Integralanteil** (`design_lqr(..., integral=True)`, `LQRWeights.q_integral`, Standard 10): zusätzlicher Zustand
+  `z = ∫(β − β*) dt` im LQR-Entwurf, Anti-Windup durch bedingte Integration (kein Integrieren in gesättigten Schritten).
+  Opt-in; D3–D6 bleiben beim bisherigen Entwurf.
+
+Ergebnisse (`output/drift/robustness/` mit dem neuen Beobachter, `output/drift/robustness_integral/` zusätzlich mit
+Integralanteil, `configs/drift/robustness_integral.yaml`):
+
+| Fall | ohne Integral: Klasse, Endfehler β | mit Integral: Klasse, Endfehler β | mit Integral: Endfehler v |
+|---|---|---|---|
+| nominal | held, 0,07° | held, 0,00° | 0,01 m/s |
+| Schwerpunkt hoch | held, 4,78° | held, 0,33° | −1,20 m/s |
+| Schwerpunkt hinten / vorn | held, −2,27° / 3,02° | held, −0,10° / 0,17° | 0,73 / −0,76 m/s |
+| Reibwert 0,8 / 1,0 | held, −3,44° / 3,18° | held, −0,08° / 0,28° | 0,35 / −0,63 m/s |
+| Aktuatorverzögerung / stark | held, −2,21° / −3,58° | held, −0,71° / −1,97° (84 / 92 % gesättigt) | 0,39 / 0,44 m/s |
+| Split-µ 0,7 | degraded, −8,40° | **held**, −0,07° | 0,04 m/s |
+| Split-µ 0,5 | degraded, −16,7° | **held**, 0,18° (β-RMSE 3,7°) | −0,52 m/s |
+| geschätzt, Driftbeobachter (5 Seeds) | **held 5/5**, 0,48° (0,40–0,62) | held 5/5, 0,68° (0,57–0,85) | 0,28 m/s |
+| geschätzt, Sensoren gestört | **held 5/5**, 1,17° (0,93–1,48) | held 5/5, 2,41° (2,09–2,74) | 0,79 m/s |
+| sensorbeschränkt (Mode C), Driftbeobachter | **held 5/5**, 0,48° | held 5/5, 0,68° | 0,28 m/s |
+| geschätzt, allgemeiner Beobachter (Referenz) | lost 5/5 | lost 5/5 | – |
+
+Alle übrigen Fälle bleiben held (Endfehler mit Integral ≤ 0,04°).
+
+Befunde:
+
+- Der Driftbeobachter macht die Sensormodi driftfähig; der allgemeine Beobachter bleibt als Referenzfall im Bericht
+  und verliert den Drift weiterhin (erwartete Grenze, Test `test_general_blended_observer_is_not_drift_capable`).
+- Der Integralanteil beseitigt die stationären Schwimmwinkelabweichungen der idealen Fälle. Preis: Mit zwei Eingängen
+  und einer integrierten Größe stellt sich die Geschwindigkeit frei ein (bis −1,2 m/s; langsamer Eigenwert −0,036 1/s).
+- Mit Schätzung regelt das Integral den **geschätzten** Schwimmwinkel aus: Der Schätzfehler (nicht geschätzte Sensor-Biasse,
+  bei gestörten Sensoren Gyro-Bias 0,02 rad/s) bleibt als Endfehler (0,7° bzw. 2,4°), mit Integral etwas größer als ohne.
+- In den Sensormodi ist die Lenkrate in 43–74 % der Schritte begrenzt: Das Sensorrauschen erreicht über die steifen
+  LQR-Verstärkungen die Lenkung. Ein Filter oder geringere Gewichte wären der nächste Schritt.
+- Numerik mit Integral: Fehler gegen den feinsten Schritt 1,4e-3 / 2,3e-4 / 2,9e-4 (10 / 5 / 2,5 ms); keine saubere
+  Ordnung, weil die bedingte Integration mit der Sättigung schaltet. Radlastbilanz weiterhin < 1e-6.
+
 ## Offene Punkte nach D7
 
 - Einfangbereich systematisch bestimmen (größere Störungen, Rasterung wie in M11), statt nur der definierten Störungen.
-- Kein Integralanteil: Bei Parameterabweichungen bleibt eine stationäre Abweichung zu erwarten (D7).
 - 25° bei µ 0,9 direkt nicht einleitbar; gestuft (D5) erreicht, mit 8° Überschwingen nach dem Sollpunktwechsel.
 - Der Austritt verliert bis 16 % Geschwindigkeit; die Recovery bei 11 m/s nach misslungener Einleitung dreht sich.
 - Acht geometrisch nicht erreicht (Mittelpunktführung fehlt).
 - GIFs sind groß (10–18 MB); für die Dokumentation wird nur eine verkleinerte Sequenz veröffentlicht.
-- Driftfähiger Zustandsschätzer fehlt (Sensormodi verlieren den Drift).
-- Integralanteil gegen stationäre Abweichungen bei Parameterabweichungen; reibwertabhängiger Sollpunkt für Split-µ.
+- Driftbeobachter: Sensor-Biasse nicht geschätzt; in Geradeausfahrt ist `v_y` nicht beobachtbar; Bremsen oder
+  Frontantrieb verfälschen die Vorderradmessung. Rauschen sättigt die Lenkrate häufig.
+- Integralanteil nur im Halteregler (`DriftLQRController`); Einleitung, geplante Übergänge (D4/D5) nutzen ihn nicht.
 - D8 (NMPC) ist im Plan optional und erst nach bestandenen Basisgates vorgesehen.
 
 ---

@@ -1,0 +1,35 @@
+# Drift plan D7 follow-up: the same study with the sideslip integral in the LQR (q_integral 10).
+# Drift plan D7: robustness of the drift hold. The LQR is designed once for the nominal vehicle and the reference
+# below; every case deviates the plant (or its periphery) and is run unchanged. Sensor cases run with all seeds and
+# the drift observer (front wheels + IMU) unless observer: blended. controller.integral adds the sideslip integral.
+name: drift_robustness_integral
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+powertrain: {layout: rwd}
+reference: {speed_mps: 13.0, beta_deg: 20.0, mu: 0.9}
+scenario: {duration_s: 10.0, dt_s: 0.005, perturbation_beta_deg: 3.0, hold_tol_deg: 5.0}
+seeds: [0, 1, 2, 3, 4]
+controller: {integral: true, q_integral: 10.0}
+cases:
+  - {name: nominal}
+  - {name: heavy, mass_factor: 1.2, Iz_factor: 1.25}
+  - {name: light, mass_factor: 0.9, Iz_factor: 0.9}
+  - {name: high_cog, hcog_m: 0.6}
+  - {name: cog_rear, cog_shift_m: -0.10}
+  - {name: cog_front, cog_shift_m: 0.10}
+  - {name: rear_tyres_soft, cornering_scale_rear: 0.85}
+  - {name: front_tyres_soft, cornering_scale_front: 0.85}
+  - {name: mu_0.8, mu: 0.8}
+  - {name: mu_1.0, mu: 1.0}
+  - {name: speed_plus_10pct, speed_factor: 1.1}
+  - {name: transient_tyres, tyre_model: transient}
+  - {name: actuator_lag, actuator_delay_s: 0.02, actuator_tau_s: 0.03, control_latency_s: 0.01}
+  - {name: actuator_delay_heavy, actuator_delay_s: 0.04, actuator_tau_s: 0.03, control_latency_s: 0.01}
+  - {name: split_mu_0.7, split_road: {mu_low: 0.7, split_y: 24.0}}
+  - {name: split_mu_0.5, split_road: {mu_low: 0.5, split_y: 24.0}}
+  - {name: estimated, feedback: estimated}
+  - {name: estimated_degraded_sensors, feedback: estimated, sensor_noise_scale: 2.0, gyro_bias_radps: 0.02, sensor_latency_s: 0.02}
+  - {name: sensor_constrained, feedback: sensor_constrained}
+  - {name: estimated_blended_observer, feedback: estimated, observer: blended}   # general observer: not drift-capable (reference)
+numerics: {duration_s: 2.0, dt_s: 0.01}
+outputs: {directory: output/drift/robustness_integral}

@@ -24,7 +24,10 @@ def test_config_is_strict(tmp_path):
     for bad, msg in (({"cases": [{"name": "x", "masss": 1.1}]}, "unknown key"),
                      ({"cases": [{"name": "x", "feedback": "telepathy"}]}, "feedback"),
                      ({"cases": [{"name": "x"}, {"name": "x"}]}, "unique"),
-                     ({"cases": [{"name": "x", "tyre_model": "slicks"}]}, "tyre_model")):
+                     ({"cases": [{"name": "x", "tyre_model": "slicks"}]}, "tyre_model"),
+                     ({"cases": [{"name": "x", "observer": "oracle"}]}, "observer"),
+                     ({"controller": {"integral": True, "gain": 3}}, "unknown key"),
+                     ({"controller": {"integral": "yes"}}, "integral")):
         p = tmp_path / "c.yaml"
         p.write_text(yaml.safe_dump({**base, **bad}))
         with pytest.raises(ValueError, match=msg):

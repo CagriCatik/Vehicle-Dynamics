@@ -7,6 +7,11 @@ the true simulation state). With a steer-rate design (default) the steer is a co
 as a clip. Then the actuator limits: front steer within ``+-max_steer_f``, rear torque within
 ``[0, max_drive_torque]``, equal on both rear wheels; no brakes; rear steer 0. The limited
 command is what reaches the plant; saturation is reported.
+
+With an integral design (``lqr.integral``) the controller also carries
+``z = int (beta - beta*) dt`` (state ``x = [dq, d delta_f, z]``). Anti-windup by conditional
+integration: ``z`` is not advanced in a step whose command is saturated (steer, steer rate or
+torque), so a limit that binds does not wind up the integral.
 """
 
 from __future__ import annotations
@@ -46,6 +51,7 @@ class DriftLQRController:
 
     def reset(self) -> None:
         self._last_steer = None
+        self._z = 0.0
 
     def set_point(self, q_star, u_star, K) -> None:
         """Move the operating point (gain scheduling along a branch of equilibria); the steer state is kept."""
@@ -60,6 +66,8 @@ class DriftLQRController:
         if self.lqr.steer_rate:
             # steer is a controller state: integrate the commanded rate (limited) from the last command
             x = np.r_[q - self.q_star, self._last_steer - self.u_star[0]]
+            if getattr(self.lqr, "integral", False):
+                x = np.r_[x, self._z]
             v = -self.K @ x
             rate = float(np.clip(v[0], -p.max_steer_rate, p.max_steer_rate)) if self.rate_limit else float(v[0])
             u = np.array([self._last_steer + v[0] * dt, self.u_star[1] + v[1]])
@@ -75,6 +83,8 @@ class DriftLQRController:
         saturated = abs(steer - u[0]) > 1e-12 or torque != u[1]
         self._last_steer = steer
         beta = math.atan2(state.vy, state.vx)
+        if getattr(self.lqr, "integral", False) and not saturated:
+            self._z += (beta - math.atan2(self.q_star[1], self.q_star[0])) * dt   # follows set_point
         diag = DriftControlDiagnostics("HOLD", self.eq.beta, beta, self.eq.yaw_rate, float(state.r), self.eq.speed,
                                        math.hypot(state.vx, state.vy), self.equilibrium_id, bool(saturated),
                                        "saturated" if saturated else "nominal")

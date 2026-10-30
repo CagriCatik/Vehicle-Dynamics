@@ -26,7 +26,9 @@ reales Fahrzeug.
 | Aufzeichnung und vollständiger Export | `simulation/drift/runner.py` | D6 |
 | Animierte Läufe (Konfiguration) | `simulation/drift/showcase.py`, `configs/drift/animation.yaml` | D6 |
 | GIF-Renderer | `visualization/drift_animation.py` | D6 |
-| Robustheitsstudie | `simulation/drift/robustness.py`, `configs/drift/robustness.yaml` | D7 |
+| Robustheitsstudie | `simulation/drift/robustness.py`, `configs/drift/robustness.yaml`, `robustness_integral.yaml` | D7 |
+| Driftfähiger Geschwindigkeitsbeobachter | `drift/estimator.py` (`DriftVelocityObserver`) | D7-Nachtrag |
+| Integralanteil im LQR | `drift/lqr.py` (`integral=True`), `drift/control_adapter.py` | D7-Nachtrag |
 | Plots | `visualization/drift_plots.py` | D1–D3 |
 
 Abhängigkeitsrichtung wie im Plan (3.2): `drift/` kennt weder Matplotlib noch Dateien; `simulation/drift/` liest
@@ -231,6 +233,17 @@ Verlust, Endfehler ≥ 5°), `lost` (|β − β*| ≥ 30° zu irgendeinem Zeitpu
 Ergebnis erfasst). Numerik: Schrittweitenstudie des geschlossenen Kreises (Endzustand bei Δt, Δt/2, Δt/4 gegen Δt/8) und
 Radlastbilanz `Σ F_z = m g` je Lauf.
 
+Nachtrag: Beobachter je Fall (`observer: drift`, Standard, oder `blended`, der allgemeine Beobachter als Referenz) und
+Integralanteil (`controller: {integral: true, q_integral: 10}`).
+
+**Driftbeobachter.** Kalman-Filter auf `[v_x, v_y]`; Prozess: IMU-Kinematik `v̇_x = a_x + r v_y`, `v̇_y = a_y − r v_x`;
+Messung: die frei rollenden Vorderräder, `ω_i R ± r b/2 cos δ − l_v r sin δ = [cos δ, sin δ]·[v_x, v_y]`. Beobachtbar,
+solange `r ≠ 0` oder `δ ≠ 0`; Start aus der ersten Vorderradmessung mit `v_y = 0` und Standardabweichung 6 m/s.
+
+**Integralanteil.** Zustand `z = ∫(β − β*) dt`, linearisiert `ż = c'Δq` mit `c = [−v_y*, v_x*, 0, …]/v*²`, skaliert
+mit 0,05 rad·s und im LQR mit `q_integral` gewichtet; Anti-Windup durch bedingte Integration. Zwei Eingänge halten β
+und eine weitere Kombination; die Geschwindigkeit stellt sich frei ein.
+
 ## 9. Reproduktion
 
 ```bash
@@ -241,6 +254,7 @@ python examples/drift_initiation_demo.py                 # D4, configs/drift/ini
 python examples/drift_circle_demo.py                     # D5, configs/drift/circle_hold.yaml (~10 min)
 python examples/drift_figure_eight_demo.py               # D6, configs/drift/animation.yaml (GIFs, ~6 min)
 python examples/drift_robustness_demo.py                 # D7, configs/drift/robustness.yaml (~15 min parallel)
+python examples/drift_robustness_demo.py configs/drift/robustness_integral.yaml   # D7-Nachtrag, mit Integralanteil
 python -m pytest tests/vehicle_model/drift -q
 ```
 
@@ -250,8 +264,10 @@ und aufgelöst in den Ergebnisordner geschrieben (`run_config_resolved.yaml`).
 ## 10. Grenzen (Stand D7)
 
 - Nur Hinterradantrieb mit offenem Differential und Frontlenkung; Torque Vectoring und Allrad folgen nicht vor D7.
-- Nur mit idealer Rückführung funktionsfähig: Der vorhandene Schwimmwinkelbeobachter ist für den Drift ungeeignet (D7).
-- Kein Integralanteil: Bei abweichender Strecke bleibt eine stationäre Schwimmwinkelabweichung (bis etwa 5° in D7).
+- Der allgemeine Schwimmwinkelbeobachter ist für den Drift ungeeignet (D7); der Driftbeobachter schätzt keine
+  Sensor-Biasse und braucht frei rollende Vorderräder.
+- Integralanteil nur im Halteregler (opt-in); ohne ihn bleibt bei abweichender Strecke eine stationäre Abweichung
+  (bis 4,8° in D7), mit ihm weicht stattdessen die Geschwindigkeit ab (bis 1,2 m/s).
 - Lokale Aussage: Die Linearisierung gilt nahe dem Gleichgewicht; Einfangbereich und globales Verhalten sind nicht
   bewiesen, nur für die simulierten Störungen und die 36 Einleitungen des Sweeps gezeigt.
 - Einleitung nur über den Einfangbereich des LQR aus stationärer Kurvenfahrt; bei 25° und µ 0,9 reicht er nicht direkt,

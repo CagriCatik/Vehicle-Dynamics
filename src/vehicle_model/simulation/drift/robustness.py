@@ -13,7 +13,13 @@ plus three drift-specific ones:
 
 Feedback modes: ``ideal`` (true state), ``estimated`` (motion state from sensors and an observer,
 Mode B) and ``sensor_constrained`` (Mode C); sensor cases run with several seeds and report the
-spread (mean, min, max).
+spread (mean, min, max). Observer per case (``observer``): ``drift`` (default,
+:class:`~vehicle_model.drift.estimator.DriftVelocityObserver`: IMU kinematics + free-rolling front
+wheels) or ``blended`` (the general :class:`~vehicle_model.estimation.blended_sideslip.BlendedSideslipObserver`,
+kept as the reference that fails in a drift: speed from the spinning rear wheel, start at beta = 0).
+
+Controller (top-level ``controller``): ``integral: true`` adds the integral of the sideslip error
+to the LQR (``q_integral`` its scaled weight), default false (the D3 design).
 
 Scenario: start on the drift equilibrium with a sideslip perturbation, hold for ``duration_s``.
 Classes per run:
@@ -43,8 +49,8 @@ import yaml
 from .config import keys, load_yaml, numbers, require, vehicle_model
 
 _TOP = {"name", "description", "vehicle", "tyres", "powertrain", "reference", "scenario", "cases", "seeds", "workers",
-        "numerics", "outputs"}
-_EXTRA = {"name", "feedback", "hcog_m", "tyre_model", "split_road", "speed_factor", "sensor_seeds"}
+        "numerics", "outputs", "controller"}
+_EXTRA = {"name", "feedback", "hcog_m", "tyre_model", "split_road", "speed_factor", "sensor_seeds", "observer"}
 
 
 def load(path) -> dict:
@@ -63,11 +69,16 @@ def load(path) -> dict:
                 f"{src}: cases[{i}].feedback must be ideal, estimated or sensor_constrained")
         require(c.get("tyre_model", "quasi_static") in ("quasi_static", "transient"),
                 f"{src}: cases[{i}].tyre_model must be quasi_static or transient")
+        require(c.get("observer", "drift") in ("drift", "blended"), f"{src}: cases[{i}].observer must be drift or blended")
         if "split_road" in c:
             keys(c["split_road"], {"mu_low", "split_y"}, f"{src}: cases[{i}].split_road", {"mu_low", "split_y"})
         names.append(c["name"])
     require(len(set(names)) == len(names), f"{src}: case names must be unique")
     numbers(data.get("seeds", [0]), f"{src}: seeds", 0, 1e9)
+    ctl = data.get("controller") or {}
+    keys(ctl, {"integral", "q_integral"}, f"{src}: controller")
+    require(isinstance(ctl.get("integral", False), bool), f"{src}: controller.integral must be true or false")
+    numbers([ctl.get("q_integral", 10.0)], f"{src}: controller.q_integral", 0.0, 1e6)
     data["_source"] = src
     return data
 
@@ -75,14 +86,16 @@ def load(path) -> dict:
 def _design(cfg):
     from vehicle_model.drift import DriftEquilibriumSolver, DriftReference
     from vehicle_model.drift.linearization import linearise
-    from vehicle_model.drift.lqr import design_lqr
-    ref = cfg["reference"]
+    from vehicle_model.drift.lqr import LQRWeights, design_lqr
+    ref, ctl = cfg["reference"], cfg.get("controller") or {}
     m = vehicle_model(cfg["vehicle"], dict(cfg.get("tyres") or {}), cfg["_source"])
     sol = DriftEquilibriumSolver(m)
     eq = sol.solve(DriftReference(float(ref["speed_mps"]), -math.radians(float(ref["beta_deg"])), float(ref["mu"])))
     if not eq.physical_feasible:
         raise ValueError(f"nominal drift equilibrium infeasible: {eq.reasons}")
-    return m, eq, design_lqr(linearise(sol.plant(float(ref["mu"])), eq), m.params)
+    integral = bool(ctl.get("integral", False))
+    w = LQRWeights(q_integral=float(ctl.get("q_integral", LQRWeights.q_integral)))
+    return m, eq, design_lqr(linearise(sol.plant(float(ref["mu"])), eq), m.params, w, integral=integral)
 
 
 def _plant(m, case: dict, mu: float):
@@ -132,6 +145,7 @@ def run_case(args) -> dict:
     from vehicle_model.core.types import SevenDOFState
     from vehicle_model.drift.control_adapter import DriftLQRController
     from vehicle_model.drift.equilibrium import rwd_input
+    from vehicle_model.drift.estimator import DriftVelocityObserver
     from vehicle_model.drift.metrics import hold_kpis
     from vehicle_model.estimation.blended_sideslip import BlendedSideslipObserver
     from vehicle_model.simulation.uncertainty import sensor_config, wrap_controller
@@ -144,11 +158,14 @@ def run_case(args) -> dict:
     m, eq, lqr = _design(cfg)
     mu = float(cfg["reference"]["mu"])
     out = {"case": case["name"], "seed": seed, "feedback": case.get("feedback", "ideal")}
+    if out["feedback"] != "ideal":
+        out["observer"] = case.get("observer", "drift")
     try:
         plant, unc = _plant(m, case, mu)
         ctrl = DriftLQRController(m.params, eq, lqr)               # nominal design, never re-tuned
         if out["feedback"] != "ideal":
-            ctrl = _SteerSensor(EstimatedStateFeedback(ctrl, BlendedSideslipObserver(m.params), sensor_config(unc),
+            obs = DriftVelocityObserver(m.params) if out["observer"] == "drift" else BlendedSideslipObserver(m.params)
+            ctrl = _SteerSensor(EstimatedStateFeedback(ctrl, obs, sensor_config(unc),
                                                        seed=int(seed), params=m.params,
                                                        mode="C" if out["feedback"] == "sensor_constrained" else "B"))
         ctrl = wrap_controller(ctrl, unc)
@@ -163,6 +180,7 @@ def run_case(args) -> dict:
         k = hold_kpis(h.time, h.vx, h.vy, h.r, eq.beta, eq.yaw_rate, eq.speed, dur / 2.0, sat)
         final_err = abs(math.radians(k["final_beta_error_deg"]))
         out.update(k)
+        out["final_speed_error_mps"] = float(math.hypot(h.vx[-1], h.vy[-1]) - eq.speed)
         out["class"] = "lost" if k["stability_loss"] else ("held" if final_err < tol else "degraded")
         out["load_balance_max_rel_error"] = float(np.max(np.abs(np.sum(h.Fz, axis=1) - plant.params.mass * plant.params.g))
                                                   / (plant.params.mass * plant.params.g))
@@ -192,9 +210,13 @@ def numerics(cfg) -> dict:
         finals.append(np.r_[h.vx[-1], h.vy[-1], h.r[-1]])
     e = [float(np.max(np.abs(finals[i] - finals[-1]))) for i in range(len(steps) - 1)]
     orders = [math.log2(e[i] / e[i + 1]) if e[i + 1] > 0 else float("inf") for i in range(len(e) - 1)]
-    return {"steps": steps, "errors_vs_finest": e, "observed_orders": orders,
-            "note": "closed loop: the controller is sampled with the same step and holds its input over the step, "
-                    "so the observed order (about 1.5) stays below the order 4 of the RK4 plant integration"}
+    note = ("closed loop: the controller is sampled with the same step and holds its input over the step, so the "
+            "observed order stays below the order 4 of the RK4 plant integration")
+    if lqr.integral:
+        note += ("; with the sideslip integral, the conditional integration (anti-windup) switches with saturation, "
+                 "the final state is not smooth in the step and the observed order is not meaningful: the error level "
+                 "is the result")
+    return {"steps": steps, "errors_vs_finest": e, "observed_orders": orders, "note": note}
 
 
 def run(cfg, out_dir=None) -> dict:
@@ -239,6 +261,7 @@ def _summary(cfg, res) -> list:
                      "classes": {k: cls.count(k) for k in ("held", "degraded", "lost", "failed") if cls.count(k)},
                      "beta_rmse_deg": stat("beta_rmse_deg"), "final_beta_error_deg": stat("final_beta_error_deg"),
                      "max_beta_error_deg": stat("max_beta_error_deg"), "saturation_fraction": stat("saturation_fraction"),
+                     "final_speed_error_mps": stat("final_speed_error_mps"),
                      "deviation": {k: v for k, v in c.items() if k != "name"},
                      "errors": sorted({r.get("error", "") for r in rs if r.get("error")})})
     return rows
@@ -246,20 +269,24 @@ def _summary(cfg, res) -> list:
 
 def _report(cfg, summary, num) -> str:
     ref, sc = cfg["reference"], cfg["scenario"]
+    ctl = cfg.get("controller") or {}
+    law = (f"drift LQR with sideslip integral, q_integral {ctl.get('q_integral', 10.0)}" if ctl.get("integral")
+           else "drift LQR without integral action")
     L = [f"# Drift robustness: {cfg['name']}", "",
-         f"Nominal design: {ref['speed_mps']} m/s, beta {ref['beta_deg']} deg, mu {ref['mu']} (drift LQR, never re-tuned). "
+         f"Nominal design: {ref['speed_mps']} m/s, beta {ref['beta_deg']} deg, mu {ref['mu']} ({law}, never re-tuned). "
          f"Scenario: equilibrium + {sc.get('perturbation_beta_deg', 3.0)} deg sideslip, {sc.get('duration_s', 10.0)} s; "
          f"held: final |beta - beta*| < {sc.get('hold_tol_deg', 5.0)} deg; lost: >= 30 deg at any time. Synthetic "
          "parameters, virtual model only.", "",
          "| case | deviation | feedback | runs | held / degraded / lost / failed | beta RMSE [deg] mean (min-max) | "
-         "final beta error [deg] mean (min-max) | saturated |", "|---" * 8 + "|"]
+         "final beta error [deg] mean (min-max) | final speed error [m/s] | saturated |", "|---" * 9 + "|"]
     for r in summary:
         c = r["classes"]
-        dev = ", ".join(f"{k}: {v}" for k, v in r["deviation"].items() if k != "feedback") or "none"
+        dev = ", ".join(f"{k}: {v}" for k, v in r["deviation"].items() if k not in ("feedback", "observer")) or "none"
+        fb = r["feedback"] + (f" ({r['deviation'].get('observer', 'drift')} observer)" if r["feedback"] != "ideal" else "")
         f3 = lambda t: "–" if math.isnan(t[0]) else (f"{t[0]:.2f}" if t[1] == t[2] else f"{t[0]:.2f} ({t[1]:.2f}–{t[2]:.2f})")
-        L.append(f"| {r['case']} | {dev} | {r['feedback']} | {r['runs']} | {c.get('held', 0)} / {c.get('degraded', 0)} / "
+        L.append(f"| {r['case']} | {dev} | {fb} | {r['runs']} | {c.get('held', 0)} / {c.get('degraded', 0)} / "
                  f"{c.get('lost', 0)} / {c.get('failed', 0)} | {f3(r['beta_rmse_deg'])} | {f3(r['final_beta_error_deg'])} | "
-                 f"{r['saturation_fraction'][0]:.0%} |" + (f" errors: {r['errors']}" if r["errors"] else ""))
+                 f"{f3(r['final_speed_error_mps'])} | {r['saturation_fraction'][0]:.0%} |" + (f" errors: {r['errors']}" if r["errors"] else ""))
     L += ["", "## Numerics", "", f"RK4 closed-loop step study (nominal plant, {num['steps']} s): errors of the final "
           f"(vx, vy, r) against the finest step {[f'{e:.2e}' for e in num['errors_vs_finest']]}, observed orders "
           f"{[round(o, 2) for o in num['observed_orders']]}. {num['note']}.", ""]
