@@ -1,6 +1,6 @@
 # Drift-Regler: Ergebnisse und Abnahme (Drift-Plan)
 
-Ergebnisse der Pakete D0–D6 mit Gate-Bewertung (PASS / FAIL / INFEASIBLE). Verfahren:
+Ergebnisse der Pakete D0–D7 mit Gate-Bewertung (PASS / FAIL / INFEASIBLE). Verfahren:
 [DRIFT_CONTROLLER.md](DRIFT_CONTROLLER.md); Modellgrenzen: [DRIFT_MODEL_VALIDITY.md](DRIFT_MODEL_VALIDITY.md). Alle
 Parameter synthetisch, nur virtuelle Modellvalidierung.
 
@@ -15,6 +15,7 @@ Parameter synthetisch, nur virtuelle Modellvalidierung.
 | D4 Einleitung, Austritt, Recovery | PASS mit Grenze | End-to-End aus Geradeausfahrt ohne Zustandseingriff: 30 von 36 Läufen erfolgreich (83 %), µ 0,6 18/18, µ 0,9 12/18; nicht erreicht: 25° bei µ 0,9 (Einleitung überschwingt, korrekter Abbruch bei 13 und 15 m/s, Dreher in der Recovery bei 11 m/s → FAILED gemeldet). Überwachter Austritt ohne Überschwingen gegenüber 21–47° bei sofortiger Abschaltung |
 | D5 Kreisführung, Übergang, Acht | Kreis PASS, Übergang PASS, Acht: Ablauf PASS / Geometrie FAIL | Radiale Außenschleife beseitigt ±2 m Startversatz (0,00 / 0,06 m), fester LQR behält 1,4 m; gestufte Einleitung auf 25° bei µ 0,9 erreicht (die D4-Grenze), mit 8° Überschwingen; Acht: beide Driftkreise erreicht und symmetrisch, aber Mittelpunktabstand 1,34 × (R_l + R_r) statt 1 (Kreise berühren sich nicht) |
 | D6 Animation und Export | PASS | Vier Läufe mit je allen 13 Pflichtdateien; GIF öffnet, 280–420 Bilder, jedes Bild eine aufgezeichnete Probe; Bahn in CSV = Aufzeichnung (Test, 1e-9 m); Etiketten für gescheiterte Läufe und Abschnitte |
+| D7 Robustheit | PASS (Bericht), Grenzen benannt | Strukturierter Bericht über 19 Fälle (31 Läufe): ideal 14 held, 2 degraded (Split-µ), 0 lost; geschätzte und sensorbeschränkte Rückführung 15/15 lost mit Ursache (Beobachter für Drift ungeeignet); stationäre Abweichungen ohne Integralanteil bis 4,8°; Schrittweitenordnung 1,5; Radlastbilanz exakt |
 
 ## D2: Driftgleichgewichte
 
@@ -166,7 +167,49 @@ Querablagenführung oder einen direkten Wechsel links → rechts ohne Austritt (
 Jeder Ordner enthält die 13 Pflichtdateien. Die GIFs sind 10–18 MB groß; in die Dokumentation übernommen ist nur die
 vollständige Sequenz (verkleinert, 4,2 MB).
 
-## Offene Punkte nach D6
+## D7: Robustheit
+
+`configs/drift/robustness.yaml`: nominaler Entwurf 13 m/s, β −20°, µ 0,9; Gleichgewicht + 3° Schwimmwinkel, 10 s.
+Ergebnisse: `output/drift/robustness/` (`report.md`, `kpi.json`).
+
+| Fall | Abweichung | Klasse | β-RMSE (2. Hälfte) | Endfehler β |
+|---|---|---|---|---|
+| nominal | – | held | 0,27° | 0,07° |
+| schwer / leicht | Masse 1,2/0,9, I_z 1,25/0,9 | held / held | 0,21° / 0,31° | −0,01° / 0,13° |
+| Schwerpunkt hoch | h_S 0,6 m statt 0,5 m | held | 5,07° | 4,78° |
+| Schwerpunkt hinten / vorn | ±0,10 m | held / held | 2,01° / 3,08° | −2,27° / 3,02° |
+| Hinterreifen / Vorderreifen weicher | Steifigkeit × 0,85 | held / held | 0,35° / 0,60° | −0,55° / 0,37° |
+| Reibwert 0,8 / 1,0 | statt 0,9 | held / held | 3,83° / 3,84° | −3,44° / 3,18° |
+| Anfangsgeschwindigkeit +10 % | 14,3 m/s | held | 0,81° | −0,21° |
+| Reifenrelaxation | `TransientSevenDOFModel` | held | 0,28° | 0,08° |
+| Aktuatorverzögerung | 20 ms Totzeit, 30 ms Verzögerung, 10 ms Latenz | held (84 % gesättigt) | 2,27° | −2,21° |
+| Aktuatorverzögerung stark | 40 / 30 / 10 ms | held (91 % gesättigt) | 3,16° | −3,58° |
+| Split-µ 0,7 / 0,5 | halber Kreis mit niedrigerem Reibwert | degraded / degraded | 8,59° / 16,1° | −8,40° / −16,7° |
+| geschätzt (Mode B) | Sensoren nominal, 5 Seeds | lost 5/5 | – | – |
+| geschätzt, Sensoren gestört | Rauschen × 2, Gyro-Bias 0,02 rad/s, 20 ms Latenz | lost 5/5 | – | – |
+| sensorbeschränkt (Mode C) | 5 Seeds | lost 5/5 | – | – |
+
+Befunde:
+
+- **Ideale Rückführung:** Kein Driftverlust in 16 Fällen. Parameterabweichungen verschieben das Gleichgewicht, und ohne
+  Integralanteil bleibt eine stationäre Abweichung (bis 4,8° bei höherem Schwerpunkt, ±3,3° bei Reibwert ±0,1).
+- **Aktuatorverzögerung:** Der Drift wird gehalten, aber die Lenkratengrenze ist in 84–91 % der Schritte aktiv; es
+  bleibt kaum Stellreserve.
+- **Split-µ:** Der Drift wird nicht verloren, aber der Schwimmwinkel weicht um 8° (µ 0,7) bzw. 17° (µ 0,5) ab; ein
+  Drift über wechselnde Reibwerte bräuchte einen reibwertabhängigen Sollpunkt.
+- **Geschätzte Zustände: nicht driftfähig.** Der vorhandene Beobachter (`BlendedSideslipObserver`) startet mit β = 0
+  (Normalfahrt angenommen), das Fahrzeug ist aber im Drift (−20°), und er nimmt die Geschwindigkeit aus den Raddrehzahlen:
+  Das kurveninnere Hinterrad dreht im Drift durch (κ ≈ 0,87), die geschätzte Längsgeschwindigkeit steigt auf 24 m/s
+  (wahr: 12 m/s). Der LQR regelt dann auf falsche Zustände und verliert den Drift in allen 15 Läufen. Die Seeds ändern
+  daran nichts (Endzustand jeweils Stillstand nach Dreher). Ein driftfähiger Schätzer (Geschwindigkeit nur aus den
+  frei rollenden Vorderrädern oder aus GNSS, Initialisierung im Drift) fehlt.
+- **Numerik:** Radlastbilanz in jedem Lauf auf < 1e-6 relativ erfüllt. Schrittweitenstudie des geschlossenen Kreises:
+  Fehler 1,9e-3 / 7,1e-4 / 2,4e-4 bei 10 / 5 / 2,5 ms gegen 1,25 ms, beobachtete Ordnung etwa 1,5 (der Regler hält
+  seinen Eingang über einen Schritt; die RK4-Ordnung 4 der Strecke wird im Kreis nicht erreicht). Der Standardschritt
+  5 ms liegt damit bei etwa 7e-4 im Endzustand.
+- Die bisherigen Tests des gesamten Repositories (Nicht-Drift-Funktionen) laufen unverändert (volle Suite).
+
+## Offene Punkte nach D7
 
 - Einfangbereich systematisch bestimmen (größere Störungen, Rasterung wie in M11), statt nur der definierten Störungen.
 - Kein Integralanteil: Bei Parameterabweichungen bleibt eine stationäre Abweichung zu erwarten (D7).
@@ -174,7 +217,9 @@ vollständige Sequenz (verkleinert, 4,2 MB).
 - Der Austritt verliert bis 16 % Geschwindigkeit; die Recovery bei 11 m/s nach misslungener Einleitung dreht sich.
 - Acht geometrisch nicht erreicht (Mittelpunktführung fehlt).
 - GIFs sind groß (10–18 MB); für die Dokumentation wird nur eine verkleinerte Sequenz veröffentlicht.
-- Nächstes Paket: D7, Robustheit (Parameter, Reifen, Aktuatoren, Sensoren, Reibwertsprung).
+- Driftfähiger Zustandsschätzer fehlt (Sensormodi verlieren den Drift).
+- Integralanteil gegen stationäre Abweichungen bei Parameterabweichungen; reibwertabhängiger Sollpunkt für Split-µ.
+- D8 (NMPC) ist im Plan optional und erst nach bestandenen Basisgates vorgesehen.
 
 ---
 

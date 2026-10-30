@@ -1,4 +1,4 @@
-# Drift-Regler: Verfahren (Drift-Plan D1–D6)
+# Drift-Regler: Verfahren (Drift-Plan D1–D7)
 
 Autonomer Drift auf der bestehenden 7-DOF-Strecke nach `Plan_v3.md`. Dieses Dokument beschreibt die Verfahren;
 Ergebnisse stehen in [DRIFT_RESULTS.md](DRIFT_RESULTS.md), Modellgrenzen und Konventionen in
@@ -26,6 +26,7 @@ reales Fahrzeug.
 | Aufzeichnung und vollständiger Export | `simulation/drift/runner.py` | D6 |
 | Animierte Läufe (Konfiguration) | `simulation/drift/showcase.py`, `configs/drift/animation.yaml` | D6 |
 | GIF-Renderer | `visualization/drift_animation.py` | D6 |
+| Robustheitsstudie | `simulation/drift/robustness.py`, `configs/drift/robustness.yaml` | D7 |
 | Plots | `visualization/drift_plots.py` | D1–D3 |
 
 Abhängigkeitsrichtung wie im Plan (3.2): `drift/` kennt weder Matplotlib noch Dateien; `simulation/drift/` liest
@@ -214,7 +215,23 @@ dazwischen ist β, Gegenlenken sichtbar), HUD (Zeit, km/h, β, r, δ_v, κ HL/HR
 Wiedergabegeschwindigkeit aus `configs/drift/animation.yaml`. Die bestehenden Animationen und Live-Plots bleiben
 unverändert.
 
-## 8. Reproduktion
+## 8. Robustheit (D7)
+
+Der Drift-LQR wird einmal für das nominale Fahrzeug entworfen (13 m/s, β −20°, µ 0,9) und in jedem Fall unverändert
+eingesetzt. Abweichungen: das Unsicherheitsmodell aus M12 (`UncertaintyCase`: Masse, Gierträgheit, Schwerpunktlage,
+Schräglaufsteifigkeit, Reibwert, Aktuatortotzeit und -verzögerung, Regellatenz, Sensorrauschen, -bias, -latenz) und
+driftspezifisch: Schwerpunkthöhe, die Strecke mit Reifenrelaxation (`TransientSevenDOFModel`, Startzustand mit
+stationären Relaxationszuständen), eine Split-µ-Fahrbahn quer durch den Kreis (der Drift wechselt zweimal je Runde den
+Reibwert) und eine höhere Anfangsgeschwindigkeit. Rückführung ideal, geschätzt (Mode B) oder sensorbeschränkt (Mode C);
+in den Sensormodi bekommt der Sensor den zuletzt angewendeten Lenkbefehl als gemessenen Lenkwinkel. Sensorfälle laufen mit
+fünf Seeds.
+
+Szenario: Gleichgewicht + 3° Schwimmwinkel, 10 s. Klassen: `held` (kein Driftverlust, Endfehler < 5°), `degraded` (kein
+Verlust, Endfehler ≥ 5°), `lost` (|β − β*| ≥ 30° zu irgendeinem Zeitpunkt), `failed` (nicht endlich oder Ausnahme, als
+Ergebnis erfasst). Numerik: Schrittweitenstudie des geschlossenen Kreises (Endzustand bei Δt, Δt/2, Δt/4 gegen Δt/8) und
+Radlastbilanz `Σ F_z = m g` je Lauf.
+
+## 9. Reproduktion
 
 ```bash
 python examples/drift_tyre_audit.py                      # D1
@@ -223,16 +240,18 @@ python examples/drift_hold_demo.py                       # D3, configs/drift/dri
 python examples/drift_initiation_demo.py                 # D4, configs/drift/initiation.yaml (36 Läufe, ~16 min parallel)
 python examples/drift_circle_demo.py                     # D5, configs/drift/circle_hold.yaml (~10 min)
 python examples/drift_figure_eight_demo.py               # D6, configs/drift/animation.yaml (GIFs, ~6 min)
+python examples/drift_robustness_demo.py                 # D7, configs/drift/robustness.yaml (~15 min parallel)
 python -m pytest tests/vehicle_model/drift -q
 ```
 
 Konfigurationen werden streng geprüft (unbekannte Schlüssel, Wertebereiche, Dateien, Reifennamen, Gewichtsdimensionen)
 und aufgelöst in den Ergebnisordner geschrieben (`run_config_resolved.yaml`).
 
-## 9. Grenzen (Stand D6)
+## 10. Grenzen (Stand D7)
 
 - Nur Hinterradantrieb mit offenem Differential und Frontlenkung; Torque Vectoring und Allrad folgen nicht vor D7.
-- Informationsmodus nur `ideal_full_state`; geschätzte und sensorbeschränkte Rückführung folgen (D7).
+- Nur mit idealer Rückführung funktionsfähig: Der vorhandene Schwimmwinkelbeobachter ist für den Drift ungeeignet (D7).
+- Kein Integralanteil: Bei abweichender Strecke bleibt eine stationäre Schwimmwinkelabweichung (bis etwa 5° in D7).
 - Lokale Aussage: Die Linearisierung gilt nahe dem Gleichgewicht; Einfangbereich und globales Verhalten sind nicht
   bewiesen, nur für die simulierten Störungen und die 36 Einleitungen des Sweeps gezeigt.
 - Einleitung nur über den Einfangbereich des LQR aus stationärer Kurvenfahrt; bei 25° und µ 0,9 reicht er nicht direkt,
