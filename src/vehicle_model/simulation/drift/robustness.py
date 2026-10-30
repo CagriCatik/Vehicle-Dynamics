@@ -1,8 +1,8 @@
-"""Drift plan D7: robustness, model variation and numerical checks of the drift hold.
+"""Robustness, model variation and numerical checks of the drift hold.
 
 The drift LQR is designed once from the nominal vehicle (``configs/drift/robustness.yaml``:
 speed, sideslip, friction). Every case runs the same scenario on a deviating plant and is
-classified; nothing is re-tuned per case. The deviations reuse the M12 uncertainty model
+classified; nothing is re-tuned per case. The deviations reuse the robust control uncertainty model
 (:class:`~vehicle_model.simulation.uncertainty.UncertaintyCase`: mass, inertia, CoG,
 cornering stiffness, friction, actuator delay/lag, control latency, sensor noise/bias/latency)
 plus three drift-specific ones:
@@ -19,7 +19,7 @@ wheels) or ``blended`` (the general :class:`~vehicle_model.estimation.blended_si
 kept as the reference that fails in a drift: speed from the spinning rear wheel, start at beta = 0).
 
 Controller (top-level ``controller``): ``integral: true`` adds the integral of the sideslip error
-to the LQR (``q_integral`` its scaled weight), default false (the D3 design).
+to the LQR (``q_integral`` its scaled weight), default false (the drift LQR design).
 
 Scenario: start on the drift equilibrium with a sideslip perturbation, hold for ``duration_s``.
 Classes per run:
@@ -295,7 +295,7 @@ def _report(cfg, summary, num) -> str:
 
 def main(argv=None) -> int:
     import argparse
-    ap = argparse.ArgumentParser(description="Drift robustness study (Drift plan D7)")
+    ap = argparse.ArgumentParser(description="Drift robustness study")
     ap.add_argument("config", nargs="?", default="configs/drift/robustness.yaml")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)

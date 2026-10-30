@@ -1,4 +1,4 @@
-"""Plausibility and consistency checks for vehicle parameter sets (Plan.md, Abschnitt 4.2).
+"""Plausibility and consistency checks for vehicle parameter sets.
 
 ``check_vehicle_consistency`` returns a list of human-readable violations; an empty
 list means the set passed. The plausibility bands are general passenger-car ranges

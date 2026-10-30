@@ -1,0 +1,16 @@
+# GVC off/on in an open-loop lane change (one sine period, 2.5 deg, 0.5 Hz), 80 km/h, constant pedal.
+type: controller_comparison
+name: g_vectoring_lane_change
+description: GVC off/on in a lane change.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+road: {type: uniform, mu: 1.0}
+manoeuvre: {type: lane_change, speed_kph: 80, amplitude_deg: 2.5, frequency_hz: 0.5, accel_pedal: 0.05, duration_s: 5.0}
+controllers:
+  - {law: no_yaw}
+  - {law: no_yaw, gvc: {enabled: false}}
+  - {law: no_yaw, gvc: {enabled: true}}
+  - {law: no_yaw, gvc: {enabled: true, c_xy: 0.3, max_decel_g: 0.1}}
+  - {law: pi}
+  - {law: pi, gvc: {enabled: true}}
+outputs: {directory: output/g_vectoring/lane_change, formats: [csv, json, png, md]}

@@ -1,4 +1,4 @@
-"""Experiment type ``equilibrium_analysis``: nonlinear equilibria and local stability (Plan V3.0 M11 6.1, 6.2, §12).
+"""Experiment type ``equilibrium_analysis``: nonlinear equilibria and local stability (6.2).
 
 For every point of a sweep (and every curve of an optional series) the equilibria of the
 two-track model are computed (:mod:`vehicle_model.handling_analysis.equilibrium`), linearised

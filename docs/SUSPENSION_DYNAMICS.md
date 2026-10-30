@@ -75,13 +75,13 @@ $$F_{\text{act}} = \begin{cases}
 0 & \text{otherwise}
 \end{cases}$$
 
-**Measured (M8, default parameters, `tests/vehicle_model/test_vertical_dynamics.py`):** body acceleration RMS −33 % at the bounce frequency (1.45 Hz) and −18 % on an ISO 8608 class C road at 72 km/h, compared with the passive damper. The price is road holding: near wheel hop (11.5 Hz) the dynamic tyre load rises by about 75 %.
+**Measured (default parameters, `tests/vehicle_model/test_vertical_dynamics.py`):** body acceleration RMS −33 % at the bounce frequency (1.45 Hz) and −18 % on an ISO 8608 class C road at 72 km/h, compared with the passive damper. The price is road holding: near wheel hop (11.5 Hz) the dynamic tyre load rises by about 75 %.
 
 ### 2.2 Groundhook Damping
 Groundhook ties the virtual damper to the stationary road frame to minimize tyre deflection:
 $$F_{\text{ground}} = C_{\text{ground}} \dot{z}_u$$
 $$\text{Condition: } \dot{z}_u (\dot{z}_s - \dot{z}_u) \le 0$$
-Intended to reduce dynamic tyre load fluctuations $\Delta F_z$. **Measured (M8, default tuning):** only −2.6 % dynamic tyre load at wheel hop; at the bounce frequency the body mode runs at $c_{min}$ and the dynamic tyre load doubles, and on an ISO 8608 class C road the dynamic tyre load RMS is 8 % *higher* than with the passive damper. With this tuning, groundhook does not improve road holding on broadband roads.
+Intended to reduce dynamic tyre load fluctuations $\Delta F_z$. **Measured (default tuning):** only −2.6 % dynamic tyre load at wheel hop; at the bounce frequency the body mode runs at $c_{min}$ and the dynamic tyre load doubles, and on an ISO 8608 class C road the dynamic tyre load RMS is 8 % *higher* than with the passive damper. With this tuning, groundhook does not improve road holding on broadband roads.
 
 ---
 
@@ -126,7 +126,7 @@ graph TD
 
 ---
 
-## 5. Verification and road excitations (M8)
+## 5. Verification and road excitations
 
 See [VERTICAL_DYNAMICS.md](VERTICAL_DYNAMICS.md): analytical frequency responses, energy balance, ISO 8608 roads and the semi-active trade-off.
 

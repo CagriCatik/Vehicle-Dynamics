@@ -1,7 +1,6 @@
 """Brake-by-wire actuator models with hydraulic dynamics, ABS valve modulation, and regenerative blending.
 
-Implements electro-hydraulic friction brakes and regenerative brake blending
-as required by Plan.md §8 and §19 (Milestone M4).
+Implements electro-hydraulic friction brakes and regenerative brake blending.
 """
 
 from __future__ import annotations
@@ -110,7 +109,7 @@ class BrakeByWireActuator:
         dt : float
             Time step [s].
         regen_limit : array_like of shape (4,), optional
-            Upper limit of the regenerative torque per wheel [Nm] (regenerative slip control, Plan V4.0 M17.4).
+            Upper limit of the regenerative torque per wheel [Nm] (regenerative slip control).
         regen_only : array_like of shape (4,), optional
             Braking torque that only the electric machine may deliver (coast drag torque) [Nm]; regen serves
             it first, the rest of the regen covers ``cmd_brake_torque``; it is never converted to friction.

@@ -1,4 +1,4 @@
-"""Plan V3.0 M13: critical scenario search (spec, constraints, search, verification, minimisation, replay)."""
+"""Critical scenario search (spec, constraints, search, verification, minimisation, replay)."""
 
 from __future__ import annotations
 
@@ -169,7 +169,7 @@ def test_a_crashing_run_is_numerical_not_critical(monkeypatch):
     assert r["class"] == cs.NUMERICAL and "solver diverged" in r["error"] and not math.isfinite(r["objective"])
 
 
-# ----------------------------------------------------------------------------- regression cases (M13 8.4)
+# ----------------------------------------------------------------------------- regression cases
 CRITICAL = sorted(__import__("pathlib").Path("configs/critical").glob("*.yaml"))
 
 
@@ -194,4 +194,4 @@ def test_regression_case_is_confirmed_and_the_baseline_holds(path, tmp_path):
     assert out["replay"]["verdict"] == "confirmed" and out["replay"]["passed"]
     assert out["replay"]["checks"]["same_seed"]["relative_change"] == 0.0
     base = cs.evaluate(s, s.replay["values"], controller=s.baseline)
-    assert base["class"] == "nominal"            # the V2.0 PI keeps the same case under control
+    assert base["class"] == "nominal"            # the baseline PI keeps the same case under control

@@ -1,4 +1,4 @@
-"""Experiment type ``fault_tolerance_benchmark``: fault catalogue on the 7-DOF closed loop (Plan V4.0 M23).
+"""Experiment type ``fault_tolerance_benchmark``: fault catalogue on the 7-DOF closed loop.
 
 Manoeuvres x fault sets x controllers. Every controller runs behind the deterministic fault injection
 (:mod:`vehicle_model.simulation.fault_injection`); ``aware: true`` adds the health monitor and degraded modes

@@ -1,4 +1,4 @@
-"""Robust and adaptive yaw motion laws (Plan V3.0 M12 7.2 A-D).
+"""Robust and adaptive yaw motion laws (variants A-D).
 
 All laws use the design model of :mod:`.yaw_laws` (linear single track with yaw-moment
 input and yaw-rate integrator, states ``e = [v_y - v_y,ss, r - r_ss, z]``), are designed
@@ -69,7 +69,7 @@ C. Constraint-tightening MPC (:class:`TighteningMPCYawLaw`)
                                                             input rows <= rhs + s_u,  s >= 0,
 
    (an exact penalty: zero slack whenever the tightened problem is feasible). Reporting
-   follows the M10 separation: the solver status says how well the relaxed problem was
+   follows the state estimation separation: the solver status says how well the relaxed problem was
    solved; the plan's violation of the hard limits appears in the feasibility report
    (counted as infeasibility rate), together with ``tightened_problem_feasible = False``
    and the slack. Only if the relaxed solve fails as well is ``c = 0`` (the ancillary

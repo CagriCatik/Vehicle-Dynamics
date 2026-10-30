@@ -1,4 +1,4 @@
-"""Golden-value regression tests for the existing vehicle and tyre models (Plan.md, M0).
+"""Golden-value regression tests for the existing vehicle and tyre models.
 
 Each case runs a short deterministic simulation and compares the result with the
 stored baseline in ``data/regression_baseline.json``. The baseline freezes the

@@ -1,4 +1,4 @@
-"""Plan V3.0 M14: design optimisation (Pareto dominance, NSGA-II, validity, coupling, re-check)."""
+"""Design optimisation (Pareto dominance, NSGA-II, validity, coupling, re-check)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""``VehicleController`` adapter of the drift LQR (Drift plan D3): the only link to the controller port.
+"""``VehicleController`` adapter of the drift LQR: the only link to the controller port.
 
 Each step: ``q = [vx, vy, r, omega x4]`` from the state (information mode ``ideal_full_state``:
 the true simulation state). With a steer-rate design (default) the steer is a controller state:
@@ -42,7 +42,7 @@ class DriftLQRController:
         self.u_star = np.array([equilibrium.steer_front, equilibrium.wheel_drive_torque[2]])
         self.K = lqr.K
         self.equilibrium_id = equilibrium_id
-        self.initial_steer = initial_steer   # steer state at reset (default: equilibrium steer); bumpless start in D4
+        self.initial_steer = initial_steer   # steer state at reset (default: equilibrium steer); bumpless start in drift initiation and recovery
         self.reset()
 
     @property
@@ -97,7 +97,7 @@ class DriftLQRController:
 
 
 class DriftSupervisedController:
-    """Supervised drift (Drift plan D4): approach, initiation, hold, exit and recovery as one VehicleController.
+    """Supervised drift: approach, initiation, hold, exit and recovery as one VehicleController.
 
     The supervisor (:mod:`.supervisor`) decides the mode; the laws per mode are:
 
@@ -114,7 +114,7 @@ class DriftSupervisedController:
                    steer ramp to 0 with speed control; ``straight_reached`` at |steer| < 0.5 deg
         FAILED     drive torque 0, steer ramped to 0: a defined, bounded command, not a rescue
 
-    Design findings behind the exit law (DRIFT_RESULTS.md, D4): an LQR around the cornering
+    Design findings behind the exit law (DRIFT_RESULTS.md, drift initiation and recovery): an LQR around the cornering
     equilibrium spins the vehicle from the drift (linear design far from its operating point); a
     gain-scheduled path back along the branch of drift equilibria reaches the branch end at
     <= 1 deg/s but fails at the handover. The cornering equilibrium is open-loop stable, and its
@@ -139,7 +139,7 @@ class DriftSupervisedController:
         self.kv = float(speed_gain)          # [N m per m/s]
         self.max_accel = float(max_accel)    # [m/s^2] ramp of the speed reference (no wheelspin from a speed step)
         self.k_beta = float(exit_countersteer_gain)
-        self.scheduled = scheduled           # ScheduledDriftController for HOLD/TRANSITION (D5), or None
+        self.scheduled = scheduled           # ScheduledDriftController for HOLD/TRANSITION, or None
         self.reset()
 
     @property
@@ -253,7 +253,7 @@ class DriftSupervisedController:
 
 
 class ScheduledDriftController:
-    """Drift LQR scheduled along a branch of equilibria, with set-point ramp and optional circle outer loop (D5).
+    """Drift LQR scheduled along a branch of equilibria, with set-point ramp and optional circle outer loop.
 
     Inner loop: the steer-rate LQR at the operating point ``schedule.point(beta_ref)`` (gain scheduling,
     :class:`.schedule.BranchSchedule`). Set point: ``beta_ref`` moves towards ``beta_target`` at most

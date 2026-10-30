@@ -1,6 +1,6 @@
 """Unified vehicle motion controller interfaces and data contracts.
 
-Adheres to Plan.md §3.2, §14, and §19 (Milestone M5), providing a clean interface
+providing a clean interface
 for passive baselines, PID/feedback controllers, IVMC, and NMPC path trackers.
 """
 
@@ -23,7 +23,7 @@ from vehicle_model.core.types import (
 )
 
 
-# Declared information access of a controller (Plan V3.0 M10 5.4): what it reads besides the driver inputs.
+# Declared information access of a controller: what it reads besides the driver inputs.
 INFORMATION_FULL_STATE = "full_state_ideal"  # state and telemetry incl. road friction, no sensor model
 INFORMATION_DRIVER_ONLY = "driver_inputs_only"  # no feedback from the vehicle
 
@@ -62,7 +62,7 @@ class ControlOutput(SevenDOFControlInput):
 
 @runtime_checkable
 class VehicleController(Protocol):
-    """Common interface for all vehicle motion controllers (Plan.md §3.2, §19 M5)."""
+    """Common interface for all vehicle motion controllers."""
 
     @property
     def name(self) -> str:

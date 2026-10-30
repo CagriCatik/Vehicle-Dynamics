@@ -1,4 +1,4 @@
-"""Command line: ``python -m vehicle_model.experiments {run,validate,list} ...`` (Plan.md M9; types: V3.0 §12)."""
+"""Command line: ``python -m vehicle_model.experiments {run,validate,list} ...``."""
 
 from __future__ import annotations
 

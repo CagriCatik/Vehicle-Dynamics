@@ -1,4 +1,4 @@
-"""Experiment type ``ride_benchmark``: predictive damping and active pitch on the 14-DOF model (Plan V4.0 M21).
+"""Experiment type ``ride_benchmark``: predictive damping and active pitch on the 14-DOF model.
 
 A matrix of scenarios (road + manoeuvre) x controllers on the 14-DOF closed loop of
 :mod:`vehicle_model.simulation.ride`::

@@ -2,7 +2,7 @@ type: stability_map
 name: stability_map_rear_steer
 description: >
   Why do the LQR-type laws with rear steer recover fewer initial states than the passive vehicle? Same operating
-  point and grid as stability_map_robust (80 km/h, 1 deg held, mu 0.6): the unchanged V2.0 GS-LQR with rear steer
+  point and grid as stability_map_robust (80 km/h, 1 deg held, mu 0.6): the unchanged baseline GS-LQR with rear steer
   and yaw moment against the same law and the robust LQR with yaw moment only.
 vehicle: configs/vehicles/seven_dof_passenger.yaml
 road: {type: uniform, mu: 0.6}

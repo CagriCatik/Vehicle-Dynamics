@@ -1,4 +1,4 @@
-"""Drift plan D2: stationary drift equilibria over speed x sideslip x friction (both directions).
+"""Stationary drift equilibria over speed x sideslip x friction (both directions).
 
 Run:  python examples/drift_equilibria_demo.py [configs/drift/equilibrium_sweep.yaml]
 Out:  output/drift/equilibrium_sweep/ (CSV, JSON, PNG, report, resolved config, metadata)

@@ -1,4 +1,4 @@
-"""Observer evaluation: plant -> virtual sensors -> observers, truth used only for scoring (Plan.md, M7).
+"""Observer evaluation: plant -> virtual sensors -> observers, truth used only for scoring.
 
 The study loop separates information strictly:
 

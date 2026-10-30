@@ -1,4 +1,4 @@
-"""Actuator dynamics between a controller and the plant (Plan V4.0 M16, work package 3 and 6).
+"""Actuator dynamics between a controller and the plant.
 
 ``ActuatorChain`` wraps any ``VehicleController``. The controller's output is the *issued*
 command; the chain passes it through the existing actuator models and hands the *realised*
@@ -9,7 +9,7 @@ command to the plant:
     T_brake            BrakeByWireActuator (asymmetric hydraulic build/dump, regenerative blending;
                        the controller's ABS flags make it drop regen on that wheel)
 
-**Regenerative torque enters exactly once** (Plan V4.0 2.2 F). Both the friction and the regen
+**Regenerative torque enters exactly once** . Both the friction and the regen
 torque of the brake actuator are braking torques (>= 0, against the wheel rotation); they are
 passed to the plant as ``T_brake = friction + regen``. The powertrain actuator delivers only
 drive torque (>= 0) into ``T_drive`` and has no regen path of its own, so the same negative
@@ -17,7 +17,7 @@ machine torque cannot appear twice. Per wheel the machine torque is ``T_drive - 
 mechanical power and the recovered energy are reported (``regen_power_w``), but no battery or
 thermal model is claimed.
 
-Regenerative slip control (Plan V4.0 M17.4, optional ``regen``): a
+Regenerative slip control (optional ``regen``): a
 :class:`~vehicle_model.controllers.regenerative_slip.RegenSlipController` sets the per-wheel regen limit
 (``cut_on_abs``: the brake actuator's own cut under ABS; ``modulated``: a slip loop) and the coast
 drag torque of one-pedal driving, which only regen may deliver (never converted to friction).

@@ -1,4 +1,4 @@
-"""Handling analysis of the virtual reference vehicle (Plan.md, M1).
+"""Handling analysis of the virtual reference vehicle.
 
 Linearises the 7-DOF reference car (configs/vehicles/reference_passenger_car.yaml),
 reports the analytical handling characteristics and compares the linear step

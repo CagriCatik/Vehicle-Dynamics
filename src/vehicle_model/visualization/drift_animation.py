@@ -1,4 +1,4 @@
-"""Drift animation from recorded simulation data only (Drift plan D6).
+"""Drift animation from recorded simulation data only.
 
 Every frame shows recorded samples, nothing else: the vehicle is drawn at the recorded
 ``X, Y, psi`` with the recorded front steer (``vehicle_polygons`` of :mod:`.plan_view`, the

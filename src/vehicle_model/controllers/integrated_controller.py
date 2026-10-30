@@ -1,11 +1,11 @@
 """Integrated Vehicle Motion Controller (IVMC) coordinating 4WS, TV, ESC, ABS, and TCS.
 
-Two actuation paths (``actuation``, default "allocation" since V3.0):
+Two actuation paths (``actuation``, default "allocation"):
 
     "legacy"      the original additive chain: driver torques, TV adds a differential
                   torque (``TorqueVectoringController.allocate_torques``), emergency
                   deceleration, legacy TCS/ABS, heuristic split-mu brake limiter (GMR).
-    "allocation"  the shared chain of Plan V3.0 M10 5.3: the longitudinal force demand
+    "allocation"  the shared chain: the longitudinal force demand
                   (pedals, minus the phase-plane emergency deceleration) and the yaw
                   moment demand (TV + phase plane) go to
                   :class:`~vehicle_model.controllers.motion_control.ActuationLayer`

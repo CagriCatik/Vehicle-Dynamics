@@ -8,7 +8,7 @@ Navigation states (3, integrated, not extra DOFs):
 
 Modelling assumptions (documented in docs/VEHICLE_MODELS.md, section 2):
   * Planar motion on a level road, ISO 8855 axes (x forward, y left, z up). A road with ``has_grade``
-    (:class:`~vehicle_model.roads.surface.GradedRoad`, Plan V4.0 M22) adds gravity along the heading and across
+    (:class:`~vehicle_model.roads.surface.GradedRoad`) adds gravity along the heading and across
     it, scales the normal load and rolling resistance by ``cos`` of the grade and shifts the load transfer by
     the gravity component (it acts at the CoG, the tyre forces at the ground); the body stays parallel to the
     road (no pitch/heave DOF). Any other road gives exactly the level-road equations.
@@ -226,7 +226,7 @@ class SevenDOFModel:
         F_aero = 0.5 * p.rho * p.Cd * p.Af * vx * abs(vx)
         F_roll = p.c_rr * p.mass * p.g * math.tanh(vx / 0.5)
         graded = getattr(road, "has_grade", False)
-        if graded:   # road grade (M22): gravity in body axes, normal load g cos
+        if graded:   # road grade: gravity in body axes, normal load g cos
             sX, sY = road.slope(state.X, state.Y)
             th, ph = math.atan(sX * c_psi + sY * s_psi), math.atan(-sX * s_psi + sY * c_psi)
             g_x, g_y = -p.g * math.sin(th), -p.g * math.cos(th) * math.sin(ph)

@@ -1,4 +1,4 @@
-"""Analytical references for the quarter car: modes, frequency responses, energy (Plan.md, Abschnitt 9; M8).
+"""Analytical references for the quarter car: modes, frequency responses, energy.
 
 Linear quarter car (bump stops inactive), coordinates measured from static
 equilibrium, road displacement ``z_r`` as input:

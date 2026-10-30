@@ -16,7 +16,6 @@ Vehicle Dynamics Principles:
    - Dynamically commands active corner forces to suppress roll angle (phi) and roll rate (dphi),
      guaranteeing positive tyre normal loads (Fz_i > 0) without wheel lift.
 
-Conforms to Plan.md §4.5, §7, §9, §14.
 """
 
 from __future__ import annotations

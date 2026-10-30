@@ -1,4 +1,4 @@
-# Drift plan D3: local stabilisation of a computed drift equilibrium with LQR (scenarios S01-S03).
+# local stabilisation of a computed drift equilibrium with LQR (scenarios S01-S03).
 # Initial state exactly on the equilibrium (hold) or with a defined perturbation; open loop (constant u*) vs LQR.
 name: drift_lqr_hold
 vehicle: configs/vehicles/seven_dof_passenger.yaml

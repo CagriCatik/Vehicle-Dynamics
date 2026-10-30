@@ -1,14 +1,14 @@
 type: critical_scenario_search
 name: critical_search_sine_with_dwell
 description: >
-  M13: offline search for the sine-with-dwell conditions under which the V2.0 GS-LQR (4WS + TV) loses
+  critical scenario search: offline search for the sine-with-dwell conditions under which the baseline GS-LQR (4WS + TV) loses
   the vehicle (max sideslip >= 15 deg), over speed, steer amplitude, friction, rear cornering stiffness
   and actuator delay. Critical cases are verified (same seed, half step, tight load-transfer tolerance),
-  minimised towards the nominal values and compared with the V2.0 PI on the same case.
+  minimised towards the nominal values and compared with the baseline PI on the same case.
 vehicle: configs/vehicles/seven_dof_passenger.yaml
 manoeuvre: sine_with_dwell
-controller: {name: V2.0 GS-LQR, law: gs_lqr, inputs: 4ws_tv}
-baseline: {name: V2.0 PI, law: pi}
+controller: {name: baseline GS-LQR, law: gs_lqr, inputs: 4ws_tv}
+baseline: {name: baseline PI, law: pi}
 feedback: ideal
 parameters:
   - {name: speed_kph, low: 60, high: 120, nominal: 80}

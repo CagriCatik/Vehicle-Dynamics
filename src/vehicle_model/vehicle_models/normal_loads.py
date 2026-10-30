@@ -1,4 +1,4 @@
-"""Quasi-static wheel loads with unilateral contact (Plan.md, Abschnitt 8; Audit 4.3).
+"""Quasi-static wheel loads with unilateral contact (Audit 4.3).
 
 Rigid chassis on level ground, four contact points ``(x_i, y_i)`` (body frame,
 rows FL, FR, RL, RR). The loads must satisfy three equilibrium conditions

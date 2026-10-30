@@ -1,8 +1,7 @@
-"""Run an experiment specification and write results and report (Plan.md M9).
+"""Run an experiment specification and write results and report.
 
-:func:`run_experiment` dispatches on the experiment type (:mod:`.types`, Plan V3.0
-§12). This module runs the default type ``controller_comparison``: for each sweep point (or once without a sweep) every controller runs on a fresh
-plant built from the specification, through the controller benchmark of M6
+:func:`run_experiment` dispatches on the experiment type (:mod:`.types`). This module runs the default type ``controller_comparison``: for each sweep point (or once without a sweep) every controller runs on a fresh
+plant built from the specification, through the controller benchmark of controller library
 (:mod:`vehicle_model.simulation.controller_benchmark`). Model-based laws use the
 linear single track of the configured vehicle without K&C as design model.
 
@@ -127,7 +126,7 @@ def controller_factories(spec: ExperimentSpec) -> dict:
         def factory(p, c=c, inputs=inputs):
             if c.law == "pi":
                 law = YawRatePI()
-            elif c.law == "esc":                  # ESC-like: PI acting only outside a 3 deg/s yaw-rate band (M24 P1)
+            elif c.law == "esc":                  # ESC-like: PI acting only outside a 3 deg/s yaw-rate band (the esc level of the motion management matrix)
                 law = YawRatePI(deadband=math.radians(3.0), name="ESC (PI, deadband 3 deg/s)")
             elif c.law == "lqr":
                 law = LQRYawLaw(design, inputs, design_speed=20.0)
@@ -138,7 +137,7 @@ def controller_factories(spec: ExperimentSpec) -> dict:
             else:
                 law = LTVMPCYawLaw(design, inputs)
             yt = dict(c.traction).get("yaw_tolerance")
-            if yt is not None:                    # ITC: the yaw law only acts outside a yaw-rate band (M18.2)
+            if yt is not None:                    # ITC: the yaw law only acts outside a yaw-rate band
                 from vehicle_model.controllers.integrated_traction import YawToleranceLaw
                 law = YawToleranceLaw(law, math.radians(float(yt)), dict(c.traction).get("itc_scope", "always"))
             ctrl = MotionController(p, law, _with_hdc(_with_gvc(_with_steering(_motion_config(c), c), c), c), _health(c))
@@ -151,7 +150,7 @@ def controller_factories(spec: ExperimentSpec) -> dict:
 
 
 def _with_steering(cfg, c):
-    """Add the AFS steering overlay (variable ratio, overlay authority, failure) of the entry (Plan V4.0 M19.2)."""
+    """Add the AFS steering overlay (variable ratio, overlay authority, failure) of the entry."""
     st = dict(c.steering)
     if not st and not c.inputs.startswith("afs"):
         return cfg
@@ -163,7 +162,7 @@ def _with_steering(cfg, c):
 
 
 def _with_gvc(cfg, c):
-    """Add the GVC-like load-transfer control of the entry (Plan V4.0 M20; enabled: false makes it vanish)."""
+    """Add the GVC-like load-transfer control of the entry (enabled: false makes it vanish)."""
     gv = dict(c.gvc)
     if not gv:
         return cfg
@@ -177,7 +176,7 @@ def _with_gvc(cfg, c):
 
 
 def _with_hdc(cfg, c):
-    """Add hill descent control of the entry (Plan V4.0 M22; enabled: false makes it vanish)."""
+    """Add hill descent control of the entry (enabled: false makes it vanish)."""
     hd = dict(c.hdc)
     if not hd:
         return cfg
@@ -186,7 +185,7 @@ def _with_hdc(cfg, c):
 
 
 def _health(c):
-    """Actuator health of the entry's traction block (failed motors, Plan V4.0 M18) or None."""
+    """Actuator health of the entry's traction block (failed motors) or None."""
     from vehicle_model.allocation import ActuatorHealth
     failed = dict(c.traction).get("failed", ())
     if not failed:
@@ -196,7 +195,7 @@ def _health(c):
 
 
 def _motion_config(c):
-    """MotionControllerConfig with the brake (M17) and traction (M18) functions of the controller entry."""
+    """MotionControllerConfig with the brake and traction functions of the controller entry."""
     from vehicle_model.allocation import AllocatorConfig
     from vehicle_model.controllers.motion_control import ActuationConfig, MotionControllerConfig
     b, tr = dict(c.brake), dict(c.traction)
@@ -227,8 +226,8 @@ def _motion_config(c):
 
 
 def _with_actuators(factory, c=None):
-    """Factory of the same controller behind the actuator models (Plan V4.0 M16; configs/braking, powertrains);
-    with the regenerative slip control of the entry's brake block (M17.4)."""
+    """Factory of the same controller behind the actuator models (configs/braking, powertrains);
+    with the regenerative slip control of the entry's brake block."""
     from vehicle_model.simulation.actuator_chain import ActuatorChain, ActuatorChainConfig
     regen = None
     b = dict(c.brake) if c is not None else {}

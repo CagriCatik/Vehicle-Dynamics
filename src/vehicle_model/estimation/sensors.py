@@ -1,4 +1,4 @@
-"""Virtual chassis sensors: corruption, sampling, latency and dropout (Plan.md, Abschnitt 11; M7).
+"""Virtual chassis sensors: corruption, sampling, latency and dropout.
 
 Signal chain per call of :meth:`SensorSuite.measure` (ground truth in, measurement out):
 

@@ -34,7 +34,7 @@ Solver outcome: every solve is classified by :mod:`.solver_diagnostics`
 :class:`NMPCPathTrackingController` checks the plan against its hard input bounds
 (:mod:`.constraints`) and acts through the shared
 :class:`.motion_control.ActuationLayer` (allocation of ``m a_x`` with ``M_z = 0``, then
-ABS/TCS; Plan V3.0 M10 5.3). Output status as in
+ABS/TCS). Output status as in
 :class:`.motion_control.MotionController`: solver status if not nominal, otherwise the
 allocation status.
 """

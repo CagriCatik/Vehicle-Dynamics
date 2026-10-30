@@ -1,4 +1,4 @@
-"""Drift plan D2: equilibrium sweep from ``configs/drift/equilibrium_sweep.yaml`` with exports.
+"""Equilibrium sweep from ``configs/drift/equilibrium_sweep.yaml`` with exports.
 
 Outputs (``outputs.directory``): ``run_config_resolved.yaml``, ``metadata.json``,
 ``equilibria.csv`` (one row per operating point: residuals, steer, four slips and slip
@@ -58,7 +58,7 @@ def parse(data: dict, source: str = "<dict>") -> SweepSpec:
     vehicle_model(data["vehicle"], tyres, source)           # files and tyre names must resolve
     pt = dict(data.get("powertrain") or {"layout": "rwd"})
     keys(pt, {"layout"}, f"{source}: powertrain")
-    require(pt.get("layout", "rwd") == "rwd", f"{source}: powertrain.layout: only 'rwd' is implemented (V1)")
+    require(pt.get("layout", "rwd") == "rwd", f"{source}: powertrain.layout: only 'rwd' is implemented")
     sw = data["sweep"]
     keys(sw, {"speed_mps", "beta_deg", "mu"}, f"{source}: sweep", {"speed_mps", "beta_deg", "mu"})
     speeds = numbers(sw["speed_mps"], f"{source}: sweep.speed_mps", 2.0, 60.0)
@@ -145,7 +145,7 @@ def _report(spec: SweepSpec, eqs, meta) -> str:
 
 def main(argv=None) -> int:
     import argparse
-    ap = argparse.ArgumentParser(description="Drift equilibrium sweep (Drift plan D2)")
+    ap = argparse.ArgumentParser(description="Drift equilibrium sweep")
     ap.add_argument("config", nargs="?", default="configs/drift/equilibrium_sweep.yaml")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)

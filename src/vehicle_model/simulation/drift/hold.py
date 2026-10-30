@@ -1,4 +1,4 @@
-"""Drift plan D3: hold and perturbation recovery around a drift equilibrium (scenarios S01-S03).
+"""Hold and perturbation recovery around a drift equilibrium (scenarios S01-S03).
 
 For each direction: solve the equilibrium, linearise (step study, stabilisability), design the
 LQR, then simulate the existing 7-DOF plant through the existing ScenarioRunner from the
@@ -54,7 +54,7 @@ def parse(data: dict, source: str = "<dict>") -> HoldSpec:
     vehicle_model(data["vehicle"], tyres, source)
     pt = dict(data.get("powertrain") or {"layout": "rwd"})
     keys(pt, {"layout"}, f"{source}: powertrain")
-    require(pt.get("layout", "rwd") == "rwd", f"{source}: powertrain.layout: only 'rwd' is implemented (V1)")
+    require(pt.get("layout", "rwd") == "rwd", f"{source}: powertrain.layout: only 'rwd' is implemented")
     ref = dict(data["reference"])
     keys(ref, {"speed_mps", "beta_deg", "mu"}, f"{source}: reference", {"speed_mps", "beta_deg", "mu"})
     require(2.0 <= float(ref["speed_mps"]) <= 60.0, f"{source}: reference.speed_mps outside [2, 60]")
@@ -68,7 +68,7 @@ def parse(data: dict, source: str = "<dict>") -> HoldSpec:
          f"{source}: controller", {"type"})
     require(ctrl["type"] == "equilibrium_lqr", f"{source}: controller.type must be 'equilibrium_lqr'")
     require(ctrl.get("information_mode", "ideal_full_state") == "ideal_full_state",
-            f"{source}: controller.information_mode: only 'ideal_full_state' is implemented in D3")
+            f"{source}: controller.information_mode: only 'ideal_full_state' is implemented in drift LQR")
     LQRWeights(tuple(ctrl.get("q_scaled", LQRWeights.q_scaled)), tuple(ctrl.get("r_scaled", LQRWeights.r_scaled)),
                float(ctrl.get("q_steer", 1.0)))    # dimension and sign checks fail hard here
     sim = dict(data.get("simulation") or {})
@@ -108,7 +108,7 @@ def fresh_plant(model):
 
     The plant warm-starts its load-transfer iteration from the previous evaluation
     (``_accel_guess``). Reusing one plant object across runs made results depend on the run
-    order (found in D5: identical initial states of an unstable drift fell off the equilibrium
+    order (found in drift tracking: identical initial states of an unstable drift fell off the equilibrium
     at different times). Every run therefore starts from a copy with the same start value.
     """
     import copy
@@ -242,7 +242,7 @@ def _report(spec, results, lin_out, meta) -> str:
 
 def main(argv=None) -> int:
     import argparse
-    ap = argparse.ArgumentParser(description="Drift LQR hold and perturbation recovery (Drift plan D3)")
+    ap = argparse.ArgumentParser(description="Drift LQR hold and perturbation recovery")
     ap.add_argument("config", nargs="?", default="configs/drift/drift_lqr.yaml")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)

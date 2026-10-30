@@ -1,18 +1,18 @@
-# Lenkgeometrie, Fahrwerkskinematik und Radlastverteilung (M4)
+# Lenkgeometrie, Fahrwerkskinematik und Radlastverteilung
 
 Module:
 - [`steering/geometry.py`](../src/vehicle_model/steering/geometry.py): Einzelradlenkwinkel mit Ackermann-Anteil.
 - [`suspension/kinematics.py`](../src/vehicle_model/suspension/kinematics.py): quasistatische K&C, Rollzentren und Aufbaulage.
 - [`handling_analysis/understeer_budget.py`](../src/vehicle_model/handling_analysis/understeer_budget.py): lineares Eigenlenkbudget.
 
-Alles ist **optional**. Ohne K&C-Satz ist das 7-DOF-Modell unverändert; das erfüllt die M4-Abnahme „deaktivierte Zusatzeffekte reproduzieren das Basismodell“.
+Alles ist **optional**. Ohne K&C-Satz ist das 7-DOF-Modell unverändert; das erfüllt die chassis kinematics-Abnahme „deaktivierte Zusatzeffekte reproduzieren das Basismodell“.
 
 ```python
 model = SevenDOFModel.from_yaml("configs/vehicles/reference_passenger_car.yaml",
                                 kc_config="configs/suspension/kc_reference_passenger_car.yaml")
 ```
 
-Der K&C-Satz benötigt den Abschnitt `chassis_extended` der Fahrzeug-YAML: Massen, Wanksteifigkeiten und Radraten. `TransientSevenDOFModel` (M3) übernimmt K&C ebenfalls.
+Der K&C-Satz benötigt den Abschnitt `chassis_extended` der Fahrzeug-YAML: Massen, Wanksteifigkeiten und Radraten. `TransientSevenDOFModel` übernimmt K&C ebenfalls.
 
 ---
 
@@ -28,7 +28,7 @@ $$\delta_i = \delta_\text{Achse} + A\,(\delta_{i,\text{ideal}} - \delta_\text{Ac
 
 $A = 0$ bedeutet parallel (Basismodell), $A = 1$ volles Ackermann; $A > 1$ und $A < 0$ sind zulässig.
 
-Weitere Punkte aus Plan.md, Abschnitt 8 („Steering Geometry“) liegen bereits vor: 4WS-Strategien (`steering/four_wheel_steering.py`) sowie Verzögerung, Stellrate und Totzeit (`actuators/steering_actuator.py`). Es fehlt noch eine Lenkübersetzung (Lenkradwinkel zu Radwinkel); alle Modelle arbeiten mit Radwinkeln. Das gehört zu den Aktuatoren in M5.
+Weitere Punkte aus chassis_control_platform_plan.md, Abschnitt 8 („Steering Geometry“) liegen bereits vor: 4WS-Strategien (`steering/four_wheel_steering.py`) sowie Verzögerung, Stellrate und Totzeit (`actuators/steering_actuator.py`). Es fehlt noch eine Lenkübersetzung (Lenkradwinkel zu Radwinkel); alle Modelle arbeiten mit Radwinkeln. Das gehört zu den Aktuatoren in slip control and allocation.
 
 ## 2. Rollzentren und laterale Radlastverlagerung
 
@@ -38,7 +38,7 @@ $$w_f\,\Delta F_f = a_y\,[\,m_s d\,k + m_{sf} h_{rf} + 2 m_u h_u\,], \qquad w_r\
 
 Die erste Klammer enthält den elastischen, geometrischen und ungefederten Anteil.
 
-Die Summe ist **exakt** $m a_y h$. Die Wankmomentenbilanz ändert sich also nicht, nur der Vorderachsanteil. Dieser geht als effektives `k_roll_f` in die einseitige Lastverteilung aus M2 ein ([`normal_loads.py`](../src/vehicle_model/vehicle_models/normal_loads.py)); Abheben und Kippen werden weiter gemeldet. Bei $h_{rf} = h_{rr} = 0$ und $m_u = 0$ ist der Anteil genau $k$.
+Die Summe ist **exakt** $m a_y h$. Die Wankmomentenbilanz ändert sich also nicht, nur der Vorderachsanteil. Dieser geht als effektives `k_roll_f` in die einseitige Lastverteilung aus 7-DOF-Modell ein ([`normal_loads.py`](../src/vehicle_model/vehicle_models/normal_loads.py)); Abheben und Kippen werden weiter gemeldet. Bei $h_{rf} = h_{rr} = 0$ und $m_u = 0$ ist der Anteil genau $k$.
 
 Aufbaulage (kleine Winkel, starr):
 
@@ -85,7 +85,7 @@ Die Lenkwinkeländerungen hängen von $a_x$, $a_y$ und den Reifenkräften ab. Si
 
 $$EG = \underbrace{\frac{m}{L}\Big(\frac{l_r}{C_f} - \frac{l_f}{C_r}\Big)}_\text{Reifen} + \underbrace{(\varepsilon_r - \varepsilon_f)\,\frac{d\varphi}{da_y}}_\text{Roll Steer} + \underbrace{c_f\,m\frac{l_r}{L} + c_r\,m\frac{l_f}{L}}_\text{Compliance Steer}$$
 
-Für das Referenzfahrzeug mit K&C ergibt das 0,51 + 0,65 + 1,03 = **2,19 °/g**. Das liegt im üblichen Pkw-Bereich, während die Reifen allein (0,51 °/g, M1) dafür zu wenig Untersteuern liefern. Nicht im linearen Budget enthalten sind Radlastverlagerung mit lastabhängigen Reifen (bei $a_y \to 0$ ohne Steigung), Rollzentren, Ackermann (zweite Ordnung im Lenkwinkel) und das Rückstellmoment.
+Für das Referenzfahrzeug mit K&C ergibt das 0,51 + 0,65 + 1,03 = **2,19 °/g**. Das liegt im üblichen Pkw-Bereich, während die Reifen allein (0,51 °/g, Referenzfahrzeug) dafür zu wenig Untersteuern liefern. Nicht im linearen Budget enthalten sind Radlastverlagerung mit lastabhängigen Reifen (bei $a_y \to 0$ ohne Steigung), Rollzentren, Ackermann (zweite Ordnung im Lenkwinkel) und das Rückstellmoment.
 
 **Simulation:** [`examples/kc_understeer_analysis.py`](../examples/kc_understeer_analysis.py) fährt eine quasistationäre Lenkrampe nach ISO 4138 (konstante Geschwindigkeit, 90 km/h, 0,25 °/s). Bei 0,1 °/s ergeben sich dieselben Werte; bei 1 °/s verfälscht der Einschwingvorgang den Bereich unter 0,15 g.
 

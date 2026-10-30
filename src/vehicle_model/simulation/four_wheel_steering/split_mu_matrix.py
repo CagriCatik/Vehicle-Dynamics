@@ -1,9 +1,9 @@
-"""Split-mu braking across actuator configurations (Plan.md V3.0 M10 section 5.5, G05).
+"""Split-mu braking across actuator configurations.
 
 Question: which actuator configuration can keep the vehicle straight during full
 braking on split friction, and why do the others fail?
 
-All configurations run on a fresh plant through the M6 benchmark
+All configurations run on a fresh plant through the controller library benchmark
 (:func:`~vehicle_model.simulation.controller_benchmark.run_scenario`) with the same
 driver request (brake pedal, steering held straight), so they face the same brake
 demand. Two pedal levels: partial braking (headroom on the high-friction side) and
@@ -15,9 +15,9 @@ full braking (no headroom).
     4WS + ABS + ESC/TV   integrated controller without phase-plane supervision, legacy
                          additive actuation (ESC brake intervention and torque vectoring
                          sit in one subsystem there and cannot be switched separately)
-    TV (allocation)      yaw-moment control through the bounded wheel-force allocation (M5)
+    TV (allocation)      yaw-moment control through the bounded wheel-force allocation
     IVMC (legacy)        full integrated controller, legacy additive actuation
-    IVMC (allocation)    the same controller on the shared allocation (default since V3.0)
+    IVMC (allocation)    the same controller on the shared allocation (default)
 
 Authority: the yaw moment of the tyre forces about the CoG is split into the part of
 the longitudinal (brake/drive) forces and the part of the lateral (steering) forces.

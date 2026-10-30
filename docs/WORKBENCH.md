@@ -1,6 +1,6 @@
-# Interactive Engineering Workbench (M15)
+# Interactive Engineering Workbench
 
-Masterplan V3.0, Abschnitt 10. Eine grafische Forschungsumgebung über der vorhandenen YAML/CLI-Experimentinfrastruktur:
+Abschnitt 10. Eine grafische Forschungsumgebung über der vorhandenen YAML/CLI-Experimentinfrastruktur:
 Versuch konfigurieren, ausführen, Ergebnisse ansehen und vergleichen, technischen Bericht exportieren. Die Oberfläche
 ist ein Adapter; Konfiguration, Validierung und Simulation bleiben in der Experiment-Engine.
 

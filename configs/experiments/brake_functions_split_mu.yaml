@@ -1,0 +1,18 @@
+# split-mu braking (mu 1.0 / 0.2), 90 km/h, full pedal (friction step: brake_functions_mu_step.yaml).
+# Stability against deceleration: without yaw control (yaw left free) and with the PI, with and without EBD/IBC.
+type: controller_comparison
+name: brake_functions_split_mu
+description: Split-mu braking with the brake functions.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+road: {type: split_mu, mu_left: 1.0, mu_right: 0.2}
+manoeuvre: {type: straight_braking, speed_kph: 90, brake_pedal: 1.0}
+controllers:
+  - {law: passive}
+  - {law: brakes}
+  - {law: brakes, brake: {distribution: ebd, ibc: true}}
+  - {law: pi}
+  - {law: pi, brake: {distribution: ebd, ibc: true}}
+  - {law: brakes, feedback: sensor_constrained}
+  - {law: brakes, feedback: sensor_constrained, brake: {distribution: ebd, ibc: true}}
+outputs: {directory: output/brake_functions/split_mu, formats: [csv, json, png, md]}

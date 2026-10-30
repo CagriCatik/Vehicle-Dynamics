@@ -1,4 +1,4 @@
-"""Domain types of the drift package (Drift plan section 3.3).
+"""Domain types of the drift package.
 
 Arrays inside the frozen dataclasses are copied and made read-only on construction, so a
 result cannot be changed after it was reported.

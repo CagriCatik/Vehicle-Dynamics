@@ -1,4 +1,4 @@
-"""Controller benchmark: same plant, identical scenarios, defined KPIs (Plan.md, M6 acceptance).
+"""Controller benchmark: same plant, identical scenarios, defined KPIs.
 
 * A **plant factory** builds a fresh vehicle model for every run, so no state is
   carried between controllers and every controller sees the same plant.
@@ -128,7 +128,7 @@ GVC_KPIS = ("yaw_rate_rms_error", "max_yaw_rate_error_degps", "yaw_rate_t63_s", 
 
 def steer_ramp_scenario(v0: float = 22.0, steer: float = math.radians(3.0), rate: float = math.radians(20.0),
                         pedal: float = 0.05, duration: float = 4.0) -> Scenario:
-    """Steer ramp to a hold with a constant accelerator pedal (identical driver for GVC on/off; Plan V4.0 M20)."""
+    """Steer ramp to a hold with a constant accelerator pedal (identical driver for GVC on/off)."""
     t0 = 0.5
     st = lambda t: 0.0 if t < t0 else math.copysign(min(abs(steer), rate * (t - t0)), steer)
     return Scenario("steer_ramp", lambda: UniformRoad(mu=1.0), v0, duration,
@@ -138,7 +138,7 @@ def steer_ramp_scenario(v0: float = 22.0, steer: float = math.radians(3.0), rate
 
 def lane_change_scenario(v0: float = 22.0, amplitude: float = math.radians(2.5), freq: float = 0.5, pedal: float = 0.05,
                          duration: float = 5.0) -> Scenario:
-    """Single-period sine steer (lane change, open loop) with a constant pedal (Plan V4.0 M20)."""
+    """Single-period sine steer (lane change, open loop) with a constant pedal."""
     t0 = 0.5
     st = lambda t: amplitude * math.sin(2 * math.pi * freq * (t - t0)) if t0 <= t < t0 + 1.0 / freq else 0.0
     return Scenario("lane_change", lambda: UniformRoad(mu=1.0), v0, duration,
@@ -148,7 +148,7 @@ def lane_change_scenario(v0: float = 22.0, amplitude: float = math.radians(2.5),
 
 def lift_off_scenario(v0: float = 22.0, steer: float = math.radians(3.0), pedal: float = 0.3, lift: float = 2.0,
                       duration: float = 5.0) -> Scenario:
-    """Steady turn with the accelerator pressed, abrupt lift-off at ``lift`` (Plan V4.0 M20)."""
+    """Steady turn with the accelerator pressed, abrupt lift-off at ``lift``."""
     t0 = 0.5
     st = lambda t: 0.0 if t < t0 else math.copysign(min(abs(steer), math.radians(20.0) * (t - t0)), steer)
     return Scenario("lift_off", lambda: UniformRoad(mu=1.0), v0, duration,
@@ -157,7 +157,7 @@ def lift_off_scenario(v0: float = 22.0, steer: float = math.radians(3.0), pedal:
 
 
 def launch_scenario(v0: float = 2.0, accel_pedal: float = 1.0, duration: float = 6.0, target_gain: float = 50 / 3.6) -> Scenario:
-    """Straight full-acceleration launch from (nearly) standstill (Plan V4.0 M18)."""
+    """Straight full-acceleration launch from (nearly) standstill."""
     return Scenario("launch", lambda: UniformRoad(mu=1.0), v0, duration,
                     lambda t, s: ControlTarget(driver_accel_pedal=accel_pedal), kpis=TRACTION_KPIS,
                     params={"accel_start": 0.0, "target_gain": target_gain})
@@ -165,7 +165,7 @@ def launch_scenario(v0: float = 2.0, accel_pedal: float = 1.0, duration: float =
 
 def corner_exit_scenario(v0: float = 15.0, steer: float = math.radians(4.0), accel_pedal: float = 1.0,
                          accel_start: float = 2.0, duration: float = 6.0) -> Scenario:
-    """Steady cornering with the speed held, then full acceleration with the steering held (Plan V4.0 M18)."""
+    """Steady cornering with the speed held, then full acceleration with the steering held."""
     return Scenario(
         "corner_exit", lambda: UniformRoad(mu=1.0), v0, duration,
         lambda t, s: ControlTarget(driver_steer_f=steer,
@@ -174,7 +174,7 @@ def corner_exit_scenario(v0: float = 15.0, steer: float = math.radians(4.0), acc
 
 
 def straight_braking_scenario(v0: float = 25.0, brake_pedal: float = 1.0) -> Scenario:
-    """Straight braking to standstill with a constant pedal (Plan V4.0 M17)."""
+    """Straight braking to standstill with a constant pedal."""
     return Scenario("straight_braking", lambda: UniformRoad(mu=1.0), v0, 20.0,
                     lambda t, s: ControlTarget(driver_brake_pedal=brake_pedal), kpis=BRAKE_KPIS, stop_speed=1.0,
                     params={"brake_start": 0.0})
@@ -182,7 +182,7 @@ def straight_braking_scenario(v0: float = 25.0, brake_pedal: float = 1.0) -> Sce
 
 def brake_in_turn_scenario(v0: float = 22.0, steer: float = math.radians(2.0), brake_pedal: float = 0.4,
                            brake_start: float = 2.0, duration: float = 6.0) -> Scenario:
-    """Steady cornering, then braking with the steering held (ISO 7975-inspired, open loop; Plan V4.0 M17)."""
+    """Steady cornering, then braking with the steering held (ISO 7975-inspired, open loop)."""
     return Scenario(
         "brake_in_turn", lambda: UniformRoad(mu=1.0), v0, duration,
         lambda t, s: ControlTarget(driver_steer_f=steer,
@@ -192,7 +192,7 @@ def brake_in_turn_scenario(v0: float = 22.0, steer: float = math.radians(2.0), b
 
 
 def coast_scenario(v0: float = 22.0, duration: float = 8.0) -> Scenario:
-    """Both pedals released, steering straight: coast (drag-torque) deceleration (Plan V4.0 M17.4, MSR)."""
+    """Both pedals released, steering straight: coast (drag-torque) deceleration (MSR)."""
     return Scenario("coast", lambda: UniformRoad(mu=1.0), v0, duration, lambda t, s: ControlTarget(),
                     kpis=BRAKE_KPIS, stop_speed=1.0, params={"brake_start": 0.0})
 
@@ -289,10 +289,10 @@ def compute_kpis(h: dict, sc: Scenario) -> dict:
             out[k] = float(np.nanmax(np.abs(h["alloc_residual_fx"]))) if np.any(np.isfinite(h["alloc_residual_fx"])) else 0.0
         else:
             raise ValueError(f"unknown KPI {k!r}")
-    if "T_issued_abs" in h and len(h["t"]) > 2:   # actuation trace (Plan V4.0 M16)
+    if "T_issued_abs" in h and len(h["t"]) > 2:   # actuation trace
         out["issued_to_realised_lag_ms"] = actuation_lag(h["t"], h["T_issued_abs"], h["T_realised_abs"]) * 1e3
         out["regen_energy_kj"] = float(np.sum(h["regen_power_w"]) * (h["t"][1] - h["t"][0]) / 1e3)
-    if len(t) > 1 and "steer_f" in h:   # realised front steering (Plan V4.0 M19.2: AFS authority and rate)
+    if len(t) > 1 and "steer_f" in h:   # realised front steering (AFS authority and rate)
         out["max_front_steer_deg"] = float(np.degrees(np.max(np.abs(h["steer_f"]))))
         out["max_front_steer_rate_degps"] = float(np.degrees(np.max(np.abs(np.diff(h["steer_f"])))) / (t[1] - t[0]))
     out["computation_ms_mean"] = float(np.mean(h["computation_ms"]))
@@ -300,12 +300,12 @@ def compute_kpis(h: dict, sc: Scenario) -> dict:
     statuses, counts = np.unique(h["status"], return_counts=True)
     out["status_counts"] = {str(s): int(c) for s, c in zip(statuses, counts)}
     checked = [f for f in h.get("feasibility", ()) if f is not None]
-    if checked:  # constraint feasibility of the plan, counted separately from the solver status (Plan V3.0 M10 5.1)
+    if checked:  # constraint feasibility, counted separately from the solver status
         out["plan_infeasible_steps"] = sum(not f["feasible"] for f in checked)
         out["plan_unrealisable_steps"] = sum(not f["realisable"] for f in checked)
         out["plan_advisory_steps"] = sum(bool(f["exceeded"].get("advisory")) for f in checked)
     solves = [r for r in h.get("solver", ()) if r is not None]
-    if solves:  # solution quality of optimisation-based controllers (Plan V3.0 M10 5.2)
+    if solves:  # solution quality of optimisation-based controllers
         fin = lambda k: np.array([r.get(k, np.nan) for r in solves], float)
         kkt, rel = fin("kkt_stationarity_relative"), fin("relative_cost_improvement")
         out["solver_over_budget_steps"] = sum(bool(r.get("over_budget")) for r in solves)
@@ -364,7 +364,7 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
         out = ctrl.compute_control(s, target, tel, dt)
         mu_hat = float(np.mean(tel.mu)) if tel is not None else 1.0
         r_ref = ref.yaw_rate(target.driver_steer_f, s.vx, mu_hat)
-        # actuation trace (Plan V4.0 M16): requested -> allocated -> issued -> realised (what the plant gets now)
+        # actuation trace: requested -> allocated -> issued -> realised (what the plant gets now)
         trace = (out.diagnostics or {}).get("trace") or {}
         steer_w = np.array([out.steer_f, out.steer_f, out.steer_r, out.steer_r])
         F_real = (np.asarray(out.T_drive, float) - np.asarray(out.T_brake, float)) / p.Reff
@@ -399,7 +399,7 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
         util = np.hypot(tel.Fx_wheel, tel.Fy_wheel)[loaded] / np.maximum(tel.mu * tel.Fz, 1e-9)[loaded]
         h["tyre_utilisation"].append(float(np.max(util)) if util.size else float("nan"))
         h["supervisor_mode"].append((out.diagnostics or {}).get("supervisor_mode"))
-        h["function_status"].append((out.diagnostics or {}).get("function_status"))   # e.g. {"hdc": "active"} (M22)
+        h["function_status"].append((out.diagnostics or {}).get("function_status"))   # e.g. {"hdc": "active"}
         # body accelerations from the tyre forces (drag and rolling resistance not included) and per-wheel forces
         h["vy"].append(s.vy)
         h["ax"].append(float(np.sum(tel.Fx_body)) / p.mass)

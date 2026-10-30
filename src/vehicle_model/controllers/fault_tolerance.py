@@ -1,4 +1,4 @@
-"""Fault-tolerant motion control: health monitor and degraded modes (Plan V4.0 M23).
+"""Fault-tolerant motion control: health monitor and degraded modes.
 
 **Controller side** of fault tolerance. The monitor only sees what a real controller sees: the (possibly corrupted)
 time-stamped input message and the actuator self-reports (see :mod:`vehicle_model.simulation.fault_injection`);

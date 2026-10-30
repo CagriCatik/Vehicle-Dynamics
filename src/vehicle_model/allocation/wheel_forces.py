@@ -1,4 +1,4 @@
-"""Bounded allocation of longitudinal wheel forces to a total force and yaw moment (Plan.md, Abschnitt 10; M5).
+"""Bounded allocation of longitudinal wheel forces to a total force and yaw moment.
 
 Actuators: the longitudinal tyre force ``F_i`` of each wheel (wheel frame, rows
 FL, FR, RL, RR). Demand ``v = (F_x, M_z)`` in the body frame:
@@ -56,7 +56,7 @@ class AllocatorConfig:
 class ActuatorHealth:
     """Per-wheel actuator availability (False = failed, contributes no force).
 
-    ``drive_scale`` / ``brake_scale`` (Plan V4.0 M23, compatible extension): remaining fraction of the torque
+    ``drive_scale`` / ``brake_scale`` (compatible extension): remaining fraction of the torque
     limit of a healthy but limited actuator (1.0 = full; the defaults leave every bound unchanged)."""
 
     drive_ok: tuple[bool, bool, bool, bool] = (True, True, True, True)
@@ -114,8 +114,8 @@ class WheelForceAllocator:
         """``share`` (4, > 0): optional distribution weights replacing the available grip in the secondary
         objective (``F_i`` proportional to ``share_i`` among equally good solutions); ``brake_limit`` (4, >= 0) [N]:
         optional additional bound on the braking force per wheel. Both come from a brake-distribution
-        strategy (Plan V4.0 M17, EBD); ``drive_limit`` (4, >= 0) [N]: optional additional bound on the drive
-        force per wheel (traction distribution / eLSD / motor envelope, M18). Without them the allocation is
+        strategy (EBD); ``drive_limit`` (4, >= 0) [N]: optional additional bound on the drive
+        force per wheel (traction distribution / eLSD / motor envelope, traction control). Without them the allocation is
         unchanged."""
         cfg = self.config
         free_yaw = Mz_demand is None          # no yaw request: M_z unweighted (reported as achieved, residual 0)

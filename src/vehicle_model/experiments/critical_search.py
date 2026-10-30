@@ -1,10 +1,10 @@
-"""Experiment type ``critical_scenario_search``: adversarial virtual testing (Plan V3.0 M13).
+"""Experiment type ``critical_scenario_search``: adversarial virtual testing.
 
 Finds the manoeuvres and vehicle/periphery deviations under which one controller does worst,
 offline, from a declared parameter space, then reduces every critical case to a minimal,
 reproducible reference scenario.
 
-**Parameter space (M13 8.1).** Every searched parameter has a bound and a nominal value::
+**Parameter space.** Every searched parameter has a bound and a nominal value::
 
     parameters:
       - {name: amplitude_deg, low: 4, high: 10, nominal: 5}
@@ -31,7 +31,7 @@ one is not simulated:
                                               (linear single-track estimate v^2 delta / (L + K_us v^2))
                                               at most max_factor * mu * g
 
-**Objective and criterion (M13 8.2).** ``objective: {kpi, sense}`` names one KPI of the
+**Objective and criterion.** ``objective: {kpi, sense}`` names one KPI of the
 robust_benchmark set (:data:`.robust_benchmark.KPIS`: max sideslip, yaw-rate RMS error, lateral
 deviation, saturation share, degraded share, fallback rate, infeasibility rate, tyre utilisation,
 ...) and maximises (``sense: max``) or minimises it. ``criterion: {kpi, threshold, direction}``
@@ -48,11 +48,11 @@ the same seed (bit-identical KPI expected), (b) at half the step and (c) with a 
 wheel-load fixed-point tolerance; it is ``confirmed`` only if the criterion holds in (b) and (c)
 and the KPI agrees within ``verification_tolerance`` (relative), else ``numerical_artefact``.
 
-**Counterexample minimisation (M13 8.3).** For each parameter in ``minimise`` (in order), a
+**Counterexample minimisation.** For each parameter in ``minimise`` (in order), a
 bisection between the nominal and the critical value finds the value closest to nominal at
 which the criterion still holds (others kept); the result is verified again.
 
-**Collection (M13 8.4).** Per critical case ``<out>/critical/<id>/``: ``scenario.yaml`` (a
+**Collection.** Per critical case ``<out>/critical/<id>/``: ``scenario.yaml`` (a
 self-contained replay specification of this type: ``replay: {values}``), ``metadata.json``
 (seed, provenance, trigger, violated criterion, verification), ``timeseries.csv``,
 ``comparison.json`` (nominal parameters with the same controller, and the ``baseline``
@@ -528,7 +528,7 @@ def minimise(spec, values: dict, iterations: int = 6, passes: int = 3) -> tuple[
     still had their critical values shifts once they are back at nominal.
 
     A point counts as critical here only if it is **robustly** critical (:func:`robustly_critical`: also at
-    half the step, KPI within ``verification_tolerance``). Measured without this (M13): the bisection
+    half the step, KPI within ``verification_tolerance``). Measured without this: the bisection
     walks onto the stability boundary, where the outcome depends on the step (actuator delay rounded to
     whole control periods, controller rate) and the minimal case fails its own verification.
     """

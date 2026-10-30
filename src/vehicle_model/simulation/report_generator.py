@@ -2,9 +2,7 @@
 
 Generates:
 1. Standalone GitHub-Flavored Markdown report (validation_report.md)
-2. Interactive, executive HTML report dashboard (index.html)
-
-Conforms to Milestone M8 (Plan.md §16, §19 M8, §20).
+2. Interactive, executive HTML report dashboard (index.html)md vertical dynamics).
 """
 
 from __future__ import annotations
@@ -129,7 +127,7 @@ class ValidationReportGenerator:
 
         # Section 3: Engineering KPI Definitions
         lines.extend([
-            "## 3. Mathematical KPI Definitions (Plan.md §16.1)",
+            "## 3. Mathematical KPI Definitions",
             "",
             "- **Yaw Rate Error ($e_r$):** $e_r(t) = r(t) - r_{\\text{des}}(t)$, where $r_{\\text{des}} = \\frac{v_x}{L + K_{us} v_x^2} \\delta_f$.",
             "- **Body Sideslip Angle ($\\beta$):** $\\beta = \\arctan\\left(\\frac{v_y}{v_x}\\right)$, peak absolute value across maneuver.",
@@ -506,7 +504,7 @@ class ValidationReportGenerator:
     <div class="header">
         <div>
             <h1>Automotive Virtual Validation Platform</h1>
-            <p>Milestone M8 Verification Report | ISO 3888, ISO 7401, FMVSS 126, ISO 2631 Matrix Suite</p>
+            <p>Verification Report | ISO 3888, ISO 7401, FMVSS 126, ISO 2631 Matrix Suite</p>
         </div>
         <div class="status-pill">{status_text}</div>
     </div>
@@ -536,7 +534,7 @@ class ValidationReportGenerator:
     </div>
 
     <footer>
-        <p>Automated Engineering Validation Platform | Vehicle Dynamics Simulation Suite | Conforms to Plan.md §16 & §19 M8</p>
+        <p>Automated Engineering Validation Platform | Vehicle Dynamics Simulation Suite | </p>
     </footer>
 
     <script>

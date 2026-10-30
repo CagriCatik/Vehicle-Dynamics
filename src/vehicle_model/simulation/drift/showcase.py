@@ -1,4 +1,4 @@
-"""Drift plan D6: the animated and fully exported runs of ``configs/drift/animation.yaml``.
+"""The animated and fully exported runs of ``configs/drift/animation.yaml``.
 
 Scenarios (each from recorded 7-DOF data via :mod:`.runner`):
 
@@ -6,7 +6,7 @@ Scenarios (each from recorded 7-DOF data via :mod:`.runner`):
                     ``open_loop`` (constant u*) vs ``drift_tracking`` (scheduled LQR + radial loop);
                     exported per variant and as one comparison GIF on shared axes
     full_sequence   supervised drift from straight driving: approach, initiation, hold, exit
-    figure_eight    supervised left drift, exit, right drift, exit (sequence; geometry see D5)
+    figure_eight    supervised left drift, exit, right drift, exit (sequence; geometry see drift tracking)
 """
 
 from __future__ import annotations
@@ -126,7 +126,7 @@ def run(cfg: dict, out_dir=None) -> dict:
 
 def main(argv=None) -> int:
     import argparse
-    ap = argparse.ArgumentParser(description="Drift animations and full exports (Drift plan D6)")
+    ap = argparse.ArgumentParser(description="Drift animations and full exports")
     ap.add_argument("config", nargs="?", default="configs/drift/animation.yaml")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)

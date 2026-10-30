@@ -1,4 +1,4 @@
-"""M6: LQR, gain-scheduled LQR and LTV-MPC yaw laws, and the shared motion-control chain.
+"""LQR, gain-scheduled LQR and LTV-MPC yaw laws, and the shared motion-control chain.
 
 Analytical checks run the laws against their own linear design model as the
 plant (Riccati equation, closed-loop stability, equilibrium, exact tracking,
@@ -141,7 +141,7 @@ def test_mpc_respects_input_limits_in_the_whole_plan(design):
 
 
 def test_mpc_solution_is_a_kkt_point_also_with_active_limits(design):
-    """BVLS solves the box-constrained least squares exactly: the KKT residuals must vanish (M10 5.2)."""
+    """BVLS solves the box-constrained least squares exactly: the KKT residuals must vanish."""
     law = LTVMPCYawLaw(design, INPUTS_4WS_TV)
     _, _, req = _simulate_linear(design, law, steer=0.05, r_ref=0.6, T=0.5, ctx_kw={"max_mz": 500.0, "max_dr": 0.01})
     rep = req.diagnostics["solver"]

@@ -5,7 +5,7 @@ Die **nichtlineare modellprädiktive Regelung** (*Non-Linear Model Predictive Co
 Dieses Dokument beschreibt den Pfadverfolgungsregler `SLSQPPathTrackingNMPC` in [nmpc.py](../src/vehicle_model/controllers/nmpc.py).
 
 > [!IMPORTANT]
-> **Kein C/GMRES.** Der Regler löst das Optimalsteuerungsproblem als nichtlineares Programm mit `scipy.optimize.minimize(method="SLSQP")`. Eine Fortsetzungsmethode oder ein GMRES-Löser nach Ohtsuka ist **nicht implementiert**. Der frühere Klassenname `NMPCControllerCGMRES` existiert nur noch als veralteter Alias (`DeprecationWarning`). Eine echte C/GMRES-Implementierung ist nach Plan.md, Abschnitt 10.1, nur zulässig, wenn die Algorithmik tatsächlich umgesetzt wird.
+> **Kein C/GMRES.** Der Regler löst das Optimalsteuerungsproblem als nichtlineares Programm mit `scipy.optimize.minimize(method="SLSQP")`. Eine Fortsetzungsmethode oder ein GMRES-Löser nach Ohtsuka ist **nicht implementiert**. Der frühere Klassenname `NMPCControllerCGMRES` existiert nur noch als veralteter Alias (`DeprecationWarning`). Eine echte C/GMRES-Implementierung ist nach chassis_control_platform_plan.md, Abschnitt 10.1, nur zulässig, wenn die Algorithmik tatsächlich umgesetzt wird.
 
 ---
 
@@ -29,7 +29,7 @@ sequenceDiagram
     end
 ```
 
-Der Regler erhält den wahren Zustand der Strecke. Das ist der in Plan.md, Abschnitt 10.2, zulässige, ausdrücklich gekennzeichnete **Full-State-Feedback-Referenzmodus**. Eine Kopplung an Zustandsschätzer ist noch nicht vorhanden.
+Der Regler erhält den wahren Zustand der Strecke. Das ist der in chassis_control_platform_plan.md, Abschnitt 10.2, zulässige, ausdrücklich gekennzeichnete **Full-State-Feedback-Referenzmodus**. Eine Kopplung an Zustandsschätzer ist noch nicht vorhanden.
 
 ---
 
@@ -66,7 +66,7 @@ v_{k+1} &= \operatorname{clip}\left(v_k + \Delta t \cdot a_{x,k},\ 0,\ 15\,\text
 
 mit $\delta_{r,k} = \operatorname{LUT}(v_k, \delta_{f,k})$ aus dem synthetischen Kennfeld [lut.json](../configs/steering/lut.json).
 
-Die Gierratengleichung ist eine Kleinwinkelnäherung (Schwimmwinkel vernachlässigt). Die exakte 4WS-Kinematik ist Gegenstand von M1 (Modellklasse V1).
+Die Gierratengleichung ist eine Kleinwinkelnäherung (Schwimmwinkel vernachlässigt). Die exakte 4WS-Kinematik ist Gegenstand von Referenzfahrzeug (kinematisches Einspurmodell).
 
 ### 3.1 Horizont-Rampe
 
@@ -80,7 +80,7 @@ Im eingeschwungenen Zustand gilt $\Delta t = T_f / N$. Die Untergrenze 0,05 s is
 
 - Startschätzung ist die **unverschobene** Lösung des vorherigen Aufrufs.
 - Die neue Lösung wird übernommen, wenn SLSQP Erfolg meldet, wenn die Kosten unter dem 1,2-fachen der vorherigen Kosten liegen oder wenn es der erste Aufruf ist. Andernfalls bleibt die vorherige Folge aktiv.
-- SLSQP-Fehlschläge werden **nicht** als Fehlerstatus gemeldet: `NMPCPathTrackingController` gibt immer `status="nominal"` zurück. Plan.md, Abschnitt 10.4, verlangt eine explizite Behandlung; vorgesehen in M6.
+- SLSQP-Fehlschläge werden **nicht** als Fehlerstatus gemeldet: `NMPCPathTrackingController` gibt immer `status="nominal"` zurück. Der Plattformplan (Abschnitt 10.4) verlangt eine explizite Behandlung; vorgesehen in der Reglerbibliothek.
 
 ---
 
@@ -108,10 +108,10 @@ Die früheren C/GMRES-Schlüssel (`zeta`, `ht`, `phi_*`) wurden vom Löser nie g
 
 ## 6. Bekannte Grenzen
 
-- Der Standard-Radstand von 0,60 m in der YAML-Datei entspricht dem ursprünglichen Modellfahrzeug-Maßstab, nicht dem Pkw-Referenzfahrzeug aus Plan.md, Abschnitt 4. `NMPCPathTrackingController.from_yaml()` regelt damit auch ein 7-DOF-Pkw-Modell mit falschem Radstand. Die Animation `nmpc_slalom` setzt den Radstand dagegen explizit aus den 7-DOF-Parametern. Unabhängig davon bleibt eine Modellfehlanpassung zwischen kinematischem Prädiktionsmodell und dynamischer Strecke.
+- Der Standard-Radstand von 0,60 m in der YAML-Datei entspricht dem ursprünglichen Modellfahrzeug-Maßstab, nicht dem Pkw-Referenzfahrzeug aus chassis_control_platform_plan.md, Abschnitt 4. `NMPCPathTrackingController.from_yaml()` regelt damit auch ein 7-DOF-Pkw-Modell mit falschem Radstand. Die Animation `nmpc_slalom` setzt den Radstand dagegen explizit aus den 7-DOF-Parametern. Unabhängig davon bleibt eine Modellfehlanpassung zwischen kinematischem Prädiktionsmodell und dynamischer Strecke.
 - Fest kodierte Grenzen: Lenkwinkel ±30° im Modell, Geschwindigkeit 0…15 m/s, LUT-Geschwindigkeit 0…20 m/s, Hindernisgewicht 80, $\Delta t_{\min}$ = 0,05 s.
 - Keine Solverdiagnostik, kein Zeitlimit, kein Degraded Mode.
-- Quantitative Regelgüte-Kennwerte (Spurfehler, Schwimmwinkel) werden erst mit dem KPI- und Experiment-Framework (M6/M9) reproduzierbar erzeugt. Frühere, nicht reproduzierbar belegte Zahlen wurden aus diesem Dokument entfernt.
+- Quantitative Regelgüte-Kennwerte (Spurfehler, Schwimmwinkel) werden erst mit dem KPI- und Experiment-Framework reproduzierbar erzeugt. Frühere, nicht reproduzierbar belegte Zahlen wurden aus diesem Dokument entfernt.
 
 ---
 

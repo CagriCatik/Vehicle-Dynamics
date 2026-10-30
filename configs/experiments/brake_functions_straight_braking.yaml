@@ -1,0 +1,20 @@
+# straight full braking at 90 km/h on mu 1.0 / 0.5 / 0.2. Passive 60:40 car (no ABS) against the
+# shared chain without yaw control, with the allocation's grip distribution, the static 60:40 bias, EBD and
+# EBD + IBC; the last two also in information mode C (estimated loads and friction, no plant truth).
+type: controller_comparison
+name: brake_functions_straight_braking
+description: Brake distribution strategies (EBD) and tyre-derived slip targets (IBC), information modes A and C.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+road: {type: uniform, mu: 1.0}
+manoeuvre: {type: straight_braking, speed_kph: 90, brake_pedal: 1.0}
+controllers:
+  - {law: passive}
+  - {law: brakes}
+  - {law: brakes, brake: {distribution: static}}
+  - {law: brakes, brake: {distribution: ebd}}
+  - {law: brakes, brake: {distribution: ebd, ibc: true}}
+  - {law: brakes, feedback: sensor_constrained}
+  - {law: brakes, feedback: sensor_constrained, brake: {distribution: ebd, ibc: true}}
+sweep: {parameter: road.mu, values: [1.0, 0.5, 0.2]}
+outputs: {directory: output/brake_functions/straight_braking, formats: [csv, json, md]}

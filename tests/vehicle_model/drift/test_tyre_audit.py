@@ -1,4 +1,4 @@
-"""Drift plan D1: tyre audit over the large-slip range (zero/low friction, large slip angles, load lift, scaling)."""
+"""Tyre audit over the large-slip range (zero/low friction, large slip angles, load lift, scaling)."""
 
 from __future__ import annotations
 

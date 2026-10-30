@@ -1,4 +1,4 @@
-"""Cornering brake control, CBC (Plan V4.0 M17.2): a yaw-moment *request* while braking in a turn.
+"""Cornering brake control, CBC: a yaw-moment *request* while braking in a turn.
 
 Braking in a turn moves load to the front axle: the rear loses lateral capacity and the car
 tends to oversteer. CBC asks for a counteracting yaw moment through the shared allocation (which

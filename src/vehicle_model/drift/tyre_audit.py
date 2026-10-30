@@ -1,4 +1,4 @@
-"""Tyre characteristic audit over the large-slip range a drift needs (Drift plan D1, section 4.4).
+"""Tyre characteristic audit over the large-slip range a drift needs.
 
 Evaluates any :class:`~vehicle_model.tire_model.TyreModel` far beyond the linear range and
 checks it for properties a drift equilibrium relies on, without changing the tyre:

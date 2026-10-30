@@ -1,4 +1,4 @@
-"""4WS split-mu braking across actuator configurations (Plan.md V3.0 M10 section 5.5).
+"""4WS split-mu braking across actuator configurations.
 
 Six configurations brake from 100 km/h on split friction (1.0 / 0.2) with the
 same pedal and the steering held straight: partial (0.3) and full (1.0) braking.

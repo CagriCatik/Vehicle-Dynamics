@@ -1,4 +1,4 @@
-"""Closed loop on the 14-DOF model for roll stability control (Plan V4.0 M19.1).
+"""Closed loop on the 14-DOF model for roll stability control.
 
 Roll stability with wheel loads and contact needs the vertical/roll degrees of freedom of the 14-DOF
 model (plan blocker E); the 7-DOF model has no suspension and is not used here.

@@ -1,4 +1,4 @@
-"""Transient response metrics for step-like manoeuvres (Plan.md, Abschnitt 6.2 and 16).
+"""Transient response metrics for step-like manoeuvres.
 
 Works on any sampled signal (linear reference or nonlinear simulation output).
 Definitions follow ISO 7401 terminology where one exists:

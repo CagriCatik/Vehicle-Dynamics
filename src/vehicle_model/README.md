@@ -1,6 +1,6 @@
 # Vehicle Model Source Package (`src/vehicle_model`)
 
-This package contains the consolidated, flattened core Python implementation for non-linear vehicle dynamics, multi-body kinematics, interchangeable tyre modeling, state estimation, and integrated chassis control conforming to [Plan.md](../../Plan.md).
+This package contains the consolidated, flattened core Python implementation for non-linear vehicle dynamics, multi-body kinematics, interchangeable tyre modeling, state estimation, and integrated chassis control conforming to [chassis_control_platform_plan.md](../../docs/plans/chassis_control_platform_plan.md).
 
 ---
 

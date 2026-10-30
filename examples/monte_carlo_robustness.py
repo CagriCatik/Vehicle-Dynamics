@@ -1,4 +1,4 @@
-"""Monte Carlo robustness of the yaw stability control (Plan.md, M7 / Abschnitt 10.4).
+"""Monte Carlo robustness of the yaw stability control.
 
 Sine with dwell (80 km/h, 8 deg, modelled on FMVSS 126) on the reference car with
 MF tyres, passive and with the PI yaw controller, under random parameter
@@ -42,7 +42,7 @@ from vehicle_model.visualization.theme import TEXT_MUTED, apply_dark_theme, styl
 VEHICLE = "configs/vehicles/reference_passenger_car.yaml"
 MF = "magic_formula_passenger_synthetic"
 OUT = Path("output/monte_carlo")
-PASSIVE, CONTROLLED = "#d95926", "#3987e5"   # validated slots (dark surface); same entities as in the M5 demo
+PASSIVE, CONTROLLED = "#d95926", "#3987e5"   # validated slots (dark surface); same entities as in the slip control and allocation demo
 SEED = 2026
 
 VARIATIONS = {

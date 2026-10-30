@@ -1,15 +1,15 @@
 type: robust_benchmark
 name: robust_benchmark_sine_with_dwell
 description: >
-  M12 benchmark: the V2.0 baseline laws (PI, GS-LQR as of M6) against the robust and adaptive laws, each
+  robust control benchmark: the baseline laws (PI, GS-LQR as of controller library) against the robust and adaptive laws, each
   designed once from the nominal vehicle and run unchanged against six uncertainty cases in three feedback
   modes. Sine with dwell at 80 km/h, 6 deg amplitude, dry road (low_mu: 0.5).
 vehicle: configs/vehicles/seven_dof_passenger.yaml
 road: {type: uniform, mu: 1.0}
 manoeuvre: {type: sine_with_dwell, speed_kph: 80, amplitude_deg: 6}
 controllers:
-  - {name: V2.0 PI, law: pi, baseline: true}
-  - {name: V2.0 GS-LQR, law: gs_lqr, inputs: 4ws_tv, baseline: true}
+  - {name: baseline PI, law: pi, baseline: true}
+  - {name: baseline GS-LQR, law: gs_lqr, inputs: 4ws_tv, baseline: true}
   - {name: passive, law: passive}
   - {name: LTV-MPC, law: ltv_mpc, inputs: 4ws_tv}
   - {name: Robust LQR, law: robust_lqr, inputs: 4ws_tv, alpha: 3}

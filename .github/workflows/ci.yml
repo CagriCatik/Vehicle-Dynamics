@@ -1,4 +1,4 @@
-# Continuous integration (Plan.md M9).
+# Continuous integration.
 #   push / pull request: quick tests (pytest -m "not slow") and validation of the experiment specifications
 #   weekly and on demand: the full suite including the slow scenario tests
 name: CI

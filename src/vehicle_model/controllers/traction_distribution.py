@@ -1,11 +1,11 @@
-"""Drive-torque distribution for four independent motors: open, virtual eLSD, free; motor envelope (Plan V4.0 M18).
+"""Drive-torque distribution for four independent motors: open, virtual eLSD, free; motor envelope.
 
 Like EBD for braking (:mod:`.brake_distribution`), this is a *strategy for the shared allocation*, not a
 second allocator: it returns per-wheel upper bounds on the drive force (``drive_limit`` [N]) while the
 allocation demand is positive. There is no mechanical differential in the model; the "differential"
 behaviour is a constraint on the electronically commanded wheel forces of each axle:
 
-    free     no coupling: each motor up to its own grip and torque bound (the M5 allocation)
+    free     no coupling: each motor up to its own grip and torque bound (the slip control and allocation allocation)
     open     open-differential equivalent: both wheels of an axle at most what the weaker wheel can
              transmit, ``F_L, F_R <= min(U_L, U_R)``; the axle delivers at most twice the weaker side
     elsd     virtual electronic limited-slip: the stronger wheel may exceed the weaker by at most the

@@ -1,4 +1,4 @@
-"""Drift plan D6: exports and GIF made from recorded data only (frame mapping, file set, CSV = history)."""
+"""Exports and GIF made from recorded data only (frame mapping, file set, CSV = history)."""
 
 from __future__ import annotations
 

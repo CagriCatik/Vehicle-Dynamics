@@ -1,6 +1,6 @@
 # Automotive Virtual Validation Platform Specification
 
-This document details the standardized maneuvers, kinematic formulas, KPI metrics, and pass/fail acceptance thresholds implemented in the automated virtual validation platform conforming to [Plan.md](../Plan.md) (§16, §19 M8).
+This document details the standardized maneuvers, kinematic formulas, KPI metrics, and pass/fail acceptance thresholds implemented in the automated virtual validation platform conforming to [chassis_control_platform_plan.md](plans/chassis_control_platform_plan.md).
 
 ---
 
@@ -22,7 +22,7 @@ The validation platform executes 9 standardized virtual testing scenarios design
 
 ---
 
-## 2. Mathematical Definition of Engineering KPIs (Plan.md §16.1)
+## 2. Mathematical Definition of Engineering KPIs
 
 1. **Yaw-Rate Tracking Error ($e_r$):**
    $$e_r(t) = r(t) - r_{\text{des}}(t), \quad r_{\text{des}} = \frac{v_x}{L + K_{us} v_x^2} \delta_f$$
@@ -96,7 +96,7 @@ This generates:
 
 ![mu_split_braking](assets/validation_platform/mu_split_braking.png)
 
-*Split-µ-Bremsung mit gerader Lenkung und 1450 N m *gesamtem* Bremsmoment, also etwa 12 % Pedal: eine moderate Bremsung, keine Vollbremsung. Mit der alten additiven Stellkette bleibt IVMC hier unter der 15°-Grenze (≈ 10°) und dreht sich ab etwa 20 % Pedal ein; über die gemeinsame Allokation (Standard seit V3.0) bleibt er bei jedem Pedal gerade (Konfigurationsmatrix in MOTION_CONTROL.md, Test `test_additive_esc_holds_only_at_the_moderate_brake_level_of_the_validation_matrix`). Quelle: `examples/run_validation_platform.py`.*
+*Split-µ-Bremsung mit gerader Lenkung und 1450 N m *gesamtem* Bremsmoment, also etwa 12 % Pedal: eine moderate Bremsung, keine Vollbremsung. Mit der alten additiven Stellkette bleibt IVMC hier unter der 15°-Grenze (≈ 10°) und dreht sich ab etwa 20 % Pedal ein; über die gemeinsame Allokation (Standard) bleibt er bei jedem Pedal gerade (Konfigurationsmatrix in MOTION_CONTROL.md, Test `test_additive_esc_holds_only_at_the_moderate_brake_level_of_the_validation_matrix`). Quelle: `examples/run_validation_platform.py`.*
 
 ![fishhook_ncap](assets/validation_platform/fishhook_ncap.png)
 

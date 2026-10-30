@@ -1,13 +1,11 @@
-"""Physics verification and unit tests for suspension systems (Milestone M7).
+"""Physics verification and unit tests for suspension systems ().
 
 Verifies:
 - Quarter-car modal frequencies (bounce ~1-2 Hz, hop ~10-14 Hz)
 - Static load equilibrium and total normal force conservation
 - Semi-active Skyhook comfort improvement (sprung acceleration attenuation)
 - Semi-active Groundhook tyre contact force stabilization
-- 14-DOF full vehicle roll, pitch, heave and suspension deflection dynamics
-
-Conforms to Milestone M7 (Plan.md §9, §17, §19 M7).
+- 14-DOF full vehicle roll, pitch, heave and suspension deflection dynamicsmd estimation robustness).
 """
 
 import math

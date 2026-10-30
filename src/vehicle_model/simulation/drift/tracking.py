@@ -1,4 +1,4 @@
-"""Drift plan D5: circle tracking, set-point transition and figure-eight (scenarios S06, S07).
+"""Circle tracking, set-point transition and figure-eight (scenarios S06, S07).
 
 S06 circle tracking: the vehicle starts on the drift equilibrium; the reference circle has the
 equilibrium radius and is shifted radially by ``offset`` (start outside for > 0). Compared
@@ -7,10 +7,10 @@ with the same plant, tyres and road:
     open_loop        constant equilibrium inputs u*
     esc              the existing allocated ESC (yaw-rate PI, deadband 2 deg/s, RWD allocation) with the
                      equilibrium inputs as driver commands
-    drift_lqr        drift LQR at the fixed equilibrium (D3), no path loop
+    drift_lqr        drift LQR at the fixed equilibrium, no path loop
     drift_tracking   LQR scheduled along the branch + radial outer loop (:class:`ScheduledDriftController`)
 
-Transition: staged initiation from straight driving, first to ``initial_beta_deg`` (supervised, D4),
+Transition: staged initiation from straight driving, first to ``initial_beta_deg`` (supervised, drift initiation and recovery),
 then TRANSITION along the branch to ``final_beta_deg``.
 
 S07 figure-eight: left drift for ``left_hold_s``, supervised exit, right drift initiated from the
@@ -68,7 +68,7 @@ def parse(data: dict, source: str = "<dict>") -> TrackingSpec:
     vehicle_model(data["vehicle"], tyres, source)
     pt = dict(data.get("powertrain") or {"layout": "rwd"})
     keys(pt, {"layout"}, f"{source}: powertrain")
-    require(pt.get("layout", "rwd") == "rwd", f"{source}: powertrain.layout: only 'rwd' is implemented (V1)")
+    require(pt.get("layout", "rwd") == "rwd", f"{source}: powertrain.layout: only 'rwd' is implemented")
     ref = dict(data["reference"])
     keys(ref, {"speed_mps", "beta_deg", "mu", "branch_beta_deg"}, f"{source}: reference",
          {"speed_mps", "beta_deg", "mu", "branch_beta_deg"})
@@ -390,7 +390,7 @@ def _report(spec, res, eq) -> str:
 
 def main(argv=None) -> int:
     import argparse
-    ap = argparse.ArgumentParser(description="Drift circle tracking, transition and figure-eight (Drift plan D5)")
+    ap = argparse.ArgumentParser(description="Drift circle tracking, transition and figure-eight")
     ap.add_argument("config", nargs="?", default="configs/drift/circle_hold.yaml")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)

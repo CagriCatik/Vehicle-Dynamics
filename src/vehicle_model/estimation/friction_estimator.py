@@ -1,6 +1,6 @@
 """Road surface friction coefficient (mu) estimator.
 
-Fulfills Plan.md §11 (Milestone M6):
+Covers:
 Real-time estimation of road friction coefficient using Recursive Least Squares (RLS)
 slip-slope estimation at low-to-medium slip, combined with peak tyre force utilization
 tracking during braking (ABS) and acceleration (TCS) transients.
@@ -76,7 +76,7 @@ class RoadFrictionEstimator:
     Information access: reads tyre forces, slips and wheel loads from the
     simulation telemetry, i.e. ground truth that no vehicle sensor provides.
     It is therefore an ideal-information reference, not a realisable estimator
-    (declared in ``information``; Plan.md 10.2 / M7).
+    (declared in ``information``; chassis_control_platform_plan.md 10.2 / estimation robustness).
     """
 
     information = "ground_truth_tyre_forces"

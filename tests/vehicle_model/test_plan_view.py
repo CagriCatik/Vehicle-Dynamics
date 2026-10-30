@@ -79,7 +79,7 @@ def test_vehicle_parts_steers_rear_wheels_in_4ws() -> None:
 
 
 def test_draw_vehicle_trajectory_renders_snapshots() -> None:
-    """draw_vehicle_trajectory must plot path and snapshot polygons on the provided axis."""
+    """Draw_vehicle_trajectory must plot path and snapshot polygons on the provided axis."""
     import matplotlib
 
     matplotlib.use("Agg", force=True)

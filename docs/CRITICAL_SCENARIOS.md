@@ -1,6 +1,6 @@
-# Adversarial Virtual Testing: kritische Szenarien automatisch finden (M13)
+# Adversarial Virtual Testing: kritische Szenarien automatisch finden
 
-Masterplan V3.0, Abschnitt 8. Statt nur von Hand entworfener Szenarien sucht ein Offline-Optimierer die Bedingungen,
+Abschnitt 8. Statt nur von Hand entworfener Szenarien sucht ein Offline-Optimierer die Bedingungen,
 unter denen ein Regler am schlechtesten abschneidet, prüft jeden Fund numerisch, vereinfacht ihn zu einem minimalen
 Referenzszenario und friert ihn als Regressionstest ein. Alle Parameter sind synthetisch; die Ergebnisse sind
 Simulationsergebnisse des 7-DOF-Zweispurmodells, keine Aussage über ein reales Fahrzeug.
@@ -18,7 +18,7 @@ Parameter, die zum Manöver nicht passen, werden beim Laden abgewiesen.
 |---|---|---|
 | Manöver | `speed_kph`; Sine with Dwell: `amplitude_deg`, `frequency_hz`; Lenkwinkelsprung und Bremsen in der Kurve: `steer_deg`, `steer_rate_degps`; Bremsen in der Kurve: `brake_start_s`, `brake_pedal` | Anfangsgeschwindigkeit, Lenkwinkelamplitude, Lenkwinkelgradient, Bremsbeginn, Bremsmoment |
 | Fahrbahn | `mu`; Niedrigreibwertzone über die volle Breite: `zone_start_m` (Lage der Reibwertgrenze), `zone_length_m`, `zone_mu` | Reibwert, Länge der Zone, Lage der Grenze |
-| Fahrzeug und Peripherie | alle Felder von `UncertaintyCase` (M12): Masse, Trägheit, `cog_shift_m`, Schräglaufsteifigkeiten, Aktuatortotzeit und -verzögerung, Regellatenz, Sensorrauschen, -bias, `sensor_latency_s` | Schwerpunktlage, Reifensteifigkeit, Sensorverzögerung |
+| Fahrzeug und Peripherie | alle Felder von `UncertaintyCase`: Masse, Trägheit, `cog_shift_m`, Schräglaufsteifigkeiten, Aktuatortotzeit und -verzögerung, Regellatenz, Sensorrauschen, -bias, `sensor_latency_s` | Schwerpunktlage, Reifensteifigkeit, Sensorverzögerung |
 | fest (`fixed`) | `actuator_failure`: `none`, `rear_steer_stuck` (Hinterachslenkung bleibt bei 0), `brake_vectoring_off` (Bremsmomente je Achse gleich: kein Giermoment aus Differenzbremsung) | Aktuatorausfall |
 
 **Physikalisch begründete Kombinationen** (`constraints`): Eine Stichprobe, die eine Bedingung verletzt, wird nicht
@@ -32,7 +32,7 @@ simuliert (`rejected`, im Bericht gezählt).
 
 ## 2. Zielfunktion und Suche (Plan 8.2)
 
-- **Zielfunktion** `objective: {kpi, sense}`: eine Kennzahl des Robustheitsbenchmarks (M12), z. B. maximaler
+- **Zielfunktion** `objective: {kpi, sense}`: eine Kennzahl des Robustheitsbenchmarks, z. B. maximaler
   Schwimmwinkel, Gierraten-RMS-Fehler, Querabweichung, Sättigungsanteil, Degraded-Anteil, Fallback- und
   Infeasibility-Rate, Reifenausnutzung; maximiert oder minimiert.
 - **Kriterium** `criterion: {kpi, threshold, direction}`: wann ein Lauf kritisch ist (im Beispiel max. Schwimmwinkel
@@ -90,11 +90,11 @@ Eine Replay-Spezifikation wertet den Fall neu aus, verifiziert ihn und meldet, o
 `configs/critical/` abgelegt ist sie ein Regressionstest: `test_regression_case_is_still_critical` (schnell, ein Lauf)
 und `test_regression_case_is_confirmed_and_the_baseline_holds` (`slow`: volle Verifikation und Baseline).
 
-## 6. Ergebnis: V2.0 GS-LQR im Sine with Dwell
+## 6. Ergebnis: baseline GS-LQR im Sine with Dwell
 
-`configs/experiments/critical_search_sine_with_dwell.yaml`: V2.0 GS-LQR (Hinterachslenkung + Giermoment, unverändert
-seit M6), ideale Rückführung; gesucht über Geschwindigkeit 60–120 km/h, Amplitude 3–10°, Reibwert 0,3–1,0,
-Hinterachs-Schräglaufsteifigkeit 0,6–1,0 und Aktuatortotzeit 0–100 ms; Baseline V2.0 PI. Kriterium max. Schwimmwinkel
+`configs/experiments/critical_search_sine_with_dwell.yaml`: baseline GS-LQR (Hinterachslenkung + Giermoment, unverändert
+seit Reglerbibliothek), ideale Rückführung; gesucht über Geschwindigkeit 60–120 km/h, Amplitude 3–10°, Reibwert 0,3–1,0,
+Hinterachs-Schräglaufsteifigkeit 0,6–1,0 und Aktuatortotzeit 0–100 ms; Baseline baseline PI. Kriterium max. Schwimmwinkel
 ≥ 15°. Seed 7, 48 LHS-Stichproben und 5 Generationen Differential Evolution (Population 20): 168 Auswertungen; die Suche
 selbst dauerte gut 2 min (7 Prozesse), Verifikation und Minimierung laufen danach seriell (gemessen ohne die
 Robustheitsprüfung der Minimierung 5 min gesamt, mit ihr länger).
@@ -104,15 +104,15 @@ Robustheitsprüfung der Minimierung 5 min gesamt, mit ihr länger).
 | Auswertungen | 168: 57 kritisch, 78 nicht kritisch, 33 durch die Querbeschleunigungsbedingung verworfen, 0 numerisch |
 | Nominalparameter | max. Schwimmwinkel 1,4° (nicht kritisch) |
 | Fall 01 (Differential Evolution) | gefunden bei 120 km/h, 5,9°, µ 0,61, Steifigkeit 0,86, 97 ms → β 89,8°, bestätigt |
-| Fall 01 minimal | **80 km/h, 5°, µ 1, Steifigkeit 1, 64 ms Totzeit** → β 89,6°; Δt/2: 89,6° (0,01 %), Toleranz eng: 89,6°: **bestätigt**; V2.0 PI im selben Fall: 2,6° |
+| Fall 01 minimal | **80 km/h, 5°, µ 1, Steifigkeit 1, 64 ms Totzeit** → β 89,6°; Δt/2: 89,6° (0,01 %), Toleranz eng: 89,6°: **bestätigt**; baseline PI im selben Fall: 2,6° |
 | Fall 02 (LHS) | gefunden bei 110 km/h, 3,3°, µ 0,47, 88 ms → β 89,8°, bestätigt |
-| Fall 02 minimal | **88,5 km/h, 3,7°, µ 1, Steifigkeit 1, 24 ms Totzeit** → β 89,6°; Δt/2: 89,6° (0,05 %): **bestätigt**; V2.0 PI: 2,9° |
+| Fall 02 minimal | **88,5 km/h, 3,7°, µ 1, Steifigkeit 1, 24 ms Totzeit** → β 89,6°; Δt/2: 89,6° (0,05 %): **bestätigt**; baseline PI: 2,9° |
 | weitere | 3 kritische Stichproben minimierten auf einen der beiden Fälle |
 
 Befunde:
 
 - **Fall 01:** Nur die Aktuatortotzeit weicht ab. Ab etwa 64 ms (eine Regelperiode Unsicherheit) dreht sich das Fahrzeug
-  mit dem GS-LQR im Standardmanöver; der PI bleibt stabil. Das bestätigt und beziffert den M12-Befund (alle Gesetze
+  mit dem GS-LQR im Standardmanöver; der PI bleibt stabil. Das bestätigt und beziffert den robust control-Befund (alle Gesetze
   hoher Verstärkung bei 80 ms instabil, ROBUST_CONTROL.md).
 - **Fall 02:** Eine **kleinere** Lenkamplitude als nominal (3,7° statt 5°) bei etwas höherer Geschwindigkeit genügt
   schon mit 24 ms Totzeit (nachgerechnet mit sonst gleichen Werten: 3,0° und 3,66° kritisch, β ≈ 90°; 4,3° und 5° nicht,
@@ -150,11 +150,11 @@ python -m pytest tests/vehicle_model/experiments/test_critical_search.py -q
 
 ![search](assets/critical_scenarios/search.png)
 
-*Suche nach kritischen Sine-with-Dwell-Bedingungen für den V2.0 GS-LQR: Verlauf (links oben, gestrichelt: Kriterium) und Stichproben je Parameterpaar (rot kritisch, blau nicht kritisch, grau verworfen; Stern: minimale Fälle, Kreuz: nominal). Quelle: `python -m vehicle_model.experiments run configs/experiments/critical_search_sine_with_dwell.yaml`.*
+*Suche nach kritischen Sine-with-Dwell-Bedingungen für den baseline GS-LQR: Verlauf (links oben, gestrichelt: Kriterium) und Stichproben je Parameterpaar (rot kritisch, blau nicht kritisch, grau verworfen; Stern: minimale Fälle, Kreuz: nominal). Quelle: `python -m vehicle_model.experiments run configs/experiments/critical_search_sine_with_dwell.yaml`.*
 
 ![timeseries](assets/critical_scenarios/01_max_sideslip_deg_timeseries.png)
 
-*Fall 01, minimal: nur 64 ms Aktuatortotzeit, sonst nominal (80 km/h, 5°, µ 1). GS-LQR (rot) dreht sich, gleicher Regler ohne Totzeit (blau) und V2.0 PI im selben Fall (grün) bleiben stabil. Quelle: wie oben.*
+*Fall 01, minimal: nur 64 ms Aktuatortotzeit, sonst nominal (80 km/h, 5°, µ 1). GS-LQR (rot) dreht sich, gleicher Regler ohne Totzeit (blau) und baseline PI im selben Fall (grün) bleiben stabil. Quelle: wie oben.*
 
 ![timeseries](assets/critical_scenarios/02_max_sideslip_deg_timeseries.png)
 

@@ -1,4 +1,4 @@
-"""Mathematical verification of the linear 2-DOF single-track reference (Plan.md, Abschnitt 6 and 15.2)."""
+"""Mathematical verification of the linear 2-DOF single-track reference."""
 
 import math
 

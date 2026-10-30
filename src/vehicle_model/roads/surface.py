@@ -167,7 +167,7 @@ class CheckerboardRoad(RoadSurface):
 
 @dataclass
 class GradedRoad(RoadSurface):
-    """Friction surface ``base`` with a longitudinal road grade along the world X axis (Plan V4.0 M22).
+    """Friction surface ``base`` with a longitudinal road grade along the world X axis.
 
     Convention: ``segments`` are ``(x_start, grade)`` pairs sorted by ``x_start``; ``grade`` is the rise per metre
     in the +X direction (``-0.10`` = 10 % downhill when driving towards +X); the road is level before the first

@@ -1,9 +1,9 @@
-"""Experiment types: a small common interface for the runner (Plan V3.0 §12).
+"""Experiment types: a small common interface for the runner.
 
 Every experiment type validates its own YAML schema and runs itself; provenance,
 the output directory and ``results.json`` are shared (:func:`provenance`,
 :func:`write_json`). A specification selects its type with the top-level key
-``type``; without it the type is ``controller_comparison`` (the M9 format), so
+``type``; without it the type is ``controller_comparison`` (the experiment engine format), so
 existing specifications stay valid.
 
     type                   module                                   what it does
@@ -17,11 +17,11 @@ existing specifications stay valid.
                                                                     and minimised counterexamples, replay
     design_optimization    :mod:`.design_optimization`              vehicle design: NSGA-II Pareto analysis, independent
                                                                     re-check of the selected designs
-    rollover_benchmark     :mod:`.rollover`                         roll stability control on the 14-DOF model (V4 M19)
-    ride_benchmark         :mod:`.ride`                             predictive damping and active pitch, 14-DOF (V4 M21)
-    hill_descent_benchmark :mod:`.hill_descent`                     hill descent control on graded roads, 7-DOF (V4 M22)
-    fault_tolerance_benchmark :mod:`.fault_tolerance`               fault catalogue, health monitor, degraded modes (V4 M23)
-    vmm_benchmark          :mod:`.vmm_benchmark`                    integrated benchmark matrix P0-P7 (V4 M24)
+    rollover_benchmark     :mod:`.rollover`                         roll stability control on the 14-DOF model
+    ride_benchmark         :mod:`.ride`                             predictive damping and active pitch, 14-DOF
+    hill_descent_benchmark :mod:`.hill_descent`                     hill descent control on graded roads, 7-DOF
+    fault_tolerance_benchmark :mod:`.fault_tolerance`               fault catalogue, health monitor, degraded modes
+    motion_management_benchmark          :mod:`.motion_management_benchmark`                    integrated benchmark matrix passive to fault_tolerant
 
 Interface of a type (:class:`ExperimentType`):
 
@@ -56,7 +56,7 @@ class ExperimentType:
 
 def _registry() -> dict[str, ExperimentType]:
     # imported here: the type modules import the shared helpers of this module
-    from . import critical_search, design_optimization, equilibrium_analysis, fault_tolerance, hill_descent, ride, rollover, robust_benchmark, runner, solver_benchmark, spec, stability_map, vmm_benchmark
+    from . import critical_search, design_optimization, equilibrium_analysis, fault_tolerance, hill_descent, ride, rollover, robust_benchmark, runner, solver_benchmark, spec, stability_map, motion_management_benchmark
 
     types = (
         ExperimentType(DEFAULT_TYPE, spec.parse_controller_comparison, runner.run_controller_comparison,
@@ -73,7 +73,7 @@ def _registry() -> dict[str, ExperimentType]:
         ExperimentType(ride.KIND, ride.parse, ride.run, ride.describe),
         ExperimentType(hill_descent.KIND, hill_descent.parse, hill_descent.run, hill_descent.describe),
         ExperimentType(fault_tolerance.KIND, fault_tolerance.parse, fault_tolerance.run, fault_tolerance.describe),
-        ExperimentType(vmm_benchmark.KIND, vmm_benchmark.parse, vmm_benchmark.run, vmm_benchmark.describe),
+        ExperimentType(motion_management_benchmark.KIND, motion_management_benchmark.parse, motion_management_benchmark.run, motion_management_benchmark.describe),
     )
     return {t.name: t for t in types}
 

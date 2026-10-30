@@ -1,4 +1,4 @@
-"""Constraint semantics and feasibility checks, separate from the solver status (Plan.md V3.0 M10 5.1/5.2, Rule 4).
+"""Constraint semantics and feasibility checks, separate from the solver status (Rule 4).
 
 A solver that reports success has minimised its cost within *its* model and bounds;
 that alone says nothing about whether the plan respects the limits that matter.
@@ -168,7 +168,7 @@ def stability_limits(mu: float, vx: float, g: float = 9.81, beta_gain: float = 0
     ``r_max = mu g / v`` (steady-state lateral acceleration within friction) and
     ``beta_max = arctan(beta_gain mu g)`` (about 11 deg at mu = 1, 2 deg at mu = 0.2,
     a common ESC rule of thumb). Not derived from the vehicle dynamics: advisory
-    only, until M11 provides model-based stability boundaries (G03).
+    only, until nonlinear stability provides model-based stability boundaries.
     """
     mu = max(float(mu), 0.05)
     return float(np.arctan(beta_gain * mu * g)), float(mu * g / max(abs(vx), 1.0))

@@ -125,9 +125,9 @@ Where:
 
 ---
 
-## 6. Sensor timing, information access, observer comparison and robustness (M7)
+## 6. Sensor timing, information access, observer comparison and robustness
 
-See [ESTIMATION_ROBUSTNESS.md](ESTIMATION_ROBUSTNESS.md). Note: the RLS friction estimator (section 3) reads tyre forces, slips and wheel loads from the simulation telemetry; it is declared as a ground-truth reference (`information = "ground_truth_tyre_forces"`), not a sensor-based estimator.
+See [ESTIMATION_ROBUSTNESS.md](ESTIMATION_ROBUSTNESS.md). Note: the RLS friction estimator reads tyre forces, slips and wheel loads from the simulation telemetry; it is declared as a ground-truth reference (`information = "ground_truth_tyre_forces"`), not a sensor-based estimator.
 
 ---
 

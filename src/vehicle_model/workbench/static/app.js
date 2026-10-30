@@ -1,4 +1,4 @@
-// Vehicle-Dynamics workbench front-end (Plan V3.0 M15). Plain JS, no build step.
+// Vehicle-Dynamics workbench front-end . Plain JS, no build step.
 // All configuration logic stays in the Python experiment engine: the form only assembles the YAML mapping of a
 // controller comparison; validation, saving and running go through the backend (the CLI's own parser).
 "use strict";

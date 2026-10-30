@@ -1,4 +1,4 @@
-"""M4: steering geometry, quasi-static K&C and roll-centre load transfer.
+"""Steering geometry, quasi-static K&C and roll-centre load transfer.
 
 Geometric checks (Ackermann), physical checks (load-transfer and moment
 balance, signs of roll and compliance steer), the analytical understeer budget
@@ -221,7 +221,7 @@ def _steady_yaw_rate(model, vx, delta, T=4.0, dt=0.005):
 
 @pytest.mark.parametrize("vx", [pytest.param(10.0, marks=pytest.mark.slow), 20.0, pytest.param(30.0, marks=pytest.mark.slow)])
 def test_steady_yaw_rate_matches_linear_understeer_budget(kc_model, vx):
-    """a_y = 0.3 m/s^2: 7-DOF with K&C vs v delta/(L + EG v^2), EG = tyres + roll steer + compliance."""
+    """A_y = 0.3 m/s^2: 7-DOF with K&C vs v delta/(L + EG v^2), EG = tyres + roll steer + compliance."""
     L = kc_model.params.wheelbase
     EG = understeer_budget(kc_model).total
     delta = 0.3 * (L + EG * vx**2) / vx**2

@@ -13,7 +13,6 @@ Implements realistic human driver steering behavior combining:
    - Evaluates steering effort (integral of delta^2 dt), control activity (integral of dot_delta^2 dt),
      and high-frequency Steering Reversal Rate (SRR).
 
-Conforms to Plan.md §12, §16, §19.
 """
 
 from __future__ import annotations

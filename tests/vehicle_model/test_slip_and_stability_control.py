@@ -1,4 +1,4 @@
-"""M5 acceptance: slip control (ABS/TCS), split-mu braking, torque vectoring, actuator faults.
+"""Acceptance: slip control (ABS/TCS), split-mu braking, torque vectoring, actuator faults.
 
 All scenarios use the reference car with the Magic Formula tyre set (MF) so that
 the peak slip depends on the road friction as for a physical tyre.

@@ -110,7 +110,7 @@ class TestFourWheelSteeringScenarios:
 
     @pytest.mark.slow
     def test_split_mu_braking_rear_steer_yaw_damping_cannot_prevent_the_spin(self, test_vehicle: SevenDOFModel):
-        """Physical limit (Plan V3.0 M10 5.5, Audit 4.7): rear-steer yaw damping alone cannot stabilise split-mu braking.
+        """Physical limit (Audit 4.7): rear-steer yaw damping alone cannot stabilise split-mu braking.
 
         Without brake-moment control the rear steering cannot counter the brake yaw moment
         (see simulation/four_wheel_steering/split_mu_matrix.py: 260-1300 N m against 3700-4000 N m).

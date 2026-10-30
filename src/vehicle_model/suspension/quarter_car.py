@@ -11,9 +11,7 @@ Equations of motion:
 
 All coordinates are deviations from static equilibrium. Tyre contact is
 unilateral: the contact force F_c = max(0, F_static - k_t (z_u - z_r) - c_t (dzu - dzr))
-enters the unsprung equation, so a lifted wheel feels no tyre force.
-
-Conforms to Milestone M7 (Plan.md §9, §19 M7).
+enters the unsprung equation, so a lifted wheel feels no tyre force.md estimation robustness).
 """
 
 from __future__ import annotations

@@ -1,12 +1,10 @@
-"""Milestone M8 Flagship Runner: Automotive Virtual Validation Platform.
+"""Flagship Runner: Automotive Virtual Validation Platform.
 
 Executes the automated scenario validation matrix and compiles traceable
 Markdown and HTML engineering reports with embedded telemetry figures.
 
 Usage:
-    python examples/run_validation_platform.py
-
-Conforms to Milestone M8 (Plan.md §16, §19 M8).
+    python examples/run_validation_platform.pymd vertical dynamics).
 """
 
 from __future__ import annotations

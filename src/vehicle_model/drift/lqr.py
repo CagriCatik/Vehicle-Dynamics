@@ -1,4 +1,4 @@
-"""LQR around a drift equilibrium (Drift plan D3, section 5.2): ``u = u* - K (q - q*)``.
+"""LQR around a drift equilibrium: ``u = u* - K (q - q*)``.
 
 Two variants:
 
@@ -22,7 +22,7 @@ and ``v = D_u^-1 du`` (actuator limits), so the weights are dimensionless:
 Integral action (``integral=True``, requires the steer-rate form): one more state
 ``z = int (beta - beta*) dt`` with ``dz/dt ~ c' dq``, ``c = [-vy*, vx*, 0, ...] / v*^2`` (the
 linearised sideslip), scaled by ``Z_SCALE`` and weighted with ``q_integral``. It removes the
-steady sideslip offset that a plant deviating from the design model leaves (D7: up to 4.8 deg);
+steady sideslip offset that a plant deviating from the design model leaves (up to 4.8 deg);
 the speed is then free to settle elsewhere (two inputs, one integrated output).
 
 A design is refused (``NotStabilisable``) if the linearisation fails the PBH test for an

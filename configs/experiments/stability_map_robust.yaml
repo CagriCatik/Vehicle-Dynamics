@@ -1,9 +1,9 @@
 type: stability_map
 name: stability_map_robust
 description: >
-  Numerical recovery regions of the M12 laws (Plan 6.4, "robust controllers from M12"), same operating point
+  Numerical recovery regions of the robust control laws (Plan 6.4, "robust controllers from robust control"), same operating point
   and grid as stability_map_cornering: 80 km/h, 1 deg front steer held, mu 0.6. Passive and TV as references.
-  All M12 laws act on rear steer and yaw moment and are designed once from the nominal vehicle.
+  All robust control laws act on rear steer and yaw moment and are designed once from the nominal vehicle.
 vehicle: configs/vehicles/seven_dof_passenger.yaml
 road: {type: uniform, mu: 0.6}
 operating_point: {speed_kph: 80, steer_deg: 1.0}

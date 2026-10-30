@@ -1,4 +1,4 @@
-"""Experiment type ``design_optimization``: vehicle design and multi-objective optimisation (Plan V3.0 M14).
+"""Experiment type ``design_optimization``: vehicle design and multi-objective optimisation.
 
 Lays out the virtual reference vehicle instead of only controlling it: a declared set of
 design parameters is searched with a seeded multi-objective evolutionary algorithm

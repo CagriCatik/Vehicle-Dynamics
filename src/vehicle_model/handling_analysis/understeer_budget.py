@@ -1,4 +1,4 @@
-"""Linear understeer budget: tyres, roll steer and compliance steer (Plan.md M4).
+"""Linear understeer budget: tyres, roll steer and compliance steer.
 
 In steady cornering at small lateral acceleration the front steer angle is
 ``delta = L/R + EG a_y``. Quasi-static K&C steer changes add to the tyre part

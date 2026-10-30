@@ -1,4 +1,4 @@
-# Drift plan D6: animated and fully exported drift runs (all from recorded 7-DOF data).
+# animated and fully exported drift runs (all from recorded 7-DOF data).
 name: drift_animation
 vehicle: configs/vehicles/seven_dof_passenger.yaml
 tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}

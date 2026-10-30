@@ -1,4 +1,4 @@
-"""Drift plan D3: Jacobians at a drift equilibrium (step study, reproducibility, stabilisability)."""
+"""Jacobians at a drift equilibrium (step study, reproducibility, stabilisability)."""
 
 from __future__ import annotations
 

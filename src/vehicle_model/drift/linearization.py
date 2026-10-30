@@ -1,4 +1,4 @@
-"""Linearisation of the 7-DOF plant at a drift equilibrium (Drift plan D3, section 5.1).
+"""Linearisation of the 7-DOF plant at a drift equilibrium.
 
 ``dq_dot = A dq + B du`` with ``q = [vx, vy, r, omega x4]`` and ``u = [delta_f, T]`` (front
 steer, equal drive torque on both rear wheels), both from central differences of the

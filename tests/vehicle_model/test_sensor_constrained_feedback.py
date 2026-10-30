@@ -1,4 +1,4 @@
-"""Mode C (sensor-constrained closed loop): no simulation telemetry reaches the controller (Plan V3.0 M10 5.4)."""
+"""Mode C (sensor-constrained closed loop): no simulation telemetry reaches the controller."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Experiment type ``solver_benchmark``: computation effort and solution quality of the dynamic NMPC (Plan V3.0 §12, M10 5.2).
+"""Experiment type ``solver_benchmark``: computation effort and solution quality of the dynamic NMPC.
 
 Every variant (a set of :class:`~vehicle_model.controllers.dynamic_two_track_nmpc.DynamicNMPCConfig`
 overrides on top of ``base``) drives the same closed-loop lane change on a fresh

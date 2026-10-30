@@ -1,4 +1,4 @@
-"""Quarter-car frequency responses and ISO 8608 roads (Plan.md, M8).
+"""Quarter-car frequency responses and ISO 8608 roads.
 
 Analytical frequency responses of the passive quarter car against simulated
 points (nonlinear model, harmonic road, steady-state amplitude), the same for

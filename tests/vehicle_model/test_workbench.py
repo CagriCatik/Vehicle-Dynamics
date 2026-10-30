@@ -1,4 +1,4 @@
-"""Plan V3.0 M15: workbench over the experiment engine (configure, run, cancel, results, compare, export, CLI).
+"""Workbench over the experiment engine (configure, run, cancel, results, compare, export, CLI).
 
 Acceptance (Plan 10.6): an experiment is configured through the HTTP interface, executed by the existing
 experiment engine in a separate process, compared and exported as a report, and the same experiment is
@@ -93,12 +93,12 @@ def test_configure_run_compare_export_and_reproduce_with_the_cli(client, tmp_pat
     done2 = client.app.state.jobs.wait(job2["id"], timeout=300)
     cmp_ = client.post("/api/compare", json={"ids": [done["out"], done2["out"]]}).json()
     assert len(cmp_["rows"]) == 4 and "max_sideslip_deg" in cmp_["kpis"]
-    exp = client.post("/api/export", json={"ids": [done["out"], done2["out"]], "title": "M15 acceptance"}).json()
+    exp = client.post("/api/export", json={"ids": [done["out"], done2["out"]], "title": "acceptance"}).json()
     z = zipfile.ZipFile(io.BytesIO(client.get(f"/files/{exp['path']}").content))
     names = z.namelist()
     assert any(n.endswith("report.md") for n in names) and any(n.endswith(".png") for n in names)
     md = z.read(next(n for n in names if n.endswith("report.md"))).decode()
-    assert "M15 acceptance" in md and "KPI comparison" in md and "python -m vehicle_model.experiments run" in md
+    assert "acceptance" in md and "KPI comparison" in md and "python -m vehicle_model.experiments run" in md
 
     # the same experiment through the CLI: identical KPIs
     cli_out = tmp_path / "cli"

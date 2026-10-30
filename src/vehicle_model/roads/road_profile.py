@@ -1,4 +1,4 @@
-"""Vertical road profiles: ISO 8608 random roads and defined single obstacles (Plan.md, Abschnitt 12; M8).
+"""Vertical road profiles: ISO 8608 random roads and defined single obstacles.
 
 ISO 8608 (2016) classifies roads by the one-sided displacement PSD
 

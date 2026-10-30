@@ -1,14 +1,14 @@
-# Handling-Analyse und analytische Referenz (M1)
+# Handling-Analyse und analytische Referenz
 
 Paket: [`src/vehicle_model/handling_analysis/`](../src/vehicle_model/handling_analysis/)
 
-Das Paket stellt die **analytische Referenz** für das Eigenlenkverhalten bereit (Plan.md, Abschnitt 6): ein lineares Einspurmodell mit Vorder- und Hinterachslenkung, geschlossene Kennwerte, Eigenwert- und Frequenzganganalyse sowie Kennwerte für Sprungantworten. Es hat keine Plot-Abhängigkeiten.
+Das Paket stellt die **analytische Referenz** für das Eigenlenkverhalten bereit: ein lineares Einspurmodell mit Vorder- und Hinterachslenkung, geschlossene Kennwerte, Eigenwert- und Frequenzganganalyse sowie Kennwerte für Sprungantworten. Es hat keine Plot-Abhängigkeiten.
 
 Die empirische ISO-4138-Auswertung simulierter Kreisfahrten (Kreisfahrt-Simulation, Untersteuergradient aus Daten, g-g-Diagramm) bleibt in [`simulation/handling_limits.py`](../src/vehicle_model/simulation/handling_limits.py). Die Ergebnisse dieses Pakets dienen als Referenz für jene Auswertung.
 
 ---
 
-## 1. Lineares Einspurmodell (Modellklasse V2, linearisiert)
+## 1. Lineares Einspurmodell (linearisiert)
 
 Koordinaten nach ISO 8855 (x vorwärts, y links, z oben; Winkel positiv gegen den Uhrzeigersinn).
 
@@ -90,11 +90,11 @@ Ergebnisse (linearisiert):
 | $f_n$ [Hz] | 2,76 | 1,45 | 1,04 |
 | $\zeta$ [–] | 0,99 | 0,94 | 0,88 |
 
-$EG$ = +0,51 °/g, $v_{char}$ = 194 km/h. Der Eigenlenkgradient entsteht nur aus Reifen und Achslastverteilung; Elastokinematik ist nicht modelliert (M4). Für reale Pkw typische Werte liegen deshalb höher.
+$EG$ = +0,51 °/g, $v_{char}$ = 194 km/h. Der Eigenlenkgradient entsteht nur aus Reifen und Achslastverteilung; Elastokinematik ist nicht modelliert. Für reale Pkw typische Werte liegen deshalb höher.
 
 ---
 
-## 5. Kinematisches Einspurmodell mit Hinterachslenkung (Modellklasse V1)
+## 5. Kinematisches Einspurmodell mit Hinterachslenkung 
 
 `KinematicSingleTrack(rear_steer=True)` erweitert den Eingang auf $[a_x, \dot\delta_f, \delta_r]$:
 
@@ -106,7 +106,7 @@ Grenzfälle: $\delta_r = 0$ ergibt das bisherige Modell (numerisch identisch, Re
 
 ## 6. Verifikationsstrategie
 
-| Test | Art (Plan.md, Abschnitt 1) | Ergebnis |
+| Test | Art | Ergebnis |
 |---|---|---|
 | [test_linear_single_track.py](../tests/vehicle_model/test_linear_single_track.py) | mathematische Verifikation | DC-Verstärkung = geschlossene Form (rel. 1e-12); neutral: $r/\delta = v/L$; $v_{char}$ maximiert die Gierverstärkung; $\det A = 0$ bei $v_{crit}$; gleichphasig gleiche Winkel ⇒ reine Translation; Formeln für Antworten 1. und 2. Ordnung |
 | [test_kinematic_4ws.py](../tests/vehicle_model/test_kinematic_4ws.py) | mathematische und numerische Verifikation | Kreisbahn analytisch (1e-9), Vorzeichen inkl. Rückwärtsfahrt, $\delta_f = \delta_r$, RK4-Konvergenzordnung 3,7…4,3 |
@@ -124,9 +124,9 @@ Abweichungen zwischen 7-DOF- und Linearmodell, je Geschwindigkeit:
 
 Das 7-DOF-Modell antwortet etwa 4 ms langsamer, passend zu der zusätzlichen Rad- und Lastverlagerungsdynamik.
 
-**Stationäre Kreisfahrt (ISO 4138, R = 40 m, 7-DOF):** Bei $a_y$ = 0,5…1,0 m/s² trifft der simulierte Lenkwinkel die lineare Vorhersage $L/R + EG\,a_y$ auf 2 % (Test `test_steady_state_circle_matches_linear_reference_at_small_ay`, Marker `slow`). Der Eigenlenkgradient des 7-DOF-Modells wächst mit $a_y$. Das lineare $EG$ = 0,51 °/g ist der Grenzwert für $a_y \to 0$. Eine quasistationäre Lenkrampe bei konstanter Geschwindigkeit (90 km/h, 0,25 °/s, M4) ergibt 0,58 °/g bei 0,05–0,15 g, 0,75 °/g bei 0,15–0,3 g und 1,28 °/g bei 0,3–0,5 g. Ursache sind Radlastverlagerung und lastabhängige Reifen bei 60 % Wanksteifigkeit vorn.
+**Stationäre Kreisfahrt (ISO 4138, R = 40 m, 7-DOF):** Bei $a_y$ = 0,5…1,0 m/s² trifft der simulierte Lenkwinkel die lineare Vorhersage $L/R + EG\,a_y$ auf 2 % (Test `test_steady_state_circle_matches_linear_reference_at_small_ay`, Marker `slow`). Der Eigenlenkgradient des 7-DOF-Modells wächst mit $a_y$. Das lineare $EG$ = 0,51 °/g ist der Grenzwert für $a_y \to 0$. Eine quasistationäre Lenkrampe bei konstanter Geschwindigkeit (90 km/h, 0,25 °/s, Fahrwerkskinematik) ergibt 0,58 °/g bei 0,05–0,15 g, 0,75 °/g bei 0,15–0,3 g und 1,28 °/g bei 0,3–0,5 g. Ursache sind Radlastverlagerung und lastabhängige Reifen bei 60 % Wanksteifigkeit vorn.
 
-*Korrektur (M4):* Hier stand zuvor „etwa 0,42 °/g bei 0,05–0,15 g“ aus der Kreisfahrt. Dieser Wert liegt unter dem Grenzwert für $a_y \to 0$ und widerspricht damit dem Anstieg. Er war ein Artefakt der Radiusdrift der Kreisfahrt-Regelung bei kleinem $a_y$ (siehe Hinweis unten). Siehe `docs/CHASSIS_KINEMATICS.md`.
+*Korrektur:* Hier stand zuvor „etwa 0,42 °/g bei 0,05–0,15 g“ aus der Kreisfahrt. Dieser Wert liegt unter dem Grenzwert für $a_y \to 0$ und widerspricht damit dem Anstieg. Er war ein Artefakt der Radiusdrift der Kreisfahrt-Regelung bei kleinem $a_y$ (siehe Hinweis unten). Siehe `docs/CHASSIS_KINEMATICS.md`.
 
 > [!NOTE]
 > `evaluate_understeer_gradient` fittet standardmäßig über 0,05…0,4 g und mischt damit diesen nichtlinearen Anstieg in einen Einzelwert (für das Referenzfahrzeug 0,66 °/g statt 0,51 °/g). Zusätzlich hält die Kreisfahrt-Regelung den Radius bei kleinen $a_y$ nur auf etwa 1,3 m genau. Für Vergleiche mit der linearen Referenz deshalb einen kleinen Fitbereich wählen und den tatsächlichen Radius verwenden.
@@ -145,10 +145,10 @@ Ausgaben in `output/handling_analysis/` (nicht versioniert): `reference_vehicle_
 
 ## 8. Bekannte Grenzen
 
-- Nur lineare Querdynamik; Grenzbereich und Combined Slip sind Gegenstand von `handling_limits.py` und M3.
+- Nur lineare Querdynamik; Grenzbereich und Combined Slip sind Gegenstand von `handling_limits.py` und tyre models.
 - Die Reduktion vernachlässigt Radlastverlagerung; bei größeren $a_y$ weicht das 7-DOF-Modell erwartungsgemäß ab.
-- Transiente Reifendynamik (Relaxationslänge) fehlt in beiden Modellen (M3).
-- Die Hinterachslenkung im V1-Modell ist ein kinematischer Eingang ohne Aktuatordynamik (M4/M5).
+- Transiente Reifendynamik (Relaxationslänge) fehlt in beiden Modellen.
+- Die Hinterachslenkung im kinematischen Einspurmodell ist ein kinematischer Eingang ohne Aktuatordynamik.
 
 ---
 

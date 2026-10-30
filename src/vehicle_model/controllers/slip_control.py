@@ -1,4 +1,4 @@
-"""Wheel-slip control for ABS and TCS: PI with anti-windup and friction-adaptive target slip (Plan.md, Abschnitt 9; M5).
+"""Wheel-slip control for ABS and TCS: PI with anti-windup and friction-adaptive target slip.
 
 Per wheel, the controller reduces the requested torque so that the longitudinal
 slip tracks a target ``kappa*``:

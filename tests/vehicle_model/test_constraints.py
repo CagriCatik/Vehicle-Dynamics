@@ -1,4 +1,4 @@
-"""Constraint semantics and feasibility separate from the solver status (Plan.md V3.0 M10 5.1/5.2)."""
+"""Constraint semantics and feasibility separate from the solver status."""
 
 from __future__ import annotations
 

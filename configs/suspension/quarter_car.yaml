@@ -1,5 +1,5 @@
 # Quarter-car suspension model parameters
-# Conforms to Milestone M7 (Plan.md §9, §19 M7)
+#md estimation robustness)
 
 sprung_mass: 375.0          # kg (ms, 1/4 of vehicle chassis)
 unsprung_mass: 45.0         # kg (mu, wheel hub + brake + tyre)

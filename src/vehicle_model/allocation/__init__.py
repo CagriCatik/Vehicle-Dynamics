@@ -1,4 +1,4 @@
-"""Bounded control allocation with feasibility feedback (Plan.md, Abschnitt 10; M5)."""
+"""Bounded control allocation with feasibility feedback."""
 
 from .wheel_forces import (
     STATUS_INFEASIBLE,

@@ -1,4 +1,4 @@
-# Drift plan D7: robustness of the drift hold. The LQR is designed once for the nominal vehicle and the reference
+# robustness of the drift hold. The LQR is designed once for the nominal vehicle and the reference
 # below; every case deviates the plant (or its periphery) and is run unchanged. Sensor cases run with all seeds and
 # the drift observer (front wheels + IMU) unless observer: blended. controller.integral adds the sideslip integral.
 name: drift_robustness

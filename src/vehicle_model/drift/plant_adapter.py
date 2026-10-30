@@ -1,4 +1,4 @@
-"""Deterministic evaluation of the existing 7-DOF plant for root finding and linearisation (Drift plan D1, 1.2).
+"""Deterministic evaluation of the existing 7-DOF plant for root finding and linearisation (1.2).
 
 :meth:`SevenDOFModel.evaluate_dynamics` starts its load-transfer fixed point from
 ``model._accel_guess`` and overwrites it with the result: the derivative at a state then

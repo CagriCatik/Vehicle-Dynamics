@@ -1,4 +1,4 @@
-"""Regenerative slip control and drag-torque control, MSR (Plan V4.0 M17.4).
+"""Regenerative slip control and drag-torque control, MSR.
 
 Negative machine torque (regenerative braking, or the coast "drag" torque of one-pedal driving) can
 lock a wheel on a slippery road. This controller limits the regenerative torque per wheel; it is

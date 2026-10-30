@@ -1,4 +1,4 @@
-"""Split-mu braking across actuator configurations (Plan.md V3.0 M10 section 5.5, G05).
+"""Split-mu braking across actuator configurations.
 
 Expected physical failures are passing tests: a configuration that cannot reduce the
 brake asymmetry must spin, and the model must show that.

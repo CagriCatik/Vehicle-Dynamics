@@ -1,6 +1,6 @@
-# Fahrzeugauslegung und Mehrzieloptimierung (M14)
+# Fahrzeugauslegung und Mehrzieloptimierung
 
-Masterplan V3.0, Abschnitt 9. Das virtuelle Referenzfahrzeug wird nicht nur geregelt, sondern ausgelegt: Ein
+Abschnitt 9. Das virtuelle Referenzfahrzeug wird nicht nur geregelt, sondern ausgelegt: Ein
 Mehrzielverfahren (NSGA-II) durchsucht deklarierte Auslegungsparameter, die Pareto-Front wird ausgewertet, und die
 ausgewählten Entwürfe werden auf einem getrennten Satz von Prüfszenarien nachgeprüft. Alle Parameter sind
 synthetisch; Aussagen gelten für die virtuellen Modelle, nicht für ein reales Fahrzeug.

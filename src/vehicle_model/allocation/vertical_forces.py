@@ -1,4 +1,4 @@
-"""Vertical force allocation (Plan V4.0 M21.2): body demand ``(F_heave, M_pitch, M_roll)`` -> four active strut forces.
+"""Vertical force allocation: body demand ``(F_heave, M_pitch, M_roll)`` -> four active strut forces.
 
 Active strut forces act between body and wheel at the corners ``(x_i, y_i)`` of the 14-DOF model (positive:
 pushing the body up). With the model's corner kinematics ``z_s,i = z_s + x_i theta + y_i phi``:

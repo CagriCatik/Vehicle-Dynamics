@@ -1,4 +1,4 @@
-"""Configuration provenance checks (Plan.md, Abschnitt 4.2 and 7)."""
+"""Configuration provenance checks."""
 
 from pathlib import Path
 
@@ -78,7 +78,7 @@ def test_seven_dof_tyre_selection_order():
     ref = SevenDOFModel.from_yaml(str(CONFIGS / "vehicles" / "reference_passenger_car.yaml"))
     assert ref.tyre_front.provenance.formulation.startswith("Fiala")  # from the YAML 'tyres' section
     old = SevenDOFModel.from_yaml(str(CONFIGS / "vehicles" / "seven_dof_passenger.yaml"))
-    assert old.tyre_front.provenance.formulation.startswith("Magic Formula 5.2")  # YAML section (since M6)
+    assert old.tyre_front.provenance.formulation.startswith("Magic Formula 5.2")  # YAML section (since controller library)
     assert SevenDOFModel().tyre_rear.provenance.formulation.startswith("Magic Formula 5.2")  # code default
     explicit = SevenDOFModel.from_yaml(
         str(CONFIGS / "vehicles" / "reference_passenger_car.yaml"),

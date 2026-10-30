@@ -1,5 +1,5 @@
 # Semi-active and active suspension controller configurations
-# Conforms to Milestone M7 (Plan.md §9, §19 M7)
+#md estimation robustness)
 
 skyhook:
   skyhook_damping: 3200.0       # Ns/m (c_sky, virtual body damper)

@@ -1,0 +1,18 @@
+# braking in a turn (ISO 7975-inspired, open loop: steady cornering at 80 km/h with 3 deg
+# steer, then pedal 0.5 with the steering held). CBC against the identical configuration without CBC, with and
+# without the yaw-rate PI (ESC role); CBC and the PI are arbitrated, never summed. Before braking the turn uses
+# about 0.8 mu g (steady); the low-friction counterpart with the same utilisation: brake_functions_brake_in_turn_low_mu.yaml.
+type: controller_comparison
+name: brake_functions_brake_in_turn
+description: Cornering brake control (CBC) with and without the yaw controller.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+road: {type: uniform, mu: 1.0}
+manoeuvre: {type: brake_in_turn, speed_kph: 80, steer_deg: 3.0, brake_pedal: 0.5, brake_start_s: 2.0, duration_s: 6.0}
+controllers:
+  - {law: brakes}
+  - {law: brakes, brake: {cbc: true}}
+  - {law: pi}
+  - {law: pi, brake: {cbc: true}}
+  - {law: pi, brake: {cbc: true, distribution: ebd, ibc: true}}
+outputs: {directory: output/brake_functions/brake_in_turn, formats: [csv, json, png, md]}

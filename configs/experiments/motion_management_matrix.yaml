@@ -1,0 +1,84 @@
+# integrated benchmark matrix passive to fault_tolerant x 15 manoeuvres x paired variation draws.
+# "-inspired" manoeuvres (ISO 7975 / FMVSS 126 / ISO 7401 / ISO 3888-2 / NHTSA fishhook), not the normative tests.
+# Synthetic parameters; controllers designed on nominal parameters, plant varied (paired draws, draw 0 nominal).
+type: motion_management_benchmark
+name: motion_management_matrix
+description: >
+  Configuration levels passive (passive) to fault_tolerant (all functions, health monitor, supervisor) on braking, handling,
+  rollover, hill descent, ride and fault manoeuvres. 7-DOF manoeuvres run the shared MotionController chain;
+  ride and rollover run on the 14-DOF model and vary only the functions that exist there.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+vehicle_14dof: configs/suspension/fourteen_dof.yaml
+dt: 0.005
+levels:
+  - {name: passive, description: "passive, fixed 60:40 brake bias, 2WS", controller: {law: passive}}
+  - {name: esc, description: "ABS + TCS + ESC-like yaw PI (3 deg/s deadband)", controller: {law: esc}}
+  - {name: tv_4ws, description: "esc + TV + 4WS (gain-scheduled LQR)", controller: {law: gs_lqr, inputs: 4ws_tv}}
+  - name: brake_functions
+    description: "tv_4ws + EBD + CBC + IBC + regenerative slip control (actuator dynamics) + HDC"
+    controller: {law: gs_lqr, inputs: 4ws_tv, actuators: dynamic, brake: {distribution: ebd, ibc: true, cbc: true, regen: modulated}, hdc: {}}
+  - name: traction
+    description: "brake_functions + eLSD + motor envelope + ITC"
+    controller: {law: gs_lqr, inputs: 4ws_tv, actuators: dynamic, brake: {distribution: ebd, ibc: true, cbc: true, regen: modulated},
+                 hdc: {}, traction: {distribution: elsd, envelope: true, yaw_tolerance: 2.0, itc_scope: traction}}
+  - name: afs_gvc_rsc
+    description: "traction + AFS (variable ratio; replaces 4WS: the LQR input sets do not combine AFS and rear steer) + GVC; RSC on the 14-DOF model"
+    controller: {law: gs_lqr, inputs: afs_tv, actuators: dynamic, brake: {distribution: ebd, ibc: true, cbc: true, regen: modulated},
+                 hdc: {}, traction: {distribution: elsd, envelope: true, yaw_tolerance: 2.0, itc_scope: traction}, steering: {ratio: variable}, gvc: {}}
+    rsc: true
+  - name: ride_control
+    description: "afs_gvc_rsc + preview damping + active pitch (14-DOF ride only; identical to afs_gvc_rsc on 7-DOF)"
+    same_as_7dof: afs_gvc_rsc
+    controller: {law: gs_lqr, inputs: afs_tv, actuators: dynamic, brake: {distribution: ebd, ibc: true, cbc: true, regen: modulated},
+                 hdc: {}, traction: {distribution: elsd, envelope: true, yaw_tolerance: 2.0, itc_scope: traction}, steering: {ratio: variable}, gvc: {}}
+    rsc: true
+    vertical: {damping: preview_skyhook, active_pitch: true, preview: {latency: 0.02, noise_std: 0.0005}}
+  - name: fault_tolerant
+    description: "ride_control + health monitor / degraded modes + supervisor record"
+    controller: {law: gs_lqr, inputs: afs_tv, actuators: dynamic, brake: {distribution: ebd, ibc: true, cbc: true, regen: modulated},
+                 hdc: {}, traction: {distribution: elsd, envelope: true, yaw_tolerance: 2.0, itc_scope: traction}, steering: {ratio: variable}, gvc: {}}
+    rsc: true
+    vertical: {damping: preview_skyhook, active_pitch: true, preview: {latency: 0.02, noise_std: 0.0005}}
+    fault_tolerant: true
+    supervisor: true
+manoeuvres:
+  - {name: 01_braking_dry, model: 7dof, road: {type: uniform, mu: 1.0}, manoeuvre: {type: straight_braking, speed_kph: 100},
+     primary: [stopping_distance, max_lateral_offset_m]}
+  - {name: 02_braking_low_mu, model: 7dof, road: {type: uniform, mu: 0.3}, manoeuvre: {type: straight_braking, speed_kph: 80},
+     primary: [stopping_distance, max_abs_slip]}
+  - {name: 03_split_mu_braking, model: 7dof, road: {type: split_mu, mu_left: 1.0, mu_right: 0.2}, manoeuvre: {type: split_mu_braking, speed_kph: 90},
+     primary: [max_lateral_offset_m, max_sideslip_deg, stopping_distance, v_end_kph]}
+  - {name: 04_brake_in_turn, model: 7dof, description: ISO-7975-inspired, road: {type: uniform, mu: 1.0},
+     manoeuvre: {type: brake_in_turn, speed_kph: 80, steer_deg: 2.5, brake_pedal: 0.5, brake_start_s: 2.0, duration_s: 6.0},
+     primary: [max_sideslip_deg, yaw_error_rms_degps]}
+  - {name: 05_sine_with_dwell, model: 7dof, description: FMVSS-126-inspired, road: {type: uniform, mu: 1.0},
+     manoeuvre: {type: sine_with_dwell, speed_kph: 80, amplitude_deg: 6}, primary: [max_sideslip_deg, yaw_error_rms_degps]}
+  - {name: 06_step_steer, model: 7dof, description: ISO-7401-inspired, road: {type: uniform, mu: 1.0},
+     manoeuvre: {type: step_steer, speed_kph: 80, steer_deg: 2.0, duration_s: 3.0}, primary: [yaw_error_rms_degps, max_sideslip_deg]}
+  - {name: 07_lane_change, model: 7dof, description: "ISO-3888-2-inspired (one-period steer lane change)", road: {type: uniform, mu: 1.0},
+     manoeuvre: {type: lane_change, speed_kph: 80, amplitude_deg: 3.0, frequency_hz: 0.5, duration_s: 5.0}, primary: [yaw_error_rms_degps, max_sideslip_deg]}
+  - {name: 08_fishhook, model: 14dof_rollover, description: "NHTSA-fishhook-inspired, loaded high CoG",
+     manoeuvre: {type: fishhook, speed_kph: 80, amplitude_deg: 8, rate_degps: 45, hold_s: 0.25}, mu: 1.0,
+     variant: {cg_height: 0.95, sprung_mass: 1520}, primary: [ltr_max, two_wheel_lift_time_s, lift_time_s]}
+  - {name: 09_mu_step_braking, model: 7dof, road: {type: mu_step, mu_before: 1.0, mu_after: 0.3, x_step: 20},
+     manoeuvre: {type: straight_braking, speed_kph: 90}, primary: [stopping_distance, max_abs_slip]}
+  - {name: 10_corner_exit, model: 7dof, road: {type: uniform, mu: 0.6},
+     manoeuvre: {type: corner_exit, speed_kph: 50, steer_deg: 4.0, accel_pedal: 1.0, accel_start_s: 2.0, duration_s: 6.0},
+     primary: [max_sideslip_deg, yaw_error_rms_degps]}
+  - {name: 11_hill_descent, model: 7dof, road: {type: uniform, mu: 0.6}, grade: [[15, -20]],
+     manoeuvre: {type: coast, speed_kph: 10, duration_s: 20}, primary: [v_max_kph, v_end_kph]}
+  - {name: 12_uneven_road, model: 14dof_ride, road: {iso_class: C, seed: 3}, manoeuvre: {type: cruise, speed_kph: 60},
+     primary: [body_accel_rms, tyre_load_variation]}
+  - {name: 13_braking_turn_rough_road, model: 14dof_ride, description: "braking 0.5 g on an ISO B road (14-DOF; steering not in the ride loop)",
+     road: {iso_class: B, seed: 5}, manoeuvre: {type: brake, speed_kph: 90, decel_g: 0.5, start_s: 0.5},
+     primary: [pitch_rms_deg, body_accel_rms]}
+  - {name: 14_actuator_fault, model: 7dof, description: "split-mu braking, brakes RR and FL fail at 0.5 s",
+     road: {type: split_mu, mu_left: 1.0, mu_right: 0.2}, manoeuvre: {type: split_mu_braking, speed_kph: 90},
+     faults: [{t_start: 0.5, channel: brake, mode: failed, wheel: RR}, {t_start: 0.5, channel: brake, mode: failed, wheel: FL}],
+     primary: [max_lateral_offset_m, max_sideslip_deg, stopping_distance, v_end_kph]}
+  - {name: 15_sensor_delay_mu_error, model: 7dof, description: "sine with dwell, 100 ms input delay and friction estimate +60 %",
+     road: {type: uniform, mu: 1.0}, manoeuvre: {type: sine_with_dwell, speed_kph: 80, amplitude_deg: 6},
+     faults: [{t_start: 0.0, channel: delay, mode: ticks, severity: 20}, {t_start: 0.0, channel: mu_estimate, mode: drift, severity: 0.6}],
+     primary: [max_sideslip_deg, yaw_error_rms_degps]}
+variations: {draws: 4, seed: 7, speed_pct: 5, mu_pct: 10, mass_pct: 10, hcog_pct: 10}
+outputs: {directory: output/motion_management/matrix, formats: [csv, json, md, png]}

@@ -1,4 +1,4 @@
-"""M9 acceptance: YAML selects vehicle, tyres, manoeuvre, controllers and road; the run is reproducible
+"""Acceptance: YAML selects vehicle, tyres, manoeuvre, controllers and road; the run is reproducible
 and yields a comparison and a verification result."""
 
 from __future__ import annotations
@@ -94,7 +94,7 @@ def test_gif_output_is_opt_in(tmp_path):
     assert "gif" not in parse_experiment(_spec()).outputs["formats"]
 
 
-# ----------------------------------------------------------------------------- experiment types (V3.0 §12)
+# ----------------------------------------------------------------------------- experiment types
 def _bench(**over):
     d = {"type": "solver_benchmark", "name": "tiny_bench", "vehicle": "configs/vehicles/seven_dof_passenger.yaml",
          "road": {"type": "uniform", "mu": 0.75},
@@ -106,7 +106,7 @@ def _bench(**over):
 
 
 def test_type_dispatch_keeps_the_m9_format_and_rejects_unknown_types():
-    assert parse_experiment(_spec()).kind == "controller_comparison"            # no type key: M9 format
+    assert parse_experiment(_spec()).kind == "controller_comparison"            # no type key: experiment engine format
     assert parse_experiment(_spec(type="controller_comparison")).to_dict()["type"] == "controller_comparison"
     with pytest.raises(ValueError, match="unknown experiment type"):
         parse_experiment(_spec(type="monte_carlo"))
@@ -279,4 +279,4 @@ def test_robust_benchmark_runs_matrix_with_baseline_comparison(tmp_path):
     assert {"yaw_rate_rms_error_degps", "max_tyre_utilisation", "fallback_rate", "degraded_share"} <= set(k)
     for f in ("results.json", "kpis.csv", "report.md", "matrix_max_sideslip_deg.png", "yaw_rate_histories.png"):
         assert (tmp_path / f).is_file(), f
-    assert "Relative to the V2.0 baseline" in (tmp_path / "report.md").read_text()
+    assert "Relative to the baseline" in (tmp_path / "report.md").read_text()

@@ -1,12 +1,12 @@
-"""Vehicle motion control chain with exchangeable control laws (Plan.md, Abschnitt 10; M6).
+"""Vehicle motion control chain with exchangeable control laws.
 
-The chain separates (Plan.md 10):
+The chain separates (chassis_control_platform_plan.md 10):
 
     driver request (steer, pedals)
       -> target motion            YawReference: r_ref from a linear single track with EG_ref
       -> motion control law       MotionLaw: yaw moment and/or rear steer (PI, LQR, MPC, ...)
-      -> control allocation       ActuationLayer: WheelForceAllocator (M5)
-      -> actuator-level control   ActuationLayer: ABS/TCS slip control (M5)
+      -> control allocation       ActuationLayer: WheelForceAllocator
+      -> actuator-level control   ActuationLayer: ABS/TCS slip control
       -> vehicle physics          plant, outside this module
 
 Every law runs on the same reference and the same actuation layer, so controllers
@@ -14,7 +14,7 @@ are compared on equal terms. Laws see the vehicle state and the telemetry
 (wheel loads, lateral forces, slips, road friction): this is an idealised
 full-state-feedback setting and is declared as such in ``information``.
 
-Actuation trace (Plan V4.0 M16): ``diagnostics["trace"]`` holds the generalised forces
+Actuation trace: ``diagnostics["trace"]`` holds the generalised forces
 ``(F_x [N], M_z [N m])`` at each stage of one control step,
 
     requested   the law's demand and the pedal force demand (before any limit)
@@ -29,7 +29,7 @@ current command, so without actuator dynamics the two agree up to that one-step 
 What the plant receives after actuator dynamics (``realised``) is added outside the
 controller (:mod:`vehicle_model.simulation.actuator_chain`).
 
-Brake functions (Plan V4.0 M17, all optional, default off = unchanged behaviour):
+Brake functions (all optional, default off = unchanged behaviour):
 
     ActuationConfig.distribution   EBD strategy: shares and rear limits for the allocation while braking
     ActuationConfig.ibc            IBC: tyre-derived slip targets for the ABS slip controller
@@ -86,14 +86,14 @@ class MotionContext:
     max_yaw_moment: float   # [N m]
     max_rear_steer: float   # [rad]
     max_front_overlay: float = 0.0   # [rad] AFS: largest front-steer overlay (0: no AFS)
-    fx_demand: float = 0.0           # [N] the driver's longitudinal demand this step (> 0: traction phase; M24)
+    fx_demand: float = 0.0           # [N] the driver's longitudinal demand this step (> 0: traction phase; motion management)
 
 
 @dataclass(frozen=True)
 class MotionRequest:
     yaw_moment: float | None = 0.0  # [N m] demand to the allocation; None: no yaw request (yaw left free), not 0
     rear_steer: float = 0.0       # [rad] rear road-wheel angle command
-    front_steer: float = 0.0      # [rad] AFS overlay on the driver's front road-wheel angle (Plan V4.0 M19.2)
+    front_steer: float = 0.0      # [rad] AFS overlay on the driver's front road-wheel angle
     status: str = "nominal"       # law/solver status
     diagnostics: dict = field(default_factory=dict)
 
@@ -116,8 +116,8 @@ class ActuationConfig:
     enable_slip_control: bool = True
     distribution: object = None     # BrakeDistributionConfig (EBD) or None: allocation's own grip distribution
     ibc: object = None              # IntegratedBrakeConfig or None: ABS targets from the calibration table
-    traction: object = None         # TractionDistributionConfig (open / eLSD / free, motor envelope; M18) or None
-    enable_tcs: bool = True         # drive slip control (TCS) on/off independently of ABS (M18 comparisons)
+    traction: object = None         # TractionDistributionConfig (open / eLSD / free, motor envelope; traction control) or None
+    enable_tcs: bool = True         # drive slip control (TCS) on/off independently of ABS (traction control comparisons)
 
 
 class ActuationLayer:
@@ -194,10 +194,10 @@ class MotionControllerConfig:
     max_yaw_moment: float = 4000.0            # [N m]
     min_speed: float = 3.0                    # [m/s] law inactive below
     actuation: ActuationConfig = field(default_factory=ActuationConfig)
-    cbc: object = None                        # CorneringBrakeConfig (Plan V4.0 M17.2) or None
-    steering: object = None                   # SteeringOverlayConfig (AFS: variable ratio, overlay limits; M19.2) or None
-    gvc: object = None                        # GVCConfig (GVC-like load-transfer control, M20) or None
-    hdc: object = None                        # HDCConfig (hill descent control, M22) or None
+    cbc: object = None                        # CorneringBrakeConfig or None
+    steering: object = None                   # SteeringOverlayConfig (AFS: variable ratio, overlay limits; roll stability and active steering) or None
+    gvc: object = None                        # GVCConfig (GVC-like load-transfer control, G-vectoring) or None
+    hdc: object = None                        # HDCConfig (hill descent control, hill descent control) or None
 
 
 class MotionController:
@@ -262,7 +262,7 @@ class MotionController:
         t0 = time.perf_counter()
         p, c = self.params, self.mc_config
         steer = float(np.clip(target.driver_steer_f, -p.max_steer_f, p.max_steer_f))
-        if self.steering is not None:          # variable ratio: the driver's effective road-wheel angle (M19.2)
+        if self.steering is not None:          # variable ratio: the driver's effective road-wheel angle
             steer = float(np.clip(steer * self.steering.config.gain(state.vx), -p.max_steer_f, p.max_steer_f))
         if telemetry is not None:
             Fz, mu, Fy, wheel_steer = telemetry.Fz, telemetry.mu, telemetry.Fy_wheel, telemetry.steer_angles
@@ -282,25 +282,25 @@ class MotionController:
             req = self.law.request(state, ctx)
         else:
             # law inactive at low speed. Braking to a stop: M_z = 0 (symmetric, no yaw jerk before standstill).
-            # Driving off: no yaw request (None). Measured (M18): with M_z = 0 and both motors of one side failed
+            # Driving off: no yaw request (None). Measured: with M_z = 0 and both motors of one side failed
             # the allocation could not drive at all below min_speed (deadlock); with None while braking, split-mu
             # stops turned by 0.6 deg in the last metres (asymmetric grip-proportional braking).
             self.law.reset()
             req = MotionRequest(yaw_moment=None if Fx_des >= 0.0 else 0.0)
         steer_r = float(np.clip(req.rear_steer, -p.max_steer_r, p.max_steer_r))
         steer_drv = steer
-        if self.steering is not None:          # the one place where the front angle is finalised (M19.2)
+        if self.steering is not None:          # the one place where the front angle is finalised
             g = self.steering.config.gain(state.vx)
             steer, _, overlay = self.steering.finalise(steer / g, state.vx, req.front_steer, p.max_steer_f, dt)
         else:
             overlay = 0.0
         gvc_ax = 0.0
         long_requests = [LongitudinalRequest("driver", "driver", "base", Fx_des)]
-        if self.gvc is not None:   # small deceleration on turn-in, added to the longitudinal demand (M20)
+        if self.gvc is not None:   # small deceleration on turn-in, added to the longitudinal demand
             gvc_ax = self.gvc.request(steer, state.vx, target.driver_brake_pedal,
                                       bool(np.any(self.actuation.abs.active)), dt)
             long_requests.append(LongitudinalRequest("gvc", "agility", "add", p.mass * gvc_ax))
-        if self.hdc is not None:   # hill descent (M22): the stronger braking of driver and HDC, never a sum
+        if self.hdc is not None:   # hill descent: the stronger braking of driver and HDC, never a sum
             last = self.actuation.last_allocation     # previous step: braking demand cut at the grip limit?
             grip_cut = last is not None and bool(np.any(last.grip_limited)) and float(last.residual[0]) > 1.0
             hdc_ax = self.hdc.request(state.vx, target.driver_accel_pedal, min(0.0, Fx_des / p.mass),
@@ -345,7 +345,7 @@ class MotionController:
 
 @dataclass(frozen=True)
 class LongitudinalRequest:
-    """One function's longitudinal force request (Plan V4.0 M24.1)."""
+    """One function's longitudinal force request."""
     source: str           # driver, hdc, gvc, ...
     priority: str         # safety | driver | stability | agility | comfort
     kind: str             # base (the driver's pedal demand) | brake_min (a braking floor) | add (small additive)
@@ -353,7 +353,7 @@ class LongitudinalRequest:
 
 
 def arbitrate_longitudinal(requests) -> tuple[float, dict]:
-    """Deterministic longitudinal arbitration (Plan V4.0 M24.1): no unbounded summation of interventions.
+    """Deterministic longitudinal arbitration: no unbounded summation of interventions.
 
     The driver's pedal demand is the base. Active braking floors (``brake_min`` < 0, e.g. HDC) take the strongest
     braking of base and floors (``min``), never a sum. Additive agility/comfort requests (``add``, e.g. GVC) are
@@ -379,7 +379,7 @@ def arbitrate_longitudinal(requests) -> tuple[float, dict]:
 
 
 def arbitrate_yaw(law_mz: float | None, cbc_mz: float | None) -> tuple[float | None, str]:
-    """Deterministic yaw-moment arbitration of the yaw law (ESC/TV) and CBC (Plan V4.0 M17.2, 3.4).
+    """Deterministic yaw-moment arbitration of the yaw law (ESC/TV) and CBC (3.4).
 
     No summation of two interventions on the same brakes:
 

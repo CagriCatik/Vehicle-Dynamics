@@ -66,7 +66,7 @@ Where:
 
 The animation scenario `nmpc_slalom` (`python examples/generate_maneuver_animations.py nmpc_slalom`) compares a passive baseline, NMPC with front steer only, and NMPC with the slaved 4WS LUT on the 7-DOF plant.
 
-Quantitative results (tracking error, sideslip) will be produced reproducibly by the KPI and experiment framework (milestones M6/M9). Earlier figures in this section could not be traced to a documented run and were removed.
+Quantitative results (tracking error, sideslip) will be produced reproducibly by the KPI and experiment framework (Reglerbibliothek, Experiment-Engine). Earlier figures in this section could not be traced to a documented run and were removed.
 
 ---
 

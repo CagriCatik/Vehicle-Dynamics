@@ -1,4 +1,4 @@
-"""Steering geometry: individual wheel angles with Ackermann share (Plan.md, Abschnitt 8; M4).
+"""Steering geometry: individual wheel angles with Ackermann share.
 
 The axle (bicycle) angles ``delta_f``, ``delta_r`` define a rigid-body motion of
 the vehicle. Its lateral velocity grows linearly along x, so the ideal

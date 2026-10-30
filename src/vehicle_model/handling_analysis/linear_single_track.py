@@ -1,6 +1,6 @@
 """Linear 2-DOF single-track (bicycle) model as analytical handling reference.
 
-Model class V2 (linearised), Plan.md, Abschnitt 5 and 6.
+Linearised single-track model (platform plan, sections 5 and 6).
 
 States, inputs, outputs (ISO 8855: x forward, y left, z up; angles positive counter-clockwise):
     x = [v_y, r]                lateral velocity [m/s], yaw rate [rad/s]
@@ -121,13 +121,13 @@ class LinearSingleTrack:
 
     @property
     def characteristic_speed(self) -> float | None:
-        """v_char = sqrt(L/EG) [m/s] for an understeering vehicle, else None."""
+        """V_char = sqrt(L/EG) [m/s] for an understeering vehicle, else None."""
         eg = self.understeer_gradient
         return math.sqrt(self.params.wheelbase / eg) if eg > 0.0 else None
 
     @property
     def critical_speed(self) -> float | None:
-        """v_crit = sqrt(-L/EG) [m/s] for an oversteering vehicle, else None."""
+        """V_crit = sqrt(-L/EG) [m/s] for an oversteering vehicle, else None."""
         eg = self.understeer_gradient
         return math.sqrt(-self.params.wheelbase / eg) if eg < 0.0 else None
 

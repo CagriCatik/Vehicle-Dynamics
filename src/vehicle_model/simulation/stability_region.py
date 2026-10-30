@@ -1,4 +1,4 @@
-"""Numerical recovery regions in the (sideslip, yaw rate) plane (Plan V3.0 M11 6.3, 6.4).
+"""Numerical recovery regions in the (sideslip, yaw rate) plane (6.4).
 
 A **problem** (:class:`RecoveryProblem`) fixes vehicle, tyres, friction, the operating
 point (speed, front steer held by the driver) and a controller. From each initial
@@ -60,12 +60,12 @@ def _controllers():
         "tv": lambda p: AllocatedStabilityController(p),
         "ivmc": lambda p: IntegratedChassisController(p),
         "ivmc_no_phase_plane": lambda p: IntegratedChassisController(p, enable_phase_plane=False),
-        # M12 laws (4WS + TV), designed from the linear single track of the nominal vehicle (``design``)
+        # robust control laws (4WS + TV), designed from the linear single track of the nominal vehicle (``design``)
         "robust_lqr": lambda p, d=None: _motion(p, "robust_lqr", d),
         "gs_lqr_dob": lambda p, d=None: _motion(p, "gs_lqr_dob", d),
         "tightening_mpc": lambda p, d=None: _motion(p, "tightening_mpc", d),
         "adaptive_lqr": lambda p, d=None: _motion(p, "adaptive_lqr", d),
-        # references for the rear-steer question: the unchanged V2.0 GS-LQR (4WS+TV) and yaw-moment-only variants
+        # references for the rear-steer question: the unchanged baseline GS-LQR (4WS+TV) and yaw-moment-only variants
         "v2_gs_lqr": lambda p, d=None: _motion(p, "v2_gs_lqr", d),
         "gs_lqr_tv": lambda p, d=None: _motion(p, "gs_lqr_tv", d),
         "robust_lqr_tv": lambda p, d=None: _motion(p, "robust_lqr_tv", d),
@@ -100,13 +100,13 @@ CONTROLLER_DESCRIPTIONS = {
     "tv": "torque vectoring: yaw-rate PI through the allocation, no deadband",
     "ivmc": "integrated control (4WS, TV, ABS/TCS, heuristic phase-plane envelope)",
     "ivmc_no_phase_plane": "integrated control without the heuristic phase-plane envelope",
-    "robust_lqr": "M12 A: GS-LQR with prescribed degree of stability alpha = 3 (4WS+TV)",
-    "gs_lqr_dob": "M12 B: GS-LQR (4WS+TV) with yaw disturbance observer",
-    "tightening_mpc": "M12 C: constraint-tightening MPC (4WS+TV)",
-    "adaptive_lqr": "M12 D: adaptive LQR, RLS cornering-stiffness factor (4WS+TV)",
-    "v2_gs_lqr": "V2.0 GS-LQR (4WS+TV) as of M6, unchanged",
+    "robust_lqr": "robust A: GS-LQR with prescribed degree of stability alpha = 3 (4WS+TV)",
+    "gs_lqr_dob": "robust B: GS-LQR (4WS+TV) with yaw disturbance observer",
+    "tightening_mpc": "robust C: constraint-tightening MPC (4WS+TV)",
+    "adaptive_lqr": "robust D: adaptive LQR, RLS cornering-stiffness factor (4WS+TV)",
+    "v2_gs_lqr": "baseline GS-LQR (4WS+TV) as of controller library, unchanged",
     "gs_lqr_tv": "GS-LQR with yaw moment only (TV)",
-    "robust_lqr_tv": "M12 A with yaw moment only (TV), alpha = 3",
+    "robust_lqr_tv": "robust A with yaw moment only (TV), alpha = 3",
 }
 
 

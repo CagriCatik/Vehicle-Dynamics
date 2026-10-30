@@ -1,4 +1,4 @@
-"""Drift plan D1: audit of the bundled tyre models over the large-slip range a drift needs.
+"""Audit of the bundled tyre models over the large-slip range a drift needs.
 
 Run:  python examples/drift_tyre_audit.py
 Out:  output/drift/tyre_audit/{tyre_audit.png, tyre_audit.json}

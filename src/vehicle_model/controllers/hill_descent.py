@@ -1,4 +1,4 @@
-"""Hill Descent Control (Plan V4.0 M22): speed-holding brake request on a downhill grade.
+"""Hill Descent Control: speed-holding brake request on a downhill grade.
 
 ``brake_saturated`` (from the MotionController): ABS active on a wheel, or the previous allocation cut the
 braking demand at the grip limit.

@@ -1,4 +1,4 @@
-"""Experiment type ``stability_map``: numerical recovery regions per controller (Plan V3.0 M11 6.3, 6.4, §12).
+"""Experiment type ``stability_map``: numerical recovery regions per controller (6.4).
 
 For each controller the closed loop is started from a grid of initial states
 ``(beta0, r0)`` at the operating speed while the driver holds the steer, and every

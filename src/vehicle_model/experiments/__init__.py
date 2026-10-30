@@ -1,4 +1,4 @@
-"""YAML-driven experiments: specification, runner, verification, report (Plan.md M9; types: Plan V3.0 §12)."""
+"""YAML-driven experiments: specification, runner, verification, report."""
 
 from .runner import run_experiment
 from .spec import ControllerSpec, ExperimentSpec, load_experiment, parse_experiment

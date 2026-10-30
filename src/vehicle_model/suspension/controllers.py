@@ -5,9 +5,7 @@ Includes:
 - Semi-active Skyhook controller (Karnopp continuous & 2-state)
 - Semi-active Groundhook controller
 - Hybrid Skyhook/Groundhook controller
-- Active suspension force actuator
-
-Conforms to Milestone M7 (Plan.md §9, §19 M7).
+- Active suspension force actuatormd estimation robustness).
 """
 
 from __future__ import annotations

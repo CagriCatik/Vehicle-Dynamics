@@ -1,4 +1,4 @@
-"""M7: observers without ground-truth access, sideslip estimation quality, Monte Carlo robustness."""
+"""Observers without ground-truth access, sideslip estimation quality, Monte Carlo robustness."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-# Drift plan D4: drift initiation from straight driving, hold, exit (S04, S05), as a sweep with success rates.
+# drift initiation from straight driving, hold, exit (S04, S05), as a sweep with success rates.
 # Every run starts straight at the drift speed; no state is set after t = 0.
 name: drift_initiation
 vehicle: configs/vehicles/seven_dof_passenger.yaml

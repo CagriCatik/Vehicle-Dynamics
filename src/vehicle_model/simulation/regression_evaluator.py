@@ -1,9 +1,7 @@
 """Automated regression evaluation and pass/fail criterion checking.
 
 Evaluates simulation KPIs against engineering thresholds and computes
-performance deltas between controller configurations.
-
-Conforms to Milestone M8 (Plan.md §16.1, §19 M8).
+performance deltas between controller configurations.md vertical dynamics).
 """
 
 from __future__ import annotations

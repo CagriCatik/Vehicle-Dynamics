@@ -1,4 +1,4 @@
-"""Unilateral tyre contact in the vertical models (Plan.md, Abschnitt 8; Audit 4.3).
+"""Unilateral tyre contact in the vertical models (Audit 4.3).
 
 A lifted wheel carries no load and the tyre exerts no force on it; the
 reported contact force falls when the wheel moves up.

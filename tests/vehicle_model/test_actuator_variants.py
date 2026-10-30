@@ -1,4 +1,4 @@
-"""M5: ideal actuator variants (Plan.md, Abschnitt 9) and the steering ratio."""
+"""Ideal actuator variants and the steering ratio."""
 
 from __future__ import annotations
 

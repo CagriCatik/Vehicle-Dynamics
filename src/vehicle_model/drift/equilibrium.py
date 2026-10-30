@@ -1,6 +1,6 @@
-"""Stationary drift equilibria of the existing 7-DOF plant (Drift plan D2, section 4.2).
+"""Stationary drift equilibria of the existing 7-DOF plant.
 
-Configuration V1: rear-wheel drive with equal torque on both rear wheels (open differential,
+Powertrain configuration: rear-wheel drive with equal torque on both rear wheels (open differential,
 ``T_drive = [0, 0, T, T]``), front steer only, no brakes, front wheels free rolling.
 
 Problem. For a reference ``(v, beta)`` the body states are ``q = [vx, vy, r, omega x4]``.
@@ -78,7 +78,7 @@ def peak_slip_angle(tyre, Fz: float, mu: float) -> float:
 
 
 def rwd_input(steer: float, torque: float) -> SevenDOFControlInput:
-    """Configuration V1: front steer, equal drive torque on both rear wheels, no brakes."""
+    """Powertrain configuration: front steer, equal drive torque on both rear wheels, no brakes."""
     return SevenDOFControlInput(steer_f=float(steer), T_drive=np.array([0.0, 0.0, torque, torque]))
 
 
@@ -250,7 +250,7 @@ __all__ = ("DriftEquilibriumSolver", "EquilibriumSettings", "approach_equilibriu
 
 
 def cornering_equilibrium(model, speed: float, steer: float, mu: float) -> DriftEquilibrium:
-    """Stable RWD cornering at fixed steer (the approach and exit state of D4) as a DriftEquilibrium.
+    """Stable RWD cornering at fixed steer (the approach and exit state of drift initiation and recovery) as a DriftEquilibrium.
 
     Found with :class:`~vehicle_model.handling_analysis.equilibrium.EquilibriumAnalysis` (speed held by
     equal rear torques) and re-solved by the drift solver without the drift criterion, so the same

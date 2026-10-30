@@ -35,10 +35,10 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Quelle: `examples/seven_dof_4ws_tv_demo.py`."),
     ],
     "TYRE_MODELS.md": [
-        ("tyres/tyre_models_m3.png",
+        ("tyres/tyre_models_overview.png",
          "Magic-Formula-Reifen (synthetisch) gegen Fiala: Seitenkraft und Rückstellmoment bei drei Radlasten, kombinierter "
          "Schlupf, Selbstähnlichkeit in µ, Relaxation und Lenkwinkelsprung des 7-DOF-Modells mit Relaxationslängen. "
-         "Quelle: `examples/tyre_models_m3_demo.py`."),
+         "Quelle: `examples/tyre_models_demo.py`."),
     ],
     "HANDLING_ANALYSIS.md": [
         ("handling_analysis/reference_vehicle_handling.png",
@@ -107,7 +107,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "`python -m vehicle_model.experiments run configs/experiments/sine_with_dwell_comparison.yaml`."),
         ("experiments/dynamic_nmpc_solver_benchmark/solver_benchmark.png",
          "Experimenttyp `solver_benchmark`: dynamisches NMPC im Spurwechsel (90 km/h, 3,5 m, µ = 0,75) mit vier "
-         "Varianten (die vierte: constraint-aware aus M12). Links Querposition (alle überschwingen, N = 6 um 1,2 m), Mitte Rechenzeit je Lösung "
+         "Varianten (die vierte: constraint-aware aus robust control). Links Querposition (alle überschwingen, N = 6 um 1,2 m), Mitte Rechenzeit je Lösung "
          "(Wanduhr), rechts KKT-Stationarität relativ zu den Kosten (logarithmisch): auch als `nominal` gemeldete "
          "Lösungen erreichen teils Werte um 1. Quelle: "
          "`python -m vehicle_model.experiments run configs/experiments/dynamic_nmpc_solver_benchmark.yaml`."),
@@ -139,11 +139,11 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Anteil zurückgekehrter Anfangszustände je Regler mit Schranken aus Rand- und empfindlichen Punkten und dem "
          "Anteil auf dem verfeinerten Gitter (Raute). Quelle: wie oben."),
         ("experiments/stability_map_robust/stability_maps.png",
-         "Rückführregionen der Regler aus M12 (alle mit Hinterachslenkung und Giermoment) neben passiv und TV, gleicher "
+         "Rückführregionen der Regler aus robust control (alle mit Hinterachslenkung und Giermoment) neben passiv und TV, gleicher "
          "Betriebspunkt: Die Regionen schrumpfen auf ein Band um β0 = 0. Quelle: "
          "`python -m vehicle_model.experiments run configs/experiments/stability_map_robust.yaml`."),
         ("experiments/stability_map_rear_steer/stability_maps.png",
-         "Ursache: der unveränderte V2.0 GS-LQR mit Hinterachslenkung (33 %) gegen GS-LQR und Robust LQR nur mit "
+         "Ursache: der unveränderte baseline GS-LQR mit Hinterachslenkung (33 %) gegen GS-LQR und Robust LQR nur mit "
          "Giermoment (je 94 %). Quelle: "
          "`python -m vehicle_model.experiments run configs/experiments/stability_map_rear_steer.yaml`."),
         ("experiments/stability_map_cornering/phase_portraits.png",
@@ -153,7 +153,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
         ("experiments/robust_benchmark_sine_with_dwell/matrix_max_sideslip_deg.png",
          "Maximaler Schwimmwinkel je Regler und Unsicherheitsfall in den drei Rückführmodi (logarithmische Farbskala; "
          "≈ 90° = Kontrollverlust). Die Aktuatorverzögerung destabilisiert alle Gesetze mit hoher Verstärkung; der "
-         "V2.0-PI, die Tightening MPC und die überwachte Variante bleiben beherrschbar. Quelle: "
+         "Basis-PI, die Tightening MPC und die überwachte Variante bleiben beherrschbar. Quelle: "
          "`python -m vehicle_model.experiments run configs/experiments/robust_benchmark_sine_with_dwell.yaml`."),
         ("experiments/robust_benchmark_sine_with_dwell/matrix_yaw_rate_rms_error_degps.png",
          "Gierratenfehler (RMS) gegen die gemeinsame Referenz, gleiche Anordnung. Quelle: wie oben."),
@@ -166,13 +166,13 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
     ],
     "CRITICAL_SCENARIOS.md": [
         ("experiments/critical_search_sine_with_dwell/search.png",
-         "Suche nach kritischen Sine-with-Dwell-Bedingungen für den V2.0 GS-LQR: Verlauf (links oben, gestrichelt: "
+         "Suche nach kritischen Sine-with-Dwell-Bedingungen für den baseline GS-LQR: Verlauf (links oben, gestrichelt: "
          "Kriterium) und Stichproben je Parameterpaar (rot kritisch, blau nicht kritisch, grau verworfen; Stern: "
          "minimale Fälle, Kreuz: nominal). Quelle: "
          "`python -m vehicle_model.experiments run configs/experiments/critical_search_sine_with_dwell.yaml`."),
         ("experiments/critical_search_sine_with_dwell/critical/01_max_sideslip_deg/timeseries.png",
          "Fall 01, minimal: nur 64 ms Aktuatortotzeit, sonst nominal (80 km/h, 5°, µ 1). GS-LQR (rot) dreht sich, "
-         "gleicher Regler ohne Totzeit (blau) und V2.0 PI im selben Fall (grün) bleiben stabil. Quelle: wie oben."),
+         "gleicher Regler ohne Totzeit (blau) und baseline PI im selben Fall (grün) bleiben stabil. Quelle: wie oben."),
         ("experiments/critical_search_sine_with_dwell/critical/02_max_sideslip_deg/timeseries.png",
          "Fall 02, minimal: 88,5 km/h, 3,7° Amplitude (kleiner als nominal), 24 ms Totzeit. Die Hinterachslenkung "
          "schwingt auf +9,6° und bleibt an der Grenze −10°. Quelle: wie oben."),
@@ -202,17 +202,17 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Halten, Austritt mit Gegenlenken, Normalfahrt. Nur aufgezeichnete Daten der 7-DOF-Strecke; doppelte "
          "Wiedergabegeschwindigkeit. Quelle: `python examples/drift_figure_eight_demo.py`."),
         ("drift/equilibrium_sweep/equilibrium_sweep.png",
-         "Stationäre Driftgleichgewichte (D2) über |β| je Geschwindigkeit und Reibwert: Radius, Lenkwinkel, Moment je "
+         "Stationäre Driftgleichgewichte über |β| je Geschwindigkeit und Reibwert: Radius, Lenkwinkel, Moment je "
          "Hinterrad, Hinterradschlupf; offene Kreise: Reifen extrapoliert, Kreuze: kein Gleichgewicht. Quelle: "
          "`python examples/drift_equilibria_demo.py`."),
         ("drift/lqr_hold/sideslip_and_yaw.png",
-         "D3: Halten und Störungen links/rechts, offen (gestrichelt) gegen LQR (durchgezogen). Quelle: "
+         "Halten und Störungen links/rechts, offen (gestrichelt) gegen LQR (durchgezogen). Quelle: "
          "`python examples/drift_hold_demo.py`."),
         ("drift/initiation/initiation_sequence.png",
-         "D4: Moduswechsel und Zeitverläufe einer Einleitung bis zum Austritt (11 m/s, 15°, µ 0,9). Quelle: "
+         "Moduswechsel und Zeitverläufe einer Einleitung bis zum Austritt (11 m/s, 15°, µ 0,9). Quelle: "
          "`python examples/drift_initiation_demo.py`."),
         ("drift/circle_tracking/trajectory.png",
-         "D5: Kreisbahnen bei ±2 m Startversatz (offen, ESC, Drift-LQR fest, mit Außenschleife) und die Acht-Sequenz "
+         "Kreisbahnen bei ±2 m Startversatz (offen, ESC, Drift-LQR fest, mit Außenschleife) und die Acht-Sequenz "
          "(Geometrie nicht erreicht). Quelle: `python examples/drift_circle_demo.py`."),
     ],
     "REAR_WHEEL_STEERING.md": [
@@ -248,7 +248,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
         ("split_mu_scenarios/scenario_1_split_mu_braking.png",
          "Dieselbe Bremsung als Dashboard: Bahnen, Gierrate, Querabweichung und Störgiermoment. Der lenkende Fahrer ist "
          "der Unterschied zur Konfigurationsmatrix in MOTION_CONTROL.md, in der die Lenkung gerade gehalten wird und "
-         "IVMC mit der alten additiven Stellkette sich eindreht (über die gemeinsame Allokation, Standard seit V3.0, "
+         "IVMC mit der alten additiven Stellkette sich eindreht (über die gemeinsame Allokation, Standard, "
          "bleibt er gerade). Quelle: `examples/split_mu_scenarios_demo.py`."),
         ("split_mu_scenarios/split_mu_friction_sweep_analysis.png",
          "Reibwert-Sweep der Niedrig-µ-Seite: Gierrate, Gierwinkel, Querabweichung, Bremsweg und Schwimmwinkel je "
@@ -314,7 +314,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
         ("validation_report/figures/mu_split_braking.png",
          "Split-µ-Bremsung mit gerader Lenkung und 1450 N m *gesamtem* Bremsmoment, also etwa 12 % Pedal: eine moderate "
          "Bremsung, keine Vollbremsung. Mit der alten additiven Stellkette bleibt IVMC hier unter der 15°-Grenze (≈ 10°) und "
-         "dreht sich ab etwa 20 % Pedal ein; über die gemeinsame Allokation (Standard seit V3.0) bleibt er bei jedem "
+         "dreht sich ab etwa 20 % Pedal ein; über die gemeinsame Allokation (Standard) bleibt er bei jedem "
          "Pedal gerade (Konfigurationsmatrix in MOTION_CONTROL.md, Test "
          "`test_additive_esc_holds_only_at_the_moderate_brake_level_of_the_validation_matrix`). "
          "Quelle: `examples/run_validation_platform.py`."),

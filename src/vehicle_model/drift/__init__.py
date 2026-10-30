@@ -1,7 +1,7 @@
-"""Autonomous drift control on the existing 7-DOF plant (Drift Controller Implementierungsplan V1.0, Plan_v3.md).
+"""Autonomous drift control on the existing 7-DOF plant (drift controller plan).
 
-Packages so far: D1 tyre audit (:mod:`.tyre_audit`), deterministic plant evaluation
-(:mod:`.plant_adapter`); D2 drift equilibria (:mod:`.types`, :mod:`.equilibrium`). The plant is always :class:`~vehicle_model.vehicle_models.SevenDOFModel`
+Packages so far: drift evaluator tyre audit (:mod:`.tyre_audit`), deterministic plant evaluation
+(:mod:`.plant_adapter`); drift equilibria drift equilibria (:mod:`.types`, :mod:`.equilibrium`). The plant is always :class:`~vehicle_model.vehicle_models.SevenDOFModel`
 (or a subclass); this package computes no tyre or body forces of its own.
 """
 

@@ -1,4 +1,4 @@
-"""Active front steering, AFS (Plan V4.0 M19.2): variable ratio and a bounded overlay, finalised in one place.
+"""Active front steering, AFS: variable ratio and a bounded overlay, finalised in one place.
 
 The front road-wheel angle is decided only in :class:`~vehicle_model.controllers.motion_control.MotionController`:
 

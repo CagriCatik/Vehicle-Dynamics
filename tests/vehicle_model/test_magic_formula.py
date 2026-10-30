@@ -1,4 +1,4 @@
-"""Magic Formula 5.2 subset (Plan.md, Abschnitt 7; M3).
+"""Magic Formula 5.2 subset.
 
 Low slip, saturation, combined slip, friction scaling, signs, continuity and
 contact loss, each checked against the documented formulation.

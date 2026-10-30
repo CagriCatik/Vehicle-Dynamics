@@ -1,4 +1,4 @@
-"""Road preview, four-channel (predictive) semi-active damping and active pitch (Plan V4.0 M21, 14-DOF only).
+"""Road preview, four-channel (predictive) semi-active damping and active pitch (14-DOF only).
 
 **Preview is an explicitly modelled external sensor**, never a future plant state: ``RoadPreview`` samples the
 road height profiles (the same objects that excite the plant, i.e. the "real road") at a look-ahead distance in

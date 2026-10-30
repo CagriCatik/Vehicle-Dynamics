@@ -1,4 +1,4 @@
-"""M6 acceptance: controllers compared on the same plant, identical scenarios and defined KPIs."""
+"""Acceptance: controllers compared on the same plant, identical scenarios and defined KPIs."""
 
 from __future__ import annotations
 

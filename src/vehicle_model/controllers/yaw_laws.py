@@ -1,11 +1,11 @@
-"""Yaw motion control laws: PI, LQR, gain-scheduled LQR and LTV-MPC (Plan.md, Abschnitt 10.1; M6).
+"""Yaw motion control laws: PI, LQR, gain-scheduled LQR and LTV-MPC.
 
 All laws act through :class:`~vehicle_model.controllers.motion_control.MotionController`
 (same reference, allocation and slip control). Actuated inputs, selectable:
 ``("yaw_moment",)`` (torque vectoring / ESC) or ``("rear_steer", "yaw_moment")``
 (integrated 4WS + TV).
 
-Design model (independent of the simulated plant, Plan.md 10.2): the linear single
+Design model (independent of the simulated plant, chassis_control_platform_plan.md 10.2): the linear single
 track of :mod:`vehicle_model.handling_analysis` with states ``x = [v_y, r]`` and
 inputs ``[delta_f, delta_r, M_z]`` (``M_z`` enters as ``r_dot += M_z/I_z``), augmented
 with the integral of the yaw-rate error ``z_dot = r - r_ref`` for steady-state
@@ -50,7 +50,7 @@ from vehicle_model.handling_analysis import LinearSingleTrack, LinearSingleTrack
 
 INPUTS_TV = ("yaw_moment",)
 INPUTS_4WS_TV = ("rear_steer", "yaw_moment")
-INPUTS_AFS = ("front_steer",)                    # active front steering overlay (Plan V4.0 M19.2)
+INPUTS_AFS = ("front_steer",)                    # active front steering overlay
 INPUTS_AFS_TV = ("front_steer", "yaw_moment")
 _INPUT_SETS = (INPUTS_TV, INPUTS_4WS_TV, INPUTS_AFS, INPUTS_AFS_TV)
 _INDEX = {"front_steer": 0, "rear_steer": 1, "yaw_moment": 2}  # columns of the full input matrix [delta_f, delta_r, M_z]
@@ -61,7 +61,7 @@ _LABEL = {INPUTS_TV: "TV", INPUTS_4WS_TV: "4WS+TV", INPUTS_AFS: "AFS", INPUTS_AF
 @dataclass
 class NoYawLaw:
     """No yaw-moment or rear-steer request: the motion chain runs only its brake/traction functions
-    (allocation, EBD, ABS/TCS, ...). Reference for brake-function comparisons (Plan V4.0 M17)."""
+    (allocation, EBD, ABS/TCS, ...). Reference for brake-function comparisons."""
 
     name: str = "brake functions only"
     information: str = INFORMATION_FULL_STATE
@@ -75,7 +75,7 @@ class NoYawLaw:
 
 @dataclass
 class YawRatePI:
-    """PI on the yaw-rate error with anti-windup (the M5 stability controller law)."""
+    """PI on the yaw-rate error with anti-windup (the slip control and allocation stability controller law)."""
 
     kp: float = 15000.0       # [N m/(rad/s)]
     ki: float = 100000.0      # [N m/rad]

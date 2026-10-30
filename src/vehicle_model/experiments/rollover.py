@@ -1,4 +1,4 @@
-"""Experiment type ``rollover_benchmark``: roll stability control on the 14-DOF model (Plan V4.0 M19.1).
+"""Experiment type ``rollover_benchmark``: roll stability control on the 14-DOF model.
 
 A matrix of vehicle variants x manoeuvres x friction values x controllers, each run on the 14-DOF closed
 loop of :mod:`vehicle_model.simulation.roll_stability` (1 ms plant step, 5 ms control, information mode A)::

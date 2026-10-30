@@ -7,7 +7,6 @@ Comprehensive multi-system integration testing verifying:
 4. Sudden Lift-Off Oversteer Catch & Recovery with Phase-Plane Envelope Protection
 5. Speed-Adaptive Neuromuscular Driver Model Consistency Across 30 km/h to 110 km/h Speeds
 
-Conforms to Plan.md §16, §18, §19.
 """
 
 from __future__ import annotations
@@ -203,7 +202,7 @@ def test_e2e_dynamic_nmpc_trajectory_tracking_kamm_circle():
     # 3. Output diagnostics should be populated
     assert "kamm_utilization" in out.diagnostics
     assert "peak_kamm" in out.diagnostics
-    # 4. The steering-rate limit is a hard constraint (Plan V3.0 M10 5.1): the applied command respects it,
+    # 4. The steering-rate limit is a hard constraint: the applied command respects it,
     #    and the feasibility of each plan is reported separately from the solver status
     assert max_steer_rate <= nmpc_cfg.max_steer_rate_radps * (1.0 + nmpc_cfg.tolerance)
     summary = nmpc.feasibility.summary()

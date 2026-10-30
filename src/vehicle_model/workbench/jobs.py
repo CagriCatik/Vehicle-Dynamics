@@ -1,4 +1,4 @@
-"""Experiment runs as separate processes (Plan V3.0 M15 10.2).
+"""Experiment runs as separate processes.
 
 A job is exactly the CLI command ``python -m vehicle_model.experiments run <config> --out <run dir>``
 in its own process: the simulation never runs in the web server's event loop, a long run does

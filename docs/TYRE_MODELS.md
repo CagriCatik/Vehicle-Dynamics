@@ -2,7 +2,7 @@
 
 Package: [`src/vehicle_model/tire_model/`](../src/vehicle_model/tire_model/)
 
-All tyre models implement one interface, `TyreModel`. That interface lets you swap the tyre without changing the vehicle models (Plan.md, section 7). This document states what each model computes and what it does **not** compute. A model claims only the effects its formulation contains. All parameter sets are synthetic and do not represent any real tyre.
+All tyre models implement one interface, `TyreModel`. That interface lets you swap the tyre without changing the vehicle models. This document states what each model computes and what it does **not** compute. A model claims only the effects its formulation contains. All parameter sets are synthetic and do not represent any real tyre.
 
 ---
 
@@ -54,7 +54,7 @@ Optional capabilities beyond the interface: only `MagicFormulaTyre` provides `fo
 | `magic_formula` | `MagicFormulaTyre` | MF 5.2 subset | MF 5.2 weighting (normalised) + ellipse limit | yes | $K$, $\mu$, $E$ | yes | `magic_formula_passenger_synthetic` |
 | `pacejka` | `PacejkaTyre` (legacy) | lateral MF, linear $F_x$ | friction circle | **hard clip, no peak** | via MF data | no | `pacejka_{front,rear}_synthetic` |
 
-Which vehicle uses which tyre: `seven_dof_passenger` (the default vehicle) and the 14-DOF model use `magic_formula_passenger_synthetic` (since M6; before: `pacejka_*_synthetic`). `reference_passenger_car` uses `fiala_passenger_synthetic`.
+Which vehicle uses which tyre: `seven_dof_passenger` (the default vehicle) and the 14-DOF model use `magic_formula_passenger_synthetic` (since controller library; before: `pacejka_*_synthetic`). `reference_passenger_car` uses `fiala_passenger_synthetic`.
 
 ### 3.1 Linear (`LinearTyre`, [brush_models.py](../src/vehicle_model/tire_model/brush_models.py))
 
@@ -127,7 +127,7 @@ The adapter evaluates the lateral MF from the YAML coefficient sets in `tire_mod
 - $\mu$ multiplies the whole lateral curve, so the cornering stiffness scales with $\mu$. This is physically wrong.
 - The combined slip uses a friction circle; a scalar loop runs over the wheels (slow).
 
-Until M6 the adapter was the default tyre. It also produced a lateral pull under longitudinal slip (fixed in M6 by keeping the part of $F_y$ that is odd in $\alpha$). Since M6 the default is `magic_formula_passenger_synthetic`; the adapter remains available.
+Until controller library the adapter was the default tyre. It also produced a lateral pull under longitudinal slip (fixed in Reglerbibliothek by keeping the part of $F_y$ that is odd in $\alpha$). Since controller library the default is `magic_formula_passenger_synthetic`; the adapter remains available.
 
 ---
 
@@ -147,7 +147,7 @@ with $V_{\text{ref}} = \max(|v_{w,x}|, |\omega R|, v_\epsilon)$ and $V_x = \max(
 
 **Vehicle integration.** [`seven_dof_transient.py`](../src/vehicle_model/vehicle_models/seven_dof_transient.py) adds `TransientSevenDOFModel` (opt-in). The slips become states: 10 base states, plus $\kappa'$ (4), plus $\tan\alpha'$ (4), giving 18. Two hooks in `SevenDOFModel` (`_slips`, `_extra_derivatives`) supply them. Tyre models, loads, and body and wheel equations stay unchanged. The sub-stepping bound covers the coupled wheel/relaxation eigenvalue $|\lambda| \le V/\sigma_\kappa + \sqrt{C_\kappa R^2/(I_w\sigma_\kappa)}$. Use `steady_slip_state(state, u)` to set consistent initial values.
 
-Step steer at 20 m/s with MF tyres (`examples/tyre_models_m3_demo.py`):
+Step steer at 20 m/s with MF tyres (`examples/tyre_models_demo.py`):
 
 | $\sigma_\alpha$ | yaw rate at 20 ms (relative to quasi-static) | peak (relative) | value at 0.6 s (relative) |
 |---|---|---|---|
@@ -172,7 +172,7 @@ The slip builds up with a delay, so the early yaw rate is lower. The lag also re
 
 ```bash
 python -m vehicle_model.tire_model.plots --all          # 8-panel figure per tyre set: output/tyres/<name>_curves.png
-python examples/tyre_models_m3_demo.py                  # MF Mz, combined slip, mu self-similarity, relaxation: output/tyres/tyre_models_m3.png
+python examples/tyre_models_demo.py                  # MF Mz, combined slip, mu self-similarity, relaxation: output/tyres/tyre_models_overview.png
 ```
 
 ---
@@ -183,8 +183,8 @@ python examples/tyre_models_m3_demo.py                  # MF Mz, combined slip, 
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![tyre_models_m3](assets/tyre_models/tyre_models_m3.png)
+![tyre_models_m3](assets/tyre_models/tyre_models_overview.png)
 
-*Magic-Formula-Reifen (synthetisch) gegen Fiala: Seitenkraft und Rückstellmoment bei drei Radlasten, kombinierter Schlupf, Selbstähnlichkeit in µ, Relaxation und Lenkwinkelsprung des 7-DOF-Modells mit Relaxationslängen. Quelle: `examples/tyre_models_m3_demo.py`.*
+*Magic-Formula-Reifen (synthetisch) gegen Fiala: Seitenkraft und Rückstellmoment bei drei Radlasten, kombinierter Schlupf, Selbstähnlichkeit in µ, Relaxation und Lenkwinkelsprung des 7-DOF-Modells mit Relaxationslängen. Quelle: `examples/tyre_models_demo.py`.*
 
 <!-- figures:end -->

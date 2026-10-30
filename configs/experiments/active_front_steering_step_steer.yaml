@@ -1,0 +1,20 @@
+# active front steering on the 7-DOF model, ISO 7401-oriented step steer, 80 km/h, 2 deg road-wheel (ideal information).
+# 2WS passive and the GS-LQR with TV, 4WS+TV, AFS and AFS+TV (same design weights), AFS with variable steering
+# ratio, AFS behind the steering actuator (lag, rate limit) and AFS failed (overlay 0).
+type: controller_comparison
+name: active_front_steering_step_steer
+description: Active front steering against 2WS, TV and 4WS baselines (ISO 7401-oriented step steer, 80 km/h, 2 deg road-wheel).
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+road: {type: uniform, mu: 1.0}
+manoeuvre: {type: step_steer, speed_kph: 80, steer_deg: 2.0, duration_s: 3.0}
+controllers:
+  - {law: passive}
+  - {law: gs_lqr, inputs: tv}
+  - {law: gs_lqr, inputs: 4ws_tv}
+  - {law: gs_lqr, inputs: afs}
+  - {law: gs_lqr, inputs: afs_tv}
+  - {law: gs_lqr, inputs: afs, steering: {ratio: variable}}
+  - {law: gs_lqr, inputs: afs, actuators: dynamic}
+  - {law: gs_lqr, inputs: afs, steering: {afs_failed: true}}
+outputs: {directory: output/active_front_steering/step_steer, formats: [csv, json, png, md]}

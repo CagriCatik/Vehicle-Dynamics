@@ -2,7 +2,7 @@
 
 Simulates an ISO 3888-like severe obstacle-avoidance double lane change at 80 km/h (22.2 m/s)
 on damp pavement (mu = 0.75) using the 7-DOF two-track vehicle dynamics model.
-Evaluates standardized KPIs (Plan.md §16.1) and exports multi-panel comparative telemetry.
+Evaluates standardized KPIs and exports multi-panel comparative telemetry.
 """
 
 from __future__ import annotations
@@ -291,7 +291,7 @@ def main() -> None:
     logger.info("Executing ISO 3888 Double Lane Change Benchmark (Passive vs 4WS vs IVMC)...")
     kpis, histories = run_benchmark()
     table_md = format_kpi_table(kpis)
-    logger.info("\n" + "=" * 95 + "\nSTANDARDIZED ENGINEERING KPI BENCHMARK TABLE (Plan.md §16.1):\n" + "=" * 95 + "\n" + table_md)
+    logger.info("\n" + "=" * 95 + "\nSTANDARDIZED ENGINEERING KPI BENCHMARK TABLE:\n" + "=" * 95 + "\n" + table_md)
 
     out_file = Path("output/benchmark/double_lane_change_comparison.png")
     plot_comparison(histories, out_file)

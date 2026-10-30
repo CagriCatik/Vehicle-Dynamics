@@ -33,7 +33,7 @@ vehicle:
   # Simplified lateral Magic Formula of DynamicSingleTrack (D = mu * Fz; Df/Dr are unused).
   # Provenance undocumented (likely a fit to the Autoverse simulator run in data/example_runs).
   # The horizontal/vertical shifts are zero so that the symmetric vehicle drives straight at
-  # zero steer (Plan.md 15.1). The former non-zero shifts (Shfy 0.007, Shry 0.01, Svfy 134.7,
+  # zero steer (chassis_control_platform_plan.md 15.1). The former non-zero shifts (Shfy 0.007, Shry 0.01, Svfy 134.7,
   # Svry 194.07) are in commit 4190954 for reproducing earlier validation runs.
   MF_lat:
     Bf: 17.0

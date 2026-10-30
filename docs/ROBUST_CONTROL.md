@@ -1,7 +1,7 @@
-# Robuste und adaptive Fahrdynamikregelung (Plan V3.0, M12)
+# Robuste und adaptive Fahrdynamikregelung
 
 Regler, die auch bei abweichenden Modellparametern, unbekanntem Reibwert, verzögerten Aktuatoren und gestörten
-Sensoren arbeiten sollen, ihr Vergleich mit der festen V2.0-Baseline und eine Überwachungsschicht. Alle Parameter
+Sensoren arbeiten sollen, ihr Vergleich mit der festen Baseline und eine Überwachungsschicht. Alle Parameter
 sind synthetisch; Ergebnisse beschreiben das virtuelle Fahrzeug, kein reales. Es wird keine funktionale Sicherheit
 und keine garantierte Stabilisierung behauptet.
 
@@ -92,7 +92,7 @@ wird das relaxierte Problem gelöst:
 
     min J(c) + w₁ (s_x + s_u) + w₂ (s_x² + s_u²)   u. d. N.  Zustandszeilen ≤ rhs + s_x,  Eingangszeilen ≤ rhs + s_u,  s ≥ 0
 
-(exakte Strafe: Schlupf null, wann immer das verschärfte Problem lösbar ist). Berichtet wird nach der Trennung aus M10:
+(exakte Strafe: Schlupf null, wann immer das verschärfte Problem lösbar ist). Berichtet wird nach der Trennung aus Zustandsschätzung:
 Der Solverstatus sagt, wie gut das relaxierte Problem gelöst wurde; die Verletzung der harten Grenzen durch den Plan
 steht im Zulässigkeitsbericht (Infeasibility Rate) mit `tightened_problem_feasible = False` und dem Schlupf. Scheitert
 auch das relaxierte Problem, wirkt der Hilfsregler (`c = 0`) mit Status `fallback`. Geltungsbereich der Garantie:
@@ -170,8 +170,8 @@ Experimenttyp `robust_benchmark`: Regler × Rückführmodus (ideal / geschätzt 
 jeweils dieselbe nichtlineare Strecke (7-DOF, unabhängig vom linearen Entwurfsmodell), dasselbe Manöver und dieselbe
 Referenz. Kennzahlen je Lauf: Gierratenfehler (RMS), Schwimmwinkel, Querabweichung zur aus `r_ref` integrierten Bahn,
 Stellsättigung, Stellraten, Reifenausnutzung, Rechenzeit, Infeasibility Rate, Fallback Rate, Degraded-Anteil,
-Aktuatoraufwand (`∫|M_z|`, `∫|δ_h|`), Kontrollverlust (`|β| ≥ 30°`). Die Baseline sind die unveränderten V2.0-Gesetze
-PI (TV) und GS-LQR (4WS+TV) aus M6; der Bericht gibt jeden Regler relativ zur ersten Baseline an und zählt die
+Aktuatoraufwand (`∫|M_z|`, `∫|δ_h|`), Kontrollverlust (`|β| ≥ 30°`). Die Baseline sind die unveränderten Basisgesetze
+PI (TV) und GS-LQR (4WS+TV) aus Reglerbibliothek; der Bericht gibt jeden Regler relativ zur ersten Baseline an und zählt die
 Vergleiche, in denen er schlechter ist. Die LQR-artigen Gesetze bekommen zusätzlich die lineare Robustheitsanalyse
 über die von den Fällen aufgespannte Parameterbox.
 
@@ -197,8 +197,8 @@ drei Rückführmodi × sechs Fälle = 162 Läufe (196 s auf 7 Prozessen). Vollst
 
 | Regler | nominal | heavy_rear_load | worn_rear_tyres | low_mu | actuator_delay |
 |---|---|---|---|---|---|
-| V2.0 PI (Baseline) | 2,97 / 2,5 | 3,26 / 2,8 | 3,69 / 3,0 | 2,10 / 1,2 | 7,07 / 3,2 |
-| V2.0 GS-LQR (Baseline) | 2,32 / 1,8 | 2,94 / 2,0 | 2,76 / 2,3 | 2,42 / 2,0 | V |
+| baseline PI (Baseline) | 2,97 / 2,5 | 3,26 / 2,8 | 3,69 / 3,0 | 2,10 / 1,2 | 7,07 / 3,2 |
+| baseline GS-LQR (Baseline) | 2,32 / 1,8 | 2,94 / 2,0 | 2,76 / 2,3 | 2,42 / 2,0 | V |
 | passiv | V | V | V | V | V |
 | LTV-MPC | 6,31 / 4,1 | 8,62 / 5,1 | 7,13 / 4,5 | 3,91 / 1,8 | V |
 | Robust LQR (α = 3) | 3,25 / 2,9 | 4,34 / 3,6 | 3,59 / 3,2 | V | V |
@@ -207,19 +207,19 @@ drei Rückführmodi × sechs Fälle = 162 Läufe (196 s auf 7 Prozessen). Vollst
 | Adaptive LQR | 2,80 / 1,5 | 2,94 / 2,0 | 2,76 / 2,3 | 2,43 / 1,9 | V |
 | Supervised Tightening MPC | 2,68 / 2,5 | 2,89 / 2,8 | 3,39 / 3,1 | 1,95 / 1,2 | 10,4 / 5,9 |
 
-**Kontrollverluste über alle 18 Kombinationen je Regler** (drei Modi × sechs Fälle): V2.0 PI 0, Tightening MPC 0,
-Supervised Tightening MPC 0, V2.0 GS-LQR 1, GS-LQR + DOB 3, Adaptive LQR 4, LTV-MPC 5, Robust LQR 7, passiv 18.
+**Kontrollverluste über alle 18 Kombinationen je Regler** (drei Modi × sechs Fälle): baseline PI 0, Tightening MPC 0,
+Supervised Tightening MPC 0, baseline GS-LQR 1, GS-LQR + DOB 3, Adaptive LQR 4, LTV-MPC 5, Robust LQR 7, passiv 18.
 
 Befunde:
 
 - **Aktuatorverzögerung ist der entscheidende Fall.** 80 ms Gesamtverzögerung destabilisieren jedes Gesetz mit hoher
-  Verstärkung und Hinterachslenkung (V2.0 GS-LQR, LTV-MPC, Robust LQR, DOB, adaptiv bei idealer Rückführung). Der
-  V2.0-PI (nur Giermoment, moderate Verstärkung) bleibt beherrschbar (7,1 °/s); die Tightening MPC verliert die
+  Verstärkung und Hinterachslenkung (baseline GS-LQR, LTV-MPC, Robust LQR, DOB, adaptiv bei idealer Rückführung). Der
+  PI (nur Giermoment, moderate Verstärkung) bleibt beherrschbar (7,1 °/s); die Tightening MPC verliert die
   Kontrolle nicht, schwingt aber stark (28° Schwimmwinkel). Keines der Gesetze modelliert die Verzögerung; ein
   verzögerungsbewusster Entwurf (Prädiktion über die Totzeit) ist der naheliegende nächste Schritt.
 - **Robust LQR mit α = 3 ist schlechter als der GS-LQR, den er verbessern sollte.** Die lineare Analyse über die Box
   (Masse 1,0–1,2, Gierträgheit 1,0–1,25, Hinterachssteifigkeit 0,7–1,0) bestätigt die Reserve: schlechtester Fall
-  −5,0 1/s gegen −1,5 1/s beim V2.0 GS-LQR. Trotzdem verliert er bei µ = 0,5 in allen drei Modi die Kontrolle: Die
+  −5,0 1/s gegen −1,5 1/s beim baseline GS-LQR. Trotzdem verliert er bei µ = 0,5 in allen drei Modi die Kontrolle: Die
   höhere Verstärkung treibt die Stellgrößen in die Sättigung, die das lineare Modell nicht kennt. Der lineare
   Robustheitsnachweis sagt über Sättigung, Reibwert und Verzögerung nichts aus.
 - **Störgrößenbeobachter**: bei Parameterabweichungen der beste Regler (worn_rear_tyres 2,04 °/s gegen 3,69 °/s beim
@@ -233,13 +233,13 @@ Befunde:
 - **Adaptiver LQR**: nach der Korrektur der Gültigkeitsbedingungen (Abschnitt 2 D) ohne Verlust bei Parameterabweichungen
   und niedrigem Reibwert; verliert die Kontrolle bei Verzögerung und im Modus C mit gestörten Sensoren (Gyro-Bias
   verfälscht den Regressor).
-- **Gegen die V2.0-Baseline (PI)** sind 120 von 144 Vergleichen auf mindestens einer Folgekennzahl schlechter. Der
-  GS-LQR (selbst V2.0) ist in den Fällen ohne Verzögerung besser als der PI; der klare Gewinn eines neuen Verfahrens ist
+- **Gegen die Baseline (PI)** sind 120 von 144 Vergleichen auf mindestens einer Folgekennzahl schlechter. Der
+  GS-LQR (selbst die Basisversion) ist in den Fällen ohne Verzögerung besser als der PI; der klare Gewinn eines neuen Verfahrens ist
   auf GS-LQR + DOB bei Parameterabweichungen und die Tightening MPC bei niedrigem Reibwert beschränkt.
 
 **Rückführregionen** (Plan 6.4, [NONLINEAR_STABILITY.md](NONLINEAR_STABILITY.md) 4.5): Bei 80 km/h, 1°, µ = 0,6
 kehren mit den Gesetzen A–D (alle mit Hinterachslenkung) nur 23–44 % der Anfangszustände zurück, weniger als beim
-passiven Fahrzeug (74 %). Dieselbe Schwäche hat der unveränderte V2.0 GS-LQR mit Hinterachslenkung (33 %); mit
+passiven Fahrzeug (74 %). Dieselbe Schwäche hat der unveränderte baseline GS-LQR mit Hinterachslenkung (33 %); mit
 Giermoment allein erreichen GS-LQR und Robust LQR 94 %. Die Hinterachslenkung des linearen Entwurfs schadet jenseits des
 linearen Bereichs; der Gierratenbenchmark zeigt das nicht, weil der Schwimmwinkel dort klein bleibt.
 
@@ -266,7 +266,7 @@ mediane relative KKT-Residuum ist höher (0,13 gegen 0,08).
 
 ![matrix_max_sideslip_deg](assets/robust_control/matrix_max_sideslip_deg.png)
 
-*Maximaler Schwimmwinkel je Regler und Unsicherheitsfall in den drei Rückführmodi (logarithmische Farbskala; ≈ 90° = Kontrollverlust). Die Aktuatorverzögerung destabilisiert alle Gesetze mit hoher Verstärkung; der V2.0-PI, die Tightening MPC und die überwachte Variante bleiben beherrschbar. Quelle: `python -m vehicle_model.experiments run configs/experiments/robust_benchmark_sine_with_dwell.yaml`.*
+*Maximaler Schwimmwinkel je Regler und Unsicherheitsfall in den drei Rückführmodi (logarithmische Farbskala; ≈ 90° = Kontrollverlust). Die Aktuatorverzögerung destabilisiert alle Gesetze mit hoher Verstärkung; der Basis-PI, die Tightening MPC und die überwachte Variante bleiben beherrschbar. Quelle: `python -m vehicle_model.experiments run configs/experiments/robust_benchmark_sine_with_dwell.yaml`.*
 
 ![matrix_yaw_rate_rms_error_degps](assets/robust_control/matrix_yaw_rate_rms_error_degps.png)
 

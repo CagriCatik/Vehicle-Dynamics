@@ -185,7 +185,7 @@ def plot_split_mu_scenario_dashboard(
             zorder=3,
         )
 
-        # Milestone 1: Start (t=0)
+        # Marker 1: Start (t=0)
         draw_vehicle(
             x=res.history.X[0],
             y=res.history.Y[0],
@@ -199,7 +199,7 @@ def plot_split_mu_scenario_dashboard(
             scale=1.5,
         )
 
-        # Milestone 2: Midpoint
+        # Marker 2: Midpoint
         mid_idx = len(res.history.X) // 2
         draw_vehicle(
             x=res.history.X[mid_idx],
@@ -214,7 +214,7 @@ def plot_split_mu_scenario_dashboard(
             scale=1.5,
         )
 
-        # Milestone 3: Final stop / exit
+        # Marker 3: Final stop / exit
         draw_vehicle(
             x=res.history.X[-1],
             y=res.history.Y[-1],

@@ -1,4 +1,4 @@
-"""Experiment specification from YAML (Plan.md M9; experiment types: Plan V3.0 §12).
+"""Experiment specification from YAML .
 
 :func:`load_experiment` and :func:`parse_experiment` dispatch on the top-level key
 ``type`` (:mod:`.types`); this module defines the default type
@@ -35,16 +35,16 @@ from pathlib import Path
 import yaml
 
 LAWS = ("passive", "pi", "esc", "lqr", "gs_lqr", "ltv_mpc", "no_yaw", "brakes")   # no_yaw (alias brakes): chain without yaw control
-# esc: the yaw-rate PI with a deadband (intervenes only on large yaw-rate errors, ESC-like; Plan V4.0 M24 P1)
+# esc: the yaw-rate PI with a deadband (intervenes only on large yaw-rate errors, ESC-like; the esc level of the motion management matrix)
 FEEDBACK_MODES = ("ideal", "estimated", "sensor_constrained")
 ACTUATOR_MODES = ("ideal", "dynamic")
 _LAW_NAMES = {"pi": "PI", "esc": "ESC", "lqr": "LQR", "gs_lqr": "GS-LQR", "ltv_mpc": "LTV-MPC", "brakes": "Brakes", "no_yaw": "no yaw control"}
-TRACTION_KEYS = {"distribution", "lock_torque", "tcs", "envelope", "driven", "failed", "yaw_tolerance",   # Plan V4.0 M18
-                 "itc_scope"}   # M24: always (M18 behaviour) | traction (band only while the driver demands drive)
+TRACTION_KEYS = {"distribution", "lock_torque", "tcs", "envelope", "driven", "failed", "yaw_tolerance",
+                 "itc_scope"}   # motion management: always (traction control behaviour) | traction (band only while the driver demands drive)
 WHEEL_NAMES = ("FL", "FR", "RL", "RR")
-BRAKE_KEYS = {"distribution", "ibc", "cbc", "regen", "coast_torque"}   # Plan V4.0 M17
+BRAKE_KEYS = {"distribution", "ibc", "cbc", "regen", "coast_torque"}
 INPUT_SETS = ("tv", "4ws_tv", "afs", "afs_tv")
-STEERING_KEYS = {"ratio", "afs_failed"}       # Plan V4.0 M19.2
+STEERING_KEYS = {"ratio", "afs_failed"}
 ROADS = {"uniform": {"mu"}, "split_mu": {"mu_left", "mu_right"}, "mu_step": {"mu_before", "mu_after", "x_step"}}
 MANOEUVRES = {
     "step_steer": {"speed_kph", "steer_deg", "duration_s"},
@@ -59,8 +59,8 @@ MANOEUVRES = {
     "lane_change": {"speed_kph", "amplitude_deg", "frequency_hz", "accel_pedal", "duration_s"},
     "lift_off": {"speed_kph", "steer_deg", "accel_pedal", "lift_s", "duration_s"},
 }
-GVC_KEYS = {"enabled", "c_xy", "max_decel_g"}           # Plan V4.0 M20
-HDC_KEYS = {"enabled", "v_set_kph", "max_decel_g"}      # Plan V4.0 M22 (in controller_comparison since M24)
+GVC_KEYS = {"enabled", "c_xy", "max_decel_g"}
+HDC_KEYS = {"enabled", "v_set_kph", "max_decel_g"}      # in controller_comparison since motion management
 FORMATS = ("csv", "json", "png", "md", "gif")
 DEFAULT_FORMATS = ("csv", "json", "png", "md")  # gif is opt-in (rendering time)
 _TOP = {"type", "name", "description", "vehicle", "tyres", "kc", "road", "manoeuvre", "controllers", "sweep", "dt",
@@ -71,13 +71,13 @@ _TOP = {"type", "name", "description", "vehicle", "tyres", "kc", "road", "manoeu
 class ControllerSpec:
     law: str
     inputs: str = "tv"
-    feedback: str = "ideal"         # Plan V3.0 M10 5.4: ideal (Mode A), estimated (B), sensor_constrained (C)
-    actuators: str = "ideal"        # Plan V4.0 M16: ideal (command = plant input) or dynamic (actuator models)
-    brake: tuple = ()               # Plan V4.0 M17: sorted (key, value) pairs of the brake-function block
-    traction: tuple = ()            # Plan V4.0 M18: sorted (key, value) pairs of the traction block
-    steering: tuple = ()            # Plan V4.0 M19.2: sorted (key, value) pairs of the steering block
-    gvc: tuple = ()                 # Plan V4.0 M20: sorted (key, value) pairs of the GVC block
-    hdc: tuple = ()                 # Plan V4.0 M22/M24: sorted (key, value) pairs of the HDC block
+    feedback: str = "ideal"         # ideal (Mode A), estimated (B), sensor_constrained (C)
+    actuators: str = "ideal"        # ideal (command = plant input) or dynamic (actuator models)
+    brake: tuple = ()               # sorted (key, value) pairs of the brake-function block
+    traction: tuple = ()            # sorted (key, value) pairs of the traction block
+    steering: tuple = ()            # sorted (key, value) pairs of the steering block
+    gvc: tuple = ()                 # sorted (key, value) pairs of the GVC block
+    hdc: tuple = ()                 # sorted (key, value) pairs of the HDC block
 
     @property
     def estimated_state(self) -> bool:
@@ -316,7 +316,7 @@ def _block(d) -> tuple:
 
 
 def _brake_block(b, law: str, actuators: str, feedback: str, where: str) -> tuple:
-    """Validated brake-function block (Plan V4.0 M17) as sorted (key, value) pairs."""
+    """Validated brake-function block as sorted (key, value) pairs."""
     if b is None:
         return ()
     from vehicle_model.controllers.brake_distribution import MODES
@@ -339,7 +339,7 @@ def _brake_block(b, law: str, actuators: str, feedback: str, where: str) -> tupl
 
 
 def _traction_block(t, law: str, where: str) -> tuple:
-    """Validated traction block (Plan V4.0 M18) as sorted (key, value) pairs (``failed`` as a tuple)."""
+    """Validated traction block as sorted (key, value) pairs (``failed`` as a tuple)."""
     if t is None:
         return ()
     from vehicle_model.controllers.traction_distribution import MODES

@@ -1,4 +1,4 @@
-"""Drift KPIs from recorded histories (Drift plan 7.1); no visualisation, no controller logic."""
+"""Drift KPIs from recorded histories ; no visualisation, no controller logic."""
 
 from __future__ import annotations
 

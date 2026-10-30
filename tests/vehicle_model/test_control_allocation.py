@@ -1,4 +1,4 @@
-"""M5: bounded control allocation (exact box-constrained WLS) and wheel-force allocation."""
+"""Bounded control allocation (exact box-constrained WLS) and wheel-force allocation."""
 
 from __future__ import annotations
 

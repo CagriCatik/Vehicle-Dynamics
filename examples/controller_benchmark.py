@@ -1,12 +1,12 @@
-"""Controller comparison on one virtual plant (Plan.md, M6).
+"""Controller comparison on one virtual plant.
 
 Plant: reference car, MF tyres, synthetic K&C set. Controllers: passive, PI,
 LQR, gain-scheduled LQR (TV and 4WS+TV) and LTV-MPC (TV and 4WS+TV); all
 model-based laws use the linear single track of the car *without* K&C as design
-model, so plant and controller model differ on purpose (Plan.md 10.2).
+model, so plant and controller model differ on purpose (chassis_control_platform_plan.md 10.2).
 
 Part 1  scenarios step steer, sine with dwell, split-mu braking on the nominal plant
-Part 2  robustness (Plan.md 10.4): sine with dwell on plant variants
+Part 2  robustness (chassis_control_platform_plan.md 10.4): sine with dwell on plant variants
         (+15 % mass and yaw inertia; rear cornering stiffness -20 %)
 
 Outputs (output/controller_benchmark/):

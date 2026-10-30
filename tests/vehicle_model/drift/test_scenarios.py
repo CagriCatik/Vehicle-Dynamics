@@ -1,4 +1,4 @@
-"""Drift plan D4: end-to-end initiation from straight driving, hold and exit on the 7-DOF plant; branch schedule."""
+"""End-to-end initiation from straight driving, hold and exit on the 7-DOF plant; branch schedule."""
 
 from __future__ import annotations
 

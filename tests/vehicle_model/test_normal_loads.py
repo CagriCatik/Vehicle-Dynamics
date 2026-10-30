@@ -1,4 +1,4 @@
-"""Quasi-static wheel loads with unilateral contact (Plan.md M2; Audit 4.3).
+"""Quasi-static wheel loads with unilateral contact (Audit 4.3).
 
 Mathematical verification of vehicle_models/normal_loads.py: equilibrium,
 non-negativity, analytical lift-off and tip-over thresholds, continuity and
@@ -46,12 +46,12 @@ def _balance_residual(p: SevenDOFParams, Fz: np.ndarray, ax: float, ay: float) -
 
 
 def _lift_threshold_ay(p: SevenDOFParams) -> float:
-    """a_y at which the inner front wheel unloads (a_x = 0), classic four-wheel formula."""
+    """A_y at which the inner front wheel unloads (a_x = 0), classic four-wheel formula."""
     return 0.5 * p.g * p.lr / p.wheelbase * p.wf / (p.hcog * p.k_roll_f)
 
 
 def _tip_threshold_ay(p: SevenDOFParams) -> float:
-    """a_y at which the centre of pressure reaches the outer side edge at x = 0 (a_x = 0)."""
+    """A_y at which the centre of pressure reaches the outer side edge at x = 0 (a_x = 0)."""
     y_edge = (p.wf * p.lr + p.wr * p.lf) / (2.0 * p.wheelbase)
     return p.g * y_edge / p.hcog
 

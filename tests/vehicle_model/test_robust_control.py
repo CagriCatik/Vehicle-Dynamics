@@ -1,4 +1,4 @@
-"""M12: uncertainty model, robust and adaptive laws checked against their derivations, constraint-aware NMPC,
+"""Uncertainty model, robust and adaptive laws checked against their derivations, constraint-aware NMPC,
 supervisory layer."""
 
 from __future__ import annotations

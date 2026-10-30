@@ -1,4 +1,4 @@
-"""Yaw stability and torque vectoring through bounded control allocation (Plan.md, Abschnitte 9-10; M5).
+"""Yaw stability and torque vectoring through bounded control allocation (Abschnitte 9-10; slip control and allocation).
 
 :class:`AllocatedStabilityController` is the motion-control chain of
 :mod:`.motion_control` with the yaw-rate PI law of :mod:`.yaw_laws`:

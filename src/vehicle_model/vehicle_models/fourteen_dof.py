@@ -8,9 +8,7 @@ Includes:
 Total: 14 dynamic degrees of freedom (24 continuous state variables).
 
 Integrates dynamic normal load variations Fz_i(t) directly into the
-interchangeable TyreModel framework (Linear, Fiala, Magic Formula, Pacejka).
-
-Conforms to Milestone M7 (Plan.md §4.5, §9, §19 M7).
+interchangeable TyreModel framework (Linear, Fiala, Magic Formula, Pacejka).md estimation robustness).
 """
 
 from __future__ import annotations

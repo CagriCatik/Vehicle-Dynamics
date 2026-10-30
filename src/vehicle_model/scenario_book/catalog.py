@@ -13,13 +13,13 @@ Categories:
     solver                YAML solver benchmarks: NMPC status, KKT residuals, computation time
     nonlinear_stability   YAML equilibrium analyses and recovery maps (equilibria, eigenvalues, stability regions)
     robust_control        YAML robust benchmarks: controllers x feedback modes x uncertainty cases
-    critical_scenarios    YAML critical scenario searches (M13): search, verification, minimal cases, replay
-    design                YAML design optimisations (M14): NSGA-II Pareto analysis, independent re-check
-    roll_stability        YAML roll stability benchmarks on the 14-DOF model (V4 M19): RSC, active roll
-    ride_comfort          YAML ride and pitch benchmarks on the 14-DOF model (V4 M21): preview damping, active pitch
-    hill_descent          YAML hill descent benchmarks on graded roads (V4 M22): HDC, grade x surface matrix
-    fault_tolerance       YAML fault catalogues on the 7-DOF loop (V4 M23): health monitor, degraded modes
-    integration           YAML benchmark matrices P0-P7 (V4 M24): all functions, paired variations, statistics
+    critical_scenarios    YAML critical scenario searches: search, verification, minimal cases, replay
+    design                YAML design optimisations: NSGA-II Pareto analysis, independent re-check
+    roll_stability        YAML roll stability benchmarks on the 14-DOF model: RSC, active roll
+    ride_comfort          YAML ride and pitch benchmarks on the 14-DOF model: preview damping, active pitch
+    hill_descent          YAML hill descent benchmarks on graded roads: HDC, grade x surface matrix
+    fault_tolerance       YAML fault catalogues on the 7-DOF loop: health monitor, degraded modes
+    integration           YAML benchmark matrices passive to fault_tolerant: all functions, paired variations, statistics
     validation            the validation matrix (configs/validation/matrix.yaml), one scenario at a time
 """
 
@@ -86,7 +86,7 @@ def _parking(name: str):
 
 # ----------------------------------------------------------------------------- 4WS benchmark scenarios
 def _four_ws(func_name: str, kind: str, gif_kwargs: dict | None = None):
-    """kind 'low': enable_4ws flag; 'high': controller 2WS (passive) vs 4WS LUT + yaw damping."""
+    """Kind 'low': enable_4ws flag; 'high': controller 2WS (passive) vs 4WS LUT + yaw damping."""
     def run(out: Path, params: dict, gif: bool) -> dict:
         import vehicle_model.simulation.four_wheel_steering_scenarios as fws
         from vehicle_model.simulation.four_wheel_steering.animation import animate_4ws_detailed_vehicle, plot_4ws_comparison
@@ -265,7 +265,7 @@ def _build() -> dict[str, ScenarioEntry]:
                              _experiment(str(path)), {}, "~5-10 min (parallel, 7-DOF)",
                              "report.md, kpis.csv, results.json, histories"))
             continue
-        if kind == "vmm_benchmark":
+        if kind == "motion_management_benchmark":
             entries.append(E(f"exp_{path.stem}", "integration", f"Vehicle motion benchmark matrix {path.stem}",
                              f"Runs {path} (edit the YAML to change levels, manoeuvres, paired variations).",
                              _experiment(str(path)), {}, "~25 min (parallel, 7-DOF and 14-DOF)",

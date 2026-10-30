@@ -1,4 +1,4 @@
-# Schlupfregelung, beschränkte Control Allocation und Stabilitätsregelung (M5)
+# Schlupfregelung, beschränkte Control Allocation und Stabilitätsregelung
 
 Module:
 - [`allocation/`](../src/vehicle_model/allocation/): beschränkte Control Allocation mit Machbarkeitsrückmeldung.
@@ -6,7 +6,7 @@ Module:
 - [`controllers/stability_control.py`](../src/vehicle_model/controllers/stability_control.py): ESC und Torque Vectoring.
 - [`actuators/`](../src/vehicle_model/actuators/): ideale Varianten und Lenkübersetzung.
 
-Alle Szenarien nutzen das Referenzfahrzeug mit dem Magic-Formula-Reifensatz (M3). Bei ihm hängt der Schlupf der Kraftspitze wie bei einem physikalischen Reifen vom Reibwert ab.
+Alle Szenarien nutzen das Referenzfahrzeug mit dem Magic-Formula-Reifensatz. Bei ihm hängt der Schlupf der Kraftspitze wie bei einem physikalischen Reifen vom Reibwert ab.
 
 ---
 
@@ -45,7 +45,7 @@ Jede Allokation meldet die erreichten Werte, das Residuum, die aktiven Grenzen (
 | `saturated` | Anforderung erfüllt, mindestens eine Grenze aktiv (auch: ausgefallener Aktuator) |
 | `infeasible` | Anforderung nicht erreichbar; `residual` nennt die Abweichung je Achse |
 
-Nicht endliche Anforderungen lösen einen `ValueError` aus. Das erfüllt die M5-Abnahme „unzulässige Stellanforderungen werden erkannt“.
+Nicht endliche Anforderungen lösen einen `ValueError` aus. Das erfüllt die slip control and allocation-Abnahme „unzulässige Stellanforderungen werden erkannt“.
 
 ## 2. Schlupfregelung (ABS, TCS)
 
@@ -63,7 +63,7 @@ Dabei gilt $s = -1$ beim Bremsen und $+1$ beim Antreiben. Der Regler nimmt nur M
 | µ̂ startet bei 0,1, adaptiv | 0,98 | 1,02 | 1,08 |
 | µ̂ = 1,0, nicht absenkbar | 0,98 | 0,96 | 0,81 |
 
-Werte sind Bremswirkungsgrade (mittlere Verzögerung 20 → 5 m/s bezogen auf µg). Werte über 1 entstehen, weil die Spitzenreibung des Reifens bei geringer Radlast über µ liegt (Lastempfindlichkeit, M3). Ein zu niedriger Schätzwert bremst also viel zu schwach; die Adaption korrigiert ihn in wenigen Zyklen. Ein zu hoher Schätzwert kostet weniger als blockierende Räder (0,62).
+Werte sind Bremswirkungsgrade (mittlere Verzögerung 20 → 5 m/s bezogen auf µg). Werte über 1 entstehen, weil die Spitzenreibung des Reifens bei geringer Radlast über µ liegt (Lastempfindlichkeit, Reifenmodelle). Ein zu niedriger Schätzwert bremst also viel zu schwach; die Adaption korrigiert ihn in wenigen Zyklen. Ein zu hoher Schätzwert kostet weniger als blockierende Räder (0,62).
 
 **Vergleich mit dem bisherigen ABS** ([`controllers/abs.py`](../src/vehicle_model/controllers/abs.py), unverändert): Es arbeitet mit festen Schwellen (κ = −0,20) und ohne Gedächtnis. Mit dem MF-Reifen erreicht es 0,90 / 0,73 / 0,66, bei µ = 0,2 blockieren die Räder (Median κ = −0,64). Ohne ABS: 0,63 / 0,60 / 0,62. Das bisherige ABS bleibt für die Bestandsszenarien erhalten; siehe Audit.
 
@@ -87,13 +87,13 @@ Genutzte Information: Gierrate und Geschwindigkeit; aus der Telemetrie Radlasten
 | Lenkwinkelsprung 72 km/h, Fahrzeug mit K&C (EG 2,2 °/g) | Gierrate 0,189 rad/s | 0,265 rad/s (Referenz 0,262), 95 % nach 0,17 s, ohne Überschwingen |
 | Bremsen mit Pedal 0,5, Bremse vorn links ausgefallen | dreht sich ein (−112° nach 1,5 s) | Gierwinkel 0,00°, Status `infeasible` |
 
-**Split-µ bei fester Lenkung:** Ohne Gegenlenken muss das Giermoment aus den Bremskräften null bleiben. Der erreichbare Bremsweg liegt deshalb nahe dem Select-low-Grenzwert ($v^2/(2\cdot 0{,}2\,g)$ = 159 m). Die Allokation nutzt zusätzlich die Lastverteilung und liegt mit 151 m darunter. Ein kürzerer Bremsweg erfordert ein Gegenlenken, das das Giermoment über Seitenkräfte abstützt. Das ist integrierte Fahrdynamikregelung mit Lenkeingriff und gehört zu M6.
+**Split-µ bei fester Lenkung:** Ohne Gegenlenken muss das Giermoment aus den Bremskräften null bleiben. Der erreichbare Bremsweg liegt deshalb nahe dem Select-low-Grenzwert ($v^2/(2\cdot 0{,}2\,g)$ = 159 m). Die Allokation nutzt zusätzlich die Lastverteilung und liegt mit 151 m darunter. Ein kürzerer Bremsweg erfordert ein Gegenlenken, das das Giermoment über Seitenkräfte abstützt. Das ist integrierte Fahrdynamikregelung mit Lenkeingriff und gehört zu controller library.
 
 Der Status `infeasible` ist bei Vollbremsung korrekt: Das Pedal fordert etwa 32 kN, der Kraftschluss erlaubt deutlich weniger. Bei ausgefallener Bremse liegt die giermomentneutral erreichbare Verzögerung bei etwa 3,5 m/s². Die Allokation meldet den Rest als Residuum.
 
 ## 4. Aktuatoren
 
-- **Ideale Varianten** (Plan.md, Abschnitt 9): Lenk-, Brems- und Antriebsaktuator haben `ideal=True`. Dann entfallen Verzögerung, Stellrate bzw. Slew-Rate und Totzeit; Winkel-, Moment- und Leistungsgrenzen sowie Fehlermodi bleiben.
+- **Ideale Varianten**: Lenk-, Brems- und Antriebsaktuator haben `ideal=True`. Dann entfallen Verzögerung, Stellrate bzw. Slew-Rate und Totzeit; Winkel-, Moment- und Leistungsgrenzen sowie Fehlermodi bleiben.
 - **Lenkübersetzung:** `SteeringActuatorConfig.steering_ratio` und `step_handwheel()`, konstante Übersetzung.
 - Die Zeitkonstante des Rekuperationsmoments war fest im Code (0,02 s). Sie ist jetzt ein dokumentierter Konfigurationswert (`tau_regen`).
 
@@ -108,7 +108,7 @@ Der Status `infeasible` ist bei Vollbremsung korrekt: Das Pedal fordert etwa 32 
 ## 6. Grenzen
 
 - Die Allokation ist quasistatisch: Sie ordnet Kräfte zu, Raddrehdynamik und Schlupf übernimmt der innere Regelkreis. Die Wirksamkeitsmatrix gilt für die aktuellen Radwinkel und Lasten.
-- Seitenkräfte werden nicht zugeordnet, sondern nur als belegter Reibkreis berücksichtigt. Lenkeingriffe folgen in M6.
+- Seitenkräfte werden nicht zugeordnet, sondern nur als belegter Reibkreis berücksichtigt. Lenkeingriffe folgen in der Reglerbibliothek.
 - ABS/TCS: Die Kalibriertabelle gehört zum MF-Reifensatz. Es gibt keine Radbeschleunigungsschwellen, keine Druckmodulationsphasen und keine Hydraulik; Aktuatordynamik liegt in `actuators/`, ist aber noch nicht in den Szenarien verschaltet. Die Reifenkraft stammt ideal aus der Telemetrie.
 - Die Stabilitätsregelung nutzt den Fahrbahnreibwert ideal. Mit Totband (ESC-Betrieb) ist sie nicht systematisch untersucht.
 - Die Bestandsregler (`abs.py`, `tcs.py`, `torque_vectoring.py`, `integrated_controller.py`) sind unverändert. Sie verwenden diese Allokation nicht.

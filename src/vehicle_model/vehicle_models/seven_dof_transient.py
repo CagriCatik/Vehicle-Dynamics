@@ -1,4 +1,4 @@
-"""7-DOF two-track model with first-order tyre relaxation (Plan.md, Abschnitt 7; M3).
+"""7-DOF two-track model with first-order tyre relaxation.
 
 Opt-in variant of :class:`SevenDOFModel`: the slips fed to the tyre model are
 states (``kappa'``, ``tan(alpha')`` per wheel) governed by

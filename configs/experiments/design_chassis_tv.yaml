@@ -1,7 +1,7 @@
 type: design_optimization
 name: design_chassis_tv
 description: >
-  M14: anti-roll bars, dampers, the rear-axle steer ratio at speed and the yaw-rate PI of the torque vectoring,
+  design optimisation: anti-roll bars, dampers, the rear-axle steer ratio at speed and the yaw-rate PI of the torque vectoring,
   laid out for handling (yaw-rate tracking), stability (sideslip over plant cases), comfort (14-DOF heave
   acceleration on an ISO 8608 class C road) and actuator effort. Selected designs are re-checked on separate
   manoeuvres, another road and other plant deviations.

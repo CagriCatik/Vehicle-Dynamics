@@ -1,4 +1,4 @@
-"""Kinematic single-track bicycle model with optional rear-axle steering (model class V1).
+"""Kinematic single-track bicycle model with optional rear-axle steering .
 
 State: ``[x, y, yaw, v, steer]``   (CoG position, heading, CoG speed, front steer angle)
 Input: ``[ax, steer_rate]``, or ``[ax, steer_rate, delta_r]`` with ``rear_steer=True``

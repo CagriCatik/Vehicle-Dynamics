@@ -1,6 +1,6 @@
-# Computation effort and solution quality of the dynamic two-track NMPC (Plan V3.0 §12, M10 5.2).
+# Computation effort and solution quality of the dynamic two-track NMPC.
 # Same lane change as the E2E test (90 km/h, 3.5 m, mu = 0.75); the variants change the solver budget and horizon.
-# The last variant is the constraint-aware NMPC of M12 (7.2 E): soft stability constraints with slack, input projection.
+# The last variant is the constraint-aware NMPC of robust control (7.2 E): soft stability constraints with slack, input projection.
 type: solver_benchmark
 name: dynamic_nmpc_solver_benchmark
 description: Iteration limit and horizon of the dynamic NMPC against status, KKT residuals, computation time and tracking.

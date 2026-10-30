@@ -1,7 +1,6 @@
 """Steering actuator models with first-order dynamics, rate limiting, and failure modes.
 
-Implements EPS (Electric Power Steering) and Steer-by-Wire actuator physical response
-as required by Plan.md §6.1, §6.2, and §19 (Milestone M4).
+Implements EPS (Electric Power Steering) and Steer-by-Wire actuator physical response.1 ().
 """
 
 from __future__ import annotations

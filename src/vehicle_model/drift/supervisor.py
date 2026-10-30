@@ -1,4 +1,4 @@
-"""Drift supervisor: discrete mode decisions (Drift plan D4, section 5.3). No control law in here.
+"""Drift supervisor: discrete mode decisions. No control law in here.
 
 Modes and transitions (each with a logged reason):
 
@@ -88,7 +88,7 @@ class DriftSupervisor:
             self._since = 0.0
 
     def retarget(self, t: float, beta_star: float, r_star: float, v_star: float, moving: bool) -> None:
-        """New reference values (set-point change, D5); HOLD <-> TRANSITION while the set point moves."""
+        """New reference values (set-point change, drift tracking); HOLD <-> TRANSITION while the set point moves."""
         self.beta_star, self.r_star, self.v_star = float(beta_star), float(r_star), float(v_star)
         if self.mode == HOLD and moving:
             self._go(t, TRANSITION, "set point moving")

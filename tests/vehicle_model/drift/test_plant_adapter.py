@@ -1,4 +1,4 @@
-"""Drift plan D1: deterministic, side-effect-free evaluation of the 7-DOF plant."""
+"""Deterministic, side-effect-free evaluation of the 7-DOF plant."""
 
 from __future__ import annotations
 

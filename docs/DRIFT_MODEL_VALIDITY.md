@@ -1,23 +1,22 @@
-# Drift: Modellgültigkeit, Konventionen und Ausgangslage (Drift-Plan D0/D1)
+# Drift: Modellgültigkeit, Konventionen und Ausgangslage
 
-Grundlage für den Drift-Regler nach `Plan_v3.md` (Drift Controller Implementierungsplan V1.0). Dieses Dokument hält fest,
+Grundlage für den Drift-Regler nach `drift_controller_plan.md`. Dieses Dokument hält fest,
 auf welchem Stand, mit welchen Konventionen und innerhalb welcher Modellgrenzen gearbeitet wird. Alle Parameter sind
 synthetisch; es gibt keine Aussage über ein reales Fahrzeug und keine Homologation.
 
-## 1. Stand (D0)
+## 1. Stand
 
 | Punkt | Wert |
 |---|---|
 | Branch / Commit beim Start | `main`, `9a1dbf4` (lokal, nicht gepusht) |
-| Planbasis | `992cc39` (29.10.2026); seither sechs lokale Commits: Split-µ-Klärung, IVMC über die gemeinsame Allokation, Mode C, Solverdiagnostik und Experimenttypen (M10), nichtlineare Stabilität (M11), robuste Regelung (M12) |
-| Arbeitsbaum | uncommittete Änderungen des Nutzers an `.gitignore`, `docs/index.md`, unversioniert `Plan_v2.md`, `Plan_v3.md`, `output/`: nicht angefasst |
+| Planbasis | `992cc39` (29.10.2026); seither sechs lokale Commits: Split-µ-Klärung, IVMC über die gemeinsame Allokation, Mode C, Solverdiagnostik und Experimenttypen, nichtlineare Stabilität, robuste Regelung |
+| Arbeitsbaum | uncommittete Änderungen des Nutzers an `.gitignore`, `docs/index.md`, unversioniert `integrated_motion_control_plan.md`, `drift_controller_plan.md`, `output/`: nicht angefasst |
 | Testbasis | volle Suite inkl. `slow` bei `9a1dbf4`: **607 bestanden, 2 übersprungen** (16 min) |
 | Referenzlauf | `examples/seven_dof_4ws_tv_demo.py` unverändert lauffähig; Radlastsumme auf 3,6e-12 N erhalten |
 
 Für den Drift relevante Änderungen seit der Planbasis: `SevenDOFModel.load_transfer_tol` / `load_transfer_max_iter` als
-Modellattribute (M11, Standard unverändert 1e-6 m/s², 25 Iterationen); `handling_analysis/equilibrium.py` (M11:
-Gleichgewichte bei gehaltener Geschwindigkeit, Jacobi-Matrix mit Schrittweitenstudie, Abgleich linear/nichtlinear);
-`SlipStiffnessScaledTyre` (M11); Überwachungsschicht und Unsicherheitsmodell (M12).
+Modellattribute (Standard unverändert 1e-6 m/s², 25 Iterationen); `handling_analysis/equilibrium.py` (Gleichgewichte bei gehaltener Geschwindigkeit, Jacobi-Matrix mit Schrittweitenstudie, Abgleich linear/nichtlinear);
+`SlipStiffnessScaledTyre`; Überwachungsschicht und Unsicherheitsmodell.
 
 ## 2. Wiederverwendung (im Code geprüft)
 
@@ -28,8 +27,8 @@ Gleichgewichte bei gehaltener Geschwindigkeit, Jacobi-Matrix mit Schrittweitenst
 | Regler-Port | `controllers/framework.py` | `compute_control(state, target, telemetry, dt) -> ControlOutput`; `ControlTarget` hat kein Drift-Feld (Drift-Referenz bleibt eigener Typ) |
 | Szenariolauf | `simulation/scenario_runner.py` | `ScenarioRunner(model, road).run(callback(t, state, telemetry) -> SevenDOFControlInput, init_state, duration, dt) -> SimulationHistory`; zeichnet den Zustand **vor** dem Schritt und die geklemmte Stellgröße auf |
 | Animation | `visualization/animation.py`, `plan_view.py` | `animate_maneuver(histories, path, fps=20, ...)`; `draw_vehicle(x, y, yaw, steer_front, params, steer_rear=0, ax=...)` |
-| Gleichgewicht, Linearisierung | `handling_analysis/equilibrium.py` | Grundlage für D2/D3 (Unbekannte und Nebenbedingungen dort anders: Drift hält `v` und `β`, frei sind Lenkwinkel und Hinterachsmoment) |
-| Aktuatoren | `actuators/steering_actuator.py`, `powertrain_actuator.py` | Verzögerung, Raten- und Leistungsgrenzen, opt-in (D7) |
+| Gleichgewicht, Linearisierung | `handling_analysis/equilibrium.py` | Grundlage für drift equilibria/drift LQR (Unbekannte und Nebenbedingungen dort anders: Drift hält `v` und `β`, frei sind Lenkwinkel und Hinterachsmoment) |
+| Aktuatoren | `actuators/steering_actuator.py`, `powertrain_actuator.py` | Verzögerung, Raten- und Leistungsgrenzen, opt-in |
 | Fahrzeug | `configs/vehicles/seven_dof_passenger.yaml` | 1200 kg, l_v 1,30 m, l_h 1,50 m, Spur 1,60 m, h_S 0,50 m; Grenzen: Lenkwinkel vorn 35°, Lenkrate 50°/s, Antrieb 1000 N·m je Rad, Bremse 3000 N·m je Rad |
 
 ## 3. Konventionen
@@ -50,7 +49,7 @@ Gleichgewichte bei gehaltener Geschwindigkeit, Jacobi-Matrix mit Schrittweitenst
   Plausibilisierung.
 - Reifen stationär (Relaxation nur im `TransientSevenDOFModel`); Parameter synthetisch.
 - Erklärte Gültigkeit des MF-Reifens: `|α| ≤ 0,35 rad` (20°), `|κ| ≤ 1`. Driftwinkel von 15–25° führen an der
-  Hinterachse an oder über diese Grenze: Dort **extrapoliert** das Modell (D1-Audit, Abschnitt 6). Ergebnisse jenseits
+  Hinterachse an oder über diese Grenze: Dort **extrapoliert** das Modell (drift evaluator-Audit, Abschnitt 6). Ergebnisse jenseits
   davon werden gekennzeichnet (`drift.extrapolating`).
 - Der MF-Reifen überträgt bei kleiner Last bis 1,05 µF_z (Lastempfindlichkeit), bei großer Last weniger als µF_z.
 - Keine Motordrehzahl- oder Leistungsgrenze in der Strecke selbst (nur das Moment je Rad); der Antriebsaktuator mit
@@ -58,7 +57,7 @@ Gleichgewichte bei gehaltener Geschwindigkeit, Jacobi-Matrix mit Schrittweitenst
 - Regularisierung bei kleiner Geschwindigkeit (0,2 m/s) und der Bremsglättung: Drift unterhalb weniger m/s ist nicht
   aussagekräftig.
 
-## 5. Deterministische Auswertung (D1, Plan 1.2)
+## 5. Deterministische Auswertung (Plan 1.2)
 
 `SevenDOFModel.evaluate_dynamics` startet die Lastverlagerungsiteration mit `_accel_guess` und überschreibt ihn. Gemessen:
 Dieselbe Ableitung (Driftzustand `v_x` 15 m/s, `v_y` −4 m/s, `r` 0,6 rad/s, Hinterachsmoment 600 N·m) unterscheidet
@@ -71,7 +70,7 @@ Modell des Aufrufers bleibt unverändert), Startwert vor jeder Auswertung fest z
 Nichtkonvergenz der Lastverlagerung steht in jedem Ergebnis (`load_transfer_converged`), wird gezählt und im strengen
 Modus als Ausnahme gemeldet. Kräfte entstehen ausschließlich in `evaluate_dynamics`.
 
-## 6. Reifenaudit (D1, Plan 4.4)
+## 6. Reifenaudit (Plan 4.4)
 
 `drift.audit_tyre` wertet jeden Reifen bis ±45° Schräglauf und `|κ| ≤ 1` aus (Plots: `output/drift/tyre_audit/`,
 `python examples/drift_tyre_audit.py`). Ergebnis für die mitgelieferten Reifen:
@@ -100,7 +99,7 @@ Folgerungen für den Drift:
 ## 7. Reproduktion
 
 ```bash
-python -m pytest tests/vehicle_model/drift -q          # D1-Tests
+python -m pytest tests/vehicle_model/drift -q          # drift evaluator-Tests
 python examples/drift_tyre_audit.py                     # Kennfelder und Audit (PNG, JSON)
 python -m pytest -q                                      # volle Suite (Testbasis)
 ```

@@ -1,4 +1,4 @@
-"""Ride and pitch closed loop on the 14-DOF model (Plan V4.0 M21; the 7-DOF model has no vertical dynamics).
+"""Ride and pitch closed loop on the 14-DOF model (the 7-DOF model has no vertical dynamics).
 
 Road: two height tracks (left/right) along the travelled distance ``s`` (so the profile follows the path,
 also in a corner): an ISO 8608 class (own seed per track) plus discrete events (half-sine bumps on one or both

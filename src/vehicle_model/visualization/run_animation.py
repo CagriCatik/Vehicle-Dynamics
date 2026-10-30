@@ -1,4 +1,4 @@
-"""Comparison animations of recorded runs (Plan V4.0 §8): one GIF per scenario, several controllers side by side.
+"""Comparison animations of recorded runs: one GIF per scenario, several controllers side by side.
 
 Only recorded samples are drawn (no interpolation, no re-simulation): frame ``k`` shows sample
 ``round(k * playback / (fps * dt))`` of every run; a run that ended earlier (stopped vehicle) stays at its last

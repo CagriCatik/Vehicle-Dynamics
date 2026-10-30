@@ -1,4 +1,4 @@
-"""Vehicle motion supervisor: function registry, arbitration record and allocation diagnostics (Plan V4.0 M24).
+"""Vehicle motion supervisor: function registry, arbitration record and allocation diagnostics.
 
 A **coordinator, not a second controller**: the control itself stays in the small functions (ABS/TCS, yaw laws,
 CBC, HDC, GVC, AFS overlay, regen slip control, health monitor), and the arbitration rules live where the
@@ -10,7 +10,7 @@ the front angle once). The supervisor
 * records per tick which functions are enabled / eligible / active and their request,
 * logs transitions, conflicts (a request suppressed by a higher priority) and hand-overs,
 * reports allocation diagnostics: residual, active bounds and the condition number of the effectiveness matrix
-  over the actuators that are still free (the multi-domain allocation stays separate per domain, M24.2).
+  over the actuators that are still free (the multi-domain allocation stays separate per domain, motion management).
 
 Priority classes (high to low): ``safety`` (ABS/TCS, RSC, HDC, safe stop) > ``driver`` > ``stability``
 (yaw law/ESC, CBC) > ``agility`` (GVC, AFS overlay, torque vectoring) > ``comfort`` (regen blending, damping).
@@ -34,26 +34,26 @@ class FunctionSpec:
     priority: str
     owner: str           # the single place that turns its request into the final command
     model: str           # 7dof | 14dof | both
-    milestone: str
+    module: str          # where the function is implemented (package-relative)
 
 
 FUNCTIONS = (
-    FunctionSpec("abs", "wheel_slip", "safety", "ActuationLayer (slip control after allocation)", "both", "M5/M16"),
-    FunctionSpec("tcs", "wheel_slip", "safety", "ActuationLayer (slip control after allocation)", "both", "M5/M16"),
-    FunctionSpec("hdc", "longitudinal", "safety", "arbitrate_longitudinal (braking floor)", "7dof", "M22"),
-    FunctionSpec("safe_stop", "longitudinal", "safety", "health monitor -> driver brake demand", "7dof", "M23"),
-    FunctionSpec("rsc", "longitudinal+yaw", "safety", "WheelForceAllocator (14-DOF loop)", "14dof", "M19"),
-    FunctionSpec("driver", "longitudinal", "driver", "arbitrate_longitudinal (base)", "both", "-"),
-    FunctionSpec("yaw_law", "yaw", "stability", "arbitrate_yaw -> WheelForceAllocator", "7dof", "M5/M16"),
-    FunctionSpec("cbc", "yaw", "stability", "arbitrate_yaw (larger magnitude, never summed)", "7dof", "M17"),
-    FunctionSpec("ebd", "longitudinal", "stability", "WheelForceAllocator (axle share / brake limits)", "7dof", "M17"),
-    FunctionSpec("afs", "front_steer", "agility", "SteeringOverlay.finalise (once)", "7dof", "M19"),
-    FunctionSpec("rear_steer", "rear_steer", "agility", "yaw law request (4WS inputs)", "7dof", "M7"),
-    FunctionSpec("gvc", "longitudinal", "agility", "arbitrate_longitudinal (additive, yields to floors)", "7dof", "M20"),
-    FunctionSpec("regen", "wheel_slip", "comfort", "BrakeByWireActuator (blending, regen slip control)", "7dof", "M17"),
-    FunctionSpec("health", "health", "safety", "FaultTolerantController (masks, fallbacks)", "7dof", "M23"),
-    FunctionSpec("damping", "vertical", "comfort", "CornerDamping (14-DOF)", "14dof", "M21"),
-    FunctionSpec("active_pitch", "vertical", "comfort", "VerticalForceAllocator (14-DOF)", "14dof", "M21"),
+    FunctionSpec("abs", "wheel_slip", "safety", "ActuationLayer (slip control after allocation)", "both", "controllers/slip_control.py"),
+    FunctionSpec("tcs", "wheel_slip", "safety", "ActuationLayer (slip control after allocation)", "both", "controllers/slip_control.py"),
+    FunctionSpec("hdc", "longitudinal", "safety", "arbitrate_longitudinal (braking floor)", "7dof", "controllers/hill_descent.py"),
+    FunctionSpec("safe_stop", "longitudinal", "safety", "health monitor -> driver brake demand", "7dof", "controllers/fault_tolerance.py"),
+    FunctionSpec("rsc", "longitudinal+yaw", "safety", "WheelForceAllocator (14-DOF loop)", "14dof", "controllers/roll_stability.py"),
+    FunctionSpec("driver", "longitudinal", "driver", "arbitrate_longitudinal (base)", "both", "controllers/motion_control.py"),
+    FunctionSpec("yaw_law", "yaw", "stability", "arbitrate_yaw -> WheelForceAllocator", "7dof", "controllers/yaw_laws.py"),
+    FunctionSpec("cbc", "yaw", "stability", "arbitrate_yaw (larger magnitude, never summed)", "7dof", "controllers/cornering_brake.py"),
+    FunctionSpec("ebd", "longitudinal", "stability", "WheelForceAllocator (axle share / brake limits)", "7dof", "controllers/brake_distribution.py"),
+    FunctionSpec("afs", "front_steer", "agility", "SteeringOverlay.finalise (once)", "7dof", "controllers/active_front_steering.py"),
+    FunctionSpec("rear_steer", "rear_steer", "agility", "yaw law request (4WS inputs)", "7dof", "controllers/yaw_laws.py"),
+    FunctionSpec("gvc", "longitudinal", "agility", "arbitrate_longitudinal (additive, yields to floors)", "7dof", "controllers/g_vectoring.py"),
+    FunctionSpec("regen", "wheel_slip", "comfort", "BrakeByWireActuator (blending, regen slip control)", "7dof", "controllers/regenerative_slip.py"),
+    FunctionSpec("health", "health", "safety", "FaultTolerantController (masks, fallbacks)", "7dof", "controllers/fault_tolerance.py"),
+    FunctionSpec("damping", "vertical", "comfort", "CornerDamping (14-DOF)", "14dof", "suspension/preview_control.py"),
+    FunctionSpec("active_pitch", "vertical", "comfort", "VerticalForceAllocator (14-DOF)", "14dof", "suspension/preview_control.py"),
 )
 
 

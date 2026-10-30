@@ -1,4 +1,4 @@
-"""GVC-like load-transfer control (Plan V4.0 M20): an own, simplified reference strategy.
+"""GVC-like load-transfer control: an own, simplified reference strategy.
 
 **Not** Mazda's proprietary G-Vectoring Control. The strategy follows the publicly described principle of
 coupling a small longitudinal deceleration to the lateral jerk during turn-in (Yamakado et al.'s

@@ -1,4 +1,4 @@
-"""Slip control, split-mu braking, torque vectoring and a failed brake (Plan.md, M5).
+"""Slip control, split-mu braking, torque vectoring and a failed brake.
 
 Reference car with the Magic Formula tyre set (MF). Compares
     braking efficiency  no ABS / legacy ABS (controllers/abs.py) / PI slip control
@@ -6,7 +6,7 @@ Reference car with the Magic Formula tyre set (MF). Compares
     torque vectoring    passive / allocated, understeering K&C car
     failed FL brake     passive / allocated
 
-Outputs (output/m5/):
+Outputs (output/slip_and_allocation/):
     slip_and_allocation.png    four-panel figure
     slip_and_allocation.json   key figures
 
@@ -39,7 +39,7 @@ from vehicle_model.visualization.theme import TEXT_MUTED, apply_dark_theme, styl
 VEHICLE = "configs/vehicles/reference_passenger_car.yaml"
 KC = "configs/suspension/kc_reference_passenger_car.yaml"
 MF = "magic_formula_passenger_synthetic"
-OUT = Path("output/m5")
+OUT = Path("output/slip_and_allocation")
 COLORS = ("#3987e5", "#d95926", "#199e70")  # validated categorical slots 1-3 (dark surface)
 NEW, PASSIVE, LEGACY = COLORS                # colour follows the entity in every panel
 DT = 0.005

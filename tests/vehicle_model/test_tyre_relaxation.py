@@ -1,4 +1,4 @@
-"""Transient tyre behaviour: first-order relaxation (Plan.md, Abschnitt 7; M3).
+"""Transient tyre behaviour: first-order relaxation.
 
 Component: analytical step response over rolled distance, steady states equal
 to the quasi-static slips, standstill. Vehicle: the transient 7-DOF variant

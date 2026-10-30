@@ -1,4 +1,4 @@
-"""Deterministic fault injection between controller and 7-DOF plant (Plan V4.0 M23).
+"""Deterministic fault injection between controller and 7-DOF plant.
 
 The **plant/sensor side** of fault tolerance: a list of :class:`FaultEvent` (from YAML) corrupts what the
 controller sees (sensor and communication faults) and what the plant receives (actuator faults). The controller
@@ -19,7 +19,7 @@ Fault catalogue (``channel: modes``; ``wheel`` for per-wheel channels, ``severit
     load_sensor    bias (wheel load seen x (1 + severity))
     delay          ticks (every controller input is ``severity`` control ticks old, time-stamped)
     stale          frozen (the input message stops updating, time stamp included)
-    damper, preview  14-DOF channels (M21): rejected here (model boundary)
+    damper, preview  14-DOF channels: rejected here (model boundary)
 
 Plant faults (``brake``, ``motor``, ``steer_*``) act on the plant input; the rest on the controller input.
 """
@@ -56,7 +56,7 @@ class FaultEvent:
 
     def __post_init__(self):
         if self.channel in FOURTEEN_DOF_ONLY:
-            raise ValueError(f"fault channel {self.channel!r} exists only on the 14-DOF model (M21), not in the 7-DOF loop")
+            raise ValueError(f"fault channel {self.channel!r} exists only on the 14-DOF model, not in the 7-DOF loop")
         if self.channel not in CATALOGUE:
             raise ValueError(f"fault channel must be one of {sorted(CATALOGUE)}")
         if self.mode not in CATALOGUE[self.channel]:

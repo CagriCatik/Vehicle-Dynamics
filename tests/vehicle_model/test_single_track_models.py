@@ -121,7 +121,7 @@ def test_validation_telemetry_contains_dynamic_force_channels():
 
 
 def test_dynamic_model_drives_straight_at_zero_steer():
-    """Symmetric vehicle at zero steer: no yaw, no lateral drift (Plan.md 15.1, audit finding 4.5)."""
+    """Symmetric vehicle at zero steer: no yaw, no lateral drift (chassis_control_platform_plan.md 15.1, audit finding 4.5)."""
     model = DynamicSingleTrack()
     t = np.arange(0.0, 2.0 + 1e-9, 0.01)
     x, _ = model.sim_continuous(np.array([0.0, 0.0, 15.0, 0.0, 0.0, 0.0, 0.0]), np.array([0.0, 0.0]), t)

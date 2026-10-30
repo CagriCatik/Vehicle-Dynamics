@@ -1,6 +1,6 @@
-"""Milestone M6 Demonstration: State Estimation (EKF, RLS Friction) and Offline PSO Tuning.
+"""Demonstration: State Estimation (EKF, RLS Friction) and Offline PSO Tuning.
 
-Fulfills Plan.md §10.3, §11, and §19 (Milestone M6):
+Covers:
 1. Simulates dynamic slalom maneuver on a varying-friction road using the 7-DOF two-track model.
 2. Ingests realistic noisy/biased sensor measurements via SensorSuite.
 3. Observers estimate sideslip angle beta, body velocities (vx, vy), and sensor biases in real-time.

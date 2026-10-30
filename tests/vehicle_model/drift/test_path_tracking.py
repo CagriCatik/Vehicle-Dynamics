@@ -1,4 +1,4 @@
-"""Drift plan D5: path references, circle fit, set-point transition and the radial outer loop."""
+"""Path references, circle fit, set-point transition and the radial outer loop."""
 
 from __future__ import annotations
 

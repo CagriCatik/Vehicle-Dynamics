@@ -151,7 +151,7 @@ All detailed theoretical formulations, mathematical derivations, component guide
 ```text
 Vehicle-Dynamics/
 ├── README.md                          # Executive overview & documentation hub
-├── Plan.md                            # Master engineering roadmap (Milestones M0 to M8)
+├── chassis_control_platform_plan.md                            # Platform plan (moved to docs/plans/)
 ├── pyproject.toml                     # Package metadata, dependencies & build config
 ├── LICENSE                            # MIT License
 │
@@ -248,7 +248,7 @@ python -m vehicle_model.scenario_book run --category parking
 
 Each YAML experiment run checks the configured model first (parameter consistency, static loads, tyre symmetry, linear reference, mirror symmetry, determinism) and writes `results.json`, `kpis.csv`, time histories, figures and an engineering report (`report.md`) to `output/experiments/<name>/`. See [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
 
-Nonlinear stability (M11): steady-state equilibria of the 7-DOF model with residuals, eigenvalues and a check against the nonlinear dynamics, and numerically determined recovery regions per controller in the (sideslip, yaw rate) plane with their numerical uncertainty. Both are experiment types:
+Nonlinear stability: steady-state equilibria of the 7-DOF model with residuals, eigenvalues and a check against the nonlinear dynamics, and numerically determined recovery regions per controller in the (sideslip, yaw rate) plane with their numerical uncertainty. Both are experiment types:
 
 ```bash
 python -m vehicle_model.experiments run configs/experiments/equilibrium_steer_sweep.yaml
@@ -317,7 +317,7 @@ python examples/integrated_control_benchmark.py
 | **2. Active 4WS (speed scheduled)** | 21.2°/s | 1.26° (−40 %) | 0.05° | 0.87 m | 0.59 g | 100.7 % |
 | **3. Integrated IVMC (4WS + TV + ESC)** | 21.0°/s | 1.23° (−41 %) | 0.07° | 0.85 m | 0.61 g | 103.2 % |
 
-IVMC acts through the shared wheel-force allocation (default since V3.0; see [MOTION_CONTROL.md](docs/MOTION_CONTROL.md) 1.2). Generated with the default tyre `magic_formula_passenger_synthetic` (since M6; the table before M6 used the legacy Pacejka adapter). Tyre utilisation is relative to the road friction $\mu F_z$; values above 100 % are possible because the MF tyre's peak friction exceeds $\mu$ at light wheel loads (load sensitivity). Synthetic vehicle and tyre parameters: the numbers compare controllers on the virtual vehicle, they are not predictions for a real car.
+IVMC acts through the shared wheel-force allocation (default; see [MOTION_CONTROL.md](docs/MOTION_CONTROL.md) 1.2). Generated with the default tyre `magic_formula_passenger_synthetic` (since controller library; the table before controller library used the legacy Pacejka adapter). Tyre utilisation is relative to the road friction $\mu F_z$; values above 100 % are possible because the MF tyre's peak friction exceeds $\mu$ at light wheel loads (load sensitivity). Synthetic vehicle and tyre parameters: the numbers compare controllers on the virtual vehicle, they are not predictions for a real car.
 
 ---
 
@@ -328,7 +328,7 @@ pytest -m "not slow"     # quick run (about one minute)
 pytest                   # full suite incl. long scenario tests (10-15 minutes)
 ```
 
-The suite combines analytical reference tests (closed-form handling characteristics, Riccati equation, quarter-car frequency responses, energy balances, Ackermann geometry), invariant tests (force and moment balances, symmetry, convergence order), regression baselines and scenario tests. Continuous integration (`.github/workflows/ci.yml`) runs the quick suite on every push and the full suite weekly. Current status and the per-milestone verification are listed in [docs/AUDIT.md](docs/AUDIT.md).
+The suite combines analytical reference tests (closed-form handling characteristics, Riccati equation, quarter-car frequency responses, energy balances, Ackermann geometry), invariant tests (force and moment balances, symmetry, convergence order), regression baselines and scenario tests. Continuous integration (`.github/workflows/ci.yml`) runs the quick suite on every push and the full suite weekly. Current status and the per-topic verification are listed in [docs/AUDIT.md](docs/AUDIT.md).
 
 ---
 

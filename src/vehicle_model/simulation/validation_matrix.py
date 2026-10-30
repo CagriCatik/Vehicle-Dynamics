@@ -5,9 +5,7 @@ Executes a comprehensive matrix of standardized test maneuvers:
 - Split-mu Emergency Braking
 - FMVSS 126 Sine with Dwell ESC Yaw Stability
 - ISO 7401 Step Steer Transient Response
-- ISO 2631 Ride Comfort & Road Holding Bump Traversal
-
-Conforms to Milestone M8 (Plan.md §16, §19 M8).
+- ISO 2631 Ride Comfort & Road Holding Bump Traversalmd vertical dynamics).
 
 Compatibility facade: the implementation lives in the package ``validation/`` (base class plus scenario mixins by topic); this module re-exports it unchanged.
 """

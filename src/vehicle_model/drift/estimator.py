@@ -1,10 +1,10 @@
-"""Drift-capable velocity observer from sensors only (follow-up of Drift plan D7).
+"""Drift-capable velocity observer from sensors only (follow-up).
 
 Why a separate observer: the general sideslip observers (``estimation.blended_sideslip``)
 take the longitudinal speed from the two middle wheel speeds and start at ``beta = 0``. In a
 rear-wheel-drive drift the inner rear wheel spins (kappa ~ 0.9): the speed reference rises to
 about twice the true speed, and the controller, which starts in the drift, is fed a sideslip of
-0 instead of -20 deg. D7 measured the result: drift lost in all estimated runs.
+0 instead of -20 deg. drift robustness measured the result: drift lost in all estimated runs.
 
 This observer uses only what stays valid in a drift:
 

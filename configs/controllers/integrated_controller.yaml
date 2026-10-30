@@ -1,7 +1,7 @@
 # Integrated Vehicle Motion Controller (IVMC) Configuration
 
 # Actuation path: "allocation" = shared bounded wheel-force allocation + slip control
-# (Plan V3.0 M10 5.3); "legacy" = original additive chain (TV adds differential torque,
+#; "legacy" = original additive chain (TV adds differential torque,
 # legacy ABS/TCS, heuristic split-mu limiter). See docs/MOTION_CONTROL.md 1.1.
 actuation: allocation
 

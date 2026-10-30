@@ -1,6 +1,6 @@
 """Offline Particle Swarm Optimization (PSO) for controller parameter tuning.
 
-Fulfills Plan.md §10.3 & §19 (Milestone M6):
+Covers:
 - Strictly offline parameter tuning (controller gains, weight matrices, scheduling).
 - Never used in real-time control loops.
 - Deterministically reproducible via explicit random seeds.
@@ -35,7 +35,7 @@ class PSOResult:
         objective_name: str = "custom_kpi_objective",
         extra_metadata: dict | None = None,
     ) -> Path:
-        """Export optimized parameters and traceability metadata to YAML (Plan.md §10.3)."""
+        """Export optimized parameters and traceability metadata to YAML."""
         p = Path(output_file).expanduser().resolve()
         p.parent.mkdir(parents=True, exist_ok=True)
 

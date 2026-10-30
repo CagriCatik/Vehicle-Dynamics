@@ -1,4 +1,4 @@
-"""M11 acceptance: equilibria with checkable residuals, local stability consistent with the linearised and the
+"""Acceptance: equilibria with checkable residuals, local stability consistent with the linearised and the
 nonlinear dynamics, reproducible recovery regions with separately reported uncertainty, exchangeable models."""
 
 from __future__ import annotations
@@ -129,7 +129,7 @@ def test_linear_prediction_matches_the_nonlinear_model_for_stable_and_unstable_e
 
 @pytest.mark.slow
 def test_saddle_node_structure_beyond_the_limit():
-    """mu 0.6, 90 km/h: one equilibrium at small steer; at 3 deg a stable one and an unstable pair on the spin side."""
+    """Mu 0.6, 90 km/h: one equilibrium at small steer; at 3 deg a stable one and an unstable pair on the spin side."""
     an = EquilibriumAnalysis(_model(0.6))
     small = an.find_all(OperatingPoint(V, math.radians(0.5)))
     large = an.find_all(OperatingPoint(V, math.radians(3.0)))
@@ -268,7 +268,7 @@ def test_heuristic_boundary_is_small_at_the_equilibrium_and_large_far_away():
 
 @pytest.mark.parametrize("controller", ["robust_lqr", "gs_lqr_dob", "tightening_mpc", "adaptive_lqr"])
 def test_m12_laws_are_available_in_recovery_maps(controller):
-    """Plan 6.4: the robust controllers of M12 are mapped like the others (designed from the nominal vehicle)."""
+    """Plan 6.4: the robust controllers of robust control are mapped like the others (designed from the nominal vehicle)."""
     prob = sr.RecoveryProblem(controller, speed=80 / 3.6, steer=math.radians(1.0), mu=0.6, duration=1.5)
     ref = sr.reference_state(prob)
     run = sr.simulate(prob, ref["beta"] + math.radians(2.0), ref["r"], (ref["beta"], ref["r"]))

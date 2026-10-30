@@ -1,4 +1,4 @@
-# Drift plan D2: stationary drift equilibria of the 7-DOF plant over speed x sideslip x friction, both directions.
+# stationary drift equilibria of the 7-DOF plant over speed x sideslip x friction, both directions.
 # Rear-wheel drive with equal rear torques (open differential), front steer only. The radius is a result.
 name: drift_equilibrium_sweep
 vehicle: configs/vehicles/seven_dof_passenger.yaml

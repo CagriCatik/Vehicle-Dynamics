@@ -1,5 +1,5 @@
 # Automated Virtual Validation Platform Matrix Configuration
-# Conforms to Milestone M8 (Plan.md §16, §19 M8)
+#md vertical dynamics)
 
 suite_name: "Automotive Vehicle Dynamics Standardized Validation Matrix"
 version: "1.0.0"

@@ -1,4 +1,4 @@
-"""Integrated traction control, ITC (Plan V4.0 M18.2): coordination of TCS, eLSD, TV and the motor envelope.
+"""Integrated traction control, ITC: coordination of TCS, eLSD, TV and the motor envelope.
 
 ITC is not a new actuator path. It configures the shared chain so that its parts do not work against each
 other:
@@ -8,7 +8,7 @@ other:
     envelope    drive bounds from the motor's speed-dependent torque (same module)
     TV          the yaw law, wrapped by :class:`YawToleranceLaw`
 
-Why the wrapper (measured, M18 split-mu launch): a yaw-rate law with yaw priority asks for ``M_z`` that
+Why the wrapper (measured, traction control split-mu launch): a yaw-rate law with yaw priority asks for ``M_z`` that
 cancels every yaw-rate error, i.e. ``M_z ~ 0`` on a straight launch; the allocation then cannot drive the
 high-friction side harder than the low-friction side, and the launch is exactly as slow as with an open
 differential (34 km/h in 6 s against 48 km/h with the eLSD alone). ITC lets the traction asymmetry through
@@ -45,7 +45,7 @@ class YawToleranceLaw:
     def request(self, state, ctx):
         req = self.inner.request(state, ctx)
         if self.scope == "traction" and getattr(ctx, "fx_demand", 0.0) <= 0.0:
-            self.passed = True                 # outside a traction phase the yaw law acts unchanged (M24)
+            self.passed = True                 # outside a traction phase the yaw law acts unchanged
             return req
         self.passed = abs(ctx.r_ref - state.r) >= self.tolerance
         if self.passed:

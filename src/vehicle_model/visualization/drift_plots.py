@@ -1,4 +1,4 @@
-"""Plots for the drift work packages (Drift plan D1/D6); data in, figures out, no controller logic."""
+"""Plots for the drift work packages; data in, figures out, no controller logic."""
 
 from __future__ import annotations
 
@@ -235,7 +235,7 @@ def plot_tracking(traj: dict, path: str | Path, name: str = "") -> Path:
 
 
 def plot_run_set(res, out_dir: str | Path) -> None:
-    """The five per-run figures of D6 from one recorded history (trajectory, sideslip/yaw, wheels, phase plane,
+    """The five per-run figures of drift animation from one recorded history (trajectory, sideslip/yaw, wheels, phase plane,
     equilibrium residuals)."""
     import math
 

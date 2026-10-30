@@ -1,4 +1,4 @@
-"""Unit and physical consistency tests for Milestone M6: State Estimation and Optimization.
+"""Unit and physical consistency tests for : State Estimation and Optimization.
 
 Validates:
   - Sensor corruption, bias drift, and wheel speed quantization.

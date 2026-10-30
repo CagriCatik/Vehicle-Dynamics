@@ -1,6 +1,6 @@
 """Extended Kalman Filter (EKF) sideslip angle and chassis state observer.
 
-Implements Plan.md §11 (Milestone M6):
+Implements:
 Fuses IMU acceleration (ax, ay), gyro yaw rate (r), wheel speed encoders,
 and steering angle to estimate longitudinal speed vx, lateral speed vy,
 sideslip angle beta = arctan(vy/vx), and sensor biases without accessing

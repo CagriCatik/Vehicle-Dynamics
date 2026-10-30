@@ -1,0 +1,17 @@
+# launch on mu 0.5 from 5 km/h with four, two front or two rear motors, one failed inverter (FL)
+# and two failed motors (FL, RL: one side), ITC throughout; dynamic actuators.
+type: controller_comparison
+name: traction_motor_faults
+description: Drive layouts and motor failures under ITC.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+road: {type: uniform, mu: 0.5}
+manoeuvre: {type: launch, speed_kph: 5, accel_pedal: 1.0, duration_s: 6.0}
+controllers:
+  - {law: pi, actuators: dynamic, traction: {distribution: elsd, envelope: true, yaw_tolerance: 2.0}}
+  - {law: pi, actuators: dynamic, traction: {distribution: elsd, envelope: true, yaw_tolerance: 2.0, driven: fwd}}
+  - {law: pi, actuators: dynamic, traction: {distribution: elsd, envelope: true, yaw_tolerance: 2.0, driven: rwd}}
+  - {law: pi, actuators: dynamic, traction: {distribution: elsd, envelope: true, yaw_tolerance: 2.0, failed: [FL]}}
+  - {law: pi, actuators: dynamic, traction: {distribution: elsd, envelope: true, yaw_tolerance: 2.0, failed: [FL, RL]}}
+  - {law: no_yaw, actuators: dynamic, traction: {failed: [FL, RL]}}
+outputs: {directory: output/traction_control/motor_faults, formats: [csv, json, md]}

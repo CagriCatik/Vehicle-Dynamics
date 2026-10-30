@@ -1,4 +1,4 @@
-"""Drift plan D7: robustness of the drift hold against plant, tyre, actuator, sensor and road variations.
+"""Robustness of the drift hold against plant, tyre, actuator, sensor and road variations.
 
 Run:  python examples/drift_robustness_demo.py [configs/drift/robustness.yaml]
 Out:  output/drift/robustness/ (kpi.json, report.md, resolved config, metadata)

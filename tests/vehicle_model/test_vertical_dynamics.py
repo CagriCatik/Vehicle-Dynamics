@@ -1,4 +1,4 @@
-"""M8 acceptance: free vibration, energy behaviour, frequency responses and defined road excitations.
+"""Acceptance: free vibration, energy behaviour, frequency responses and defined road excitations.
 
 The nonlinear quarter-car simulation (RK4, bump stops, unilateral tyre) is checked
 against the analytical linear references of suspension/vertical_analysis.py, with

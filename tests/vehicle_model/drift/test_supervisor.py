@@ -1,4 +1,4 @@
-"""Drift plan D4: supervisor mode logic (documented criteria, timeouts, no HOLD outside tolerance, FAILED final)."""
+"""Supervisor mode logic (documented criteria, timeouts, no HOLD outside tolerance, FAILED final)."""
 
 from __future__ import annotations
 

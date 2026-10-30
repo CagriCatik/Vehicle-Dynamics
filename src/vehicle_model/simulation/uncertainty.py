@@ -1,4 +1,4 @@
-"""Common uncertainty model: the simulated vehicle deviates from the nominal design (Plan V3.0 M12 7.1).
+"""Common uncertainty model: the simulated vehicle deviates from the nominal design.
 
 Controllers are designed once from the nominal vehicle (``nominal`` parameters and tyres)
 and are not re-tuned. An :class:`UncertaintyCase` declares how the *simulated* plant and

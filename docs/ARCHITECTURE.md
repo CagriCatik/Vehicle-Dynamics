@@ -1,6 +1,6 @@
 # Vehicle Dynamics & Integrated Chassis Control Architecture Guide
 
-This document describes the mathematical formulations, physical equations of motion, coordinate systems, and software architecture implemented across the vehicle dynamics engineering platform conforming to [Plan.md](../Plan.md).
+This document describes the mathematical formulations, physical equations of motion, coordinate systems, and software architecture implemented across the vehicle dynamics engineering platform conforming to [chassis_control_platform_plan.md](plans/chassis_control_platform_plan.md).
 
 ```mermaid
 graph TD

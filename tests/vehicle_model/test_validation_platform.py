@@ -1,11 +1,9 @@
-"""Unit and integration tests for Automotive Virtual Validation Platform (Milestone M8).
+"""Unit and integration tests for Automotive Virtual Validation Platform ().
 
 Verifies:
 - RegressionEvaluator criteria checking and delta calculations
 - ValidationMatrixRunner scenario execution and telemetry capture
-- ValidationReportGenerator Markdown and HTML compilation
-
-Conforms to Milestone M8 (Plan.md §16, §19 M8).
+- ValidationReportGenerator Markdown and HTML compilationmd vertical dynamics).
 """
 
 from pathlib import Path

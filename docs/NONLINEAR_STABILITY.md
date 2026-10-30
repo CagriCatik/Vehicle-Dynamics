@@ -1,4 +1,4 @@
-# Nichtlineare Fahrzeugstabilität und Grenzbereich (Plan V3.0, M11)
+# Nichtlineare Fahrzeugstabilität und Grenzbereich
 
 Dieses Dokument beschreibt die Gleichgewichts- und Stabilitätsanalyse des 7-DOF-Zweispurmodells und die numerisch
 bestimmten Rückführregionen der Regler. Alle Parameter sind synthetisch; die Ergebnisse beschreiben das virtuelle
@@ -114,7 +114,7 @@ Betriebspunkts. Jeder Regler wird also an seinem eigenen stationären Zustand f�
 | `ivmc` | integrierte Regelung (4WS, TV, ABS/TCS, heuristische Phase-Plane-Hülle) |
 | `ivmc_no_phase_plane` | dieselbe ohne Phase-Plane-Hülle |
 
-Robuste Regler aus M12 werden nach ihrer Umsetzung ergänzt.
+Robuste Regler werden nach ihrer Umsetzung ergänzt.
 
 **Unsicherheit**, getrennt vom Ergebnis ausgewiesen:
 
@@ -215,9 +215,9 @@ Heuristik also zu optimistisch. Außerhalb kehren 153 Zustände zurück (passiv)
 Rückführbarkeit ist die Heuristik stark konservativ (Übereinstimmung 32 % passiv, 11 % IVMC). Sie bewertet den Abstand
 zur Haftgrenze, nicht die Rückführbarkeit, und taugt in dieser Form nicht als Schätzung der Region.
 
-### 4.5 Rückführregionen der Regler aus M12 und die Rolle der Hinterachslenkung
+### 4.5 Rückführregionen der Regler aus robuste Regelung und die Rolle der Hinterachslenkung
 
-Plan 6.4 verlangt auch die robusten Regler aus M12. Gleicher Betriebspunkt und gleiches Gitter wie 4.4
+Plan 6.4 verlangt auch die robusten Regler (robuste Regelung). Gleicher Betriebspunkt und gleiches Gitter wie 4.4
 (`stability_map_robust.yaml`, `stability_map_rear_steer.yaml`); alle Regler sind einmal aus dem nominalen Fahrzeug
 entworfen ([ROBUST_CONTROL.md](ROBUST_CONTROL.md)).
 
@@ -229,14 +229,14 @@ entworfen ([ROBUST_CONTROL.md](ROBUST_CONTROL.md)).
 | GS-LQR + DOB | Hinterachslenkung + Giermoment | 34 % | 24–45 % | 148 |
 | Tightening MPC | Hinterachslenkung + Giermoment | 44 % | 28–61 % | 123 |
 | Adaptive LQR | Hinterachslenkung + Giermoment | 33 % | 22–44 % | 151 |
-| **V2.0 GS-LQR, unverändert** | Hinterachslenkung + Giermoment | **33 %** | 22–44 % | 151 |
+| **baseline GS-LQR, unverändert** | Hinterachslenkung + Giermoment | **33 %** | 22–44 % | 151 |
 | GS-LQR, nur Giermoment | Giermoment | 94 % | 89–97 % | 14 |
 | Robust LQR, nur Giermoment | Giermoment | 94 % | 89–97 % | 14 |
 
 Alle Regler mit Hinterachslenkung aus dem linearen Entwurf verkleinern die Region gegenüber dem passiven Fahrzeug
 deutlich; dieselben Gesetze nur mit Giermoment erreichen die 94 % der TV. Ursache ist also nicht das jeweilige
-Verfahren aus M12, sondern die Hinterachslenkung des linearen Entwurfs, und sie betrifft auch die unveränderte
-V2.0-Baseline: Der Entwurf gewichtet den Schwimmwinkel (`q_vy = 20`) und lenkt hinten, um ihn auf null zu bringen. Im
+Verfahren aus robuste Regelung, sondern die Hinterachslenkung des linearen Entwurfs, und sie betrifft auch die unveränderte
+Baseline: Der Entwurf gewichtet den Schwimmwinkel (`q_vy = 20`) und lenkt hinten, um ihn auf null zu bringen. Im
 linearen Bereich (|β0| ≲ 5°) gelingt das; jenseits davon, bei gesättigten Hinterreifen, nimmt die Hinterachslenkung der
 Achse die verbleibende Seitenkraft, und das Fahrzeug dreht sich. Die Regionen zeigen genau dieses Band um β0 = 0.
 
@@ -292,11 +292,11 @@ sie ist nicht umgesetzt.
 
 ![stability_maps](assets/nonlinear_stability/stability_map_robust_stability_maps.png)
 
-*Rückführregionen der Regler aus M12 (alle mit Hinterachslenkung und Giermoment) neben passiv und TV, gleicher Betriebspunkt: Die Regionen schrumpfen auf ein Band um β0 = 0. Quelle: `python -m vehicle_model.experiments run configs/experiments/stability_map_robust.yaml`.*
+*Rückführregionen der Regler aus robuste Regelung (alle mit Hinterachslenkung und Giermoment) neben passiv und TV, gleicher Betriebspunkt: Die Regionen schrumpfen auf ein Band um β0 = 0. Quelle: `python -m vehicle_model.experiments run configs/experiments/stability_map_robust.yaml`.*
 
 ![stability_maps](assets/nonlinear_stability/stability_map_rear_steer_stability_maps.png)
 
-*Ursache: der unveränderte V2.0 GS-LQR mit Hinterachslenkung (33 %) gegen GS-LQR und Robust LQR nur mit Giermoment (je 94 %). Quelle: `python -m vehicle_model.experiments run configs/experiments/stability_map_rear_steer.yaml`.*
+*Ursache: der unveränderte baseline GS-LQR mit Hinterachslenkung (33 %) gegen GS-LQR und Robust LQR nur mit Giermoment (je 94 %). Quelle: `python -m vehicle_model.experiments run configs/experiments/stability_map_rear_steer.yaml`.*
 
 ![phase_portraits](assets/nonlinear_stability/phase_portraits.png)
 

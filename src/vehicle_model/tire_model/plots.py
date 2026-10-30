@@ -1,6 +1,6 @@
 """Comprehensive tyre model diagnostic and characteristic plotting suite.
 
-Implements all required visualizations specified in Plan.md §5.2:
+Implements all required visualizations provided:
 - Longitudinal force vs. slip ratio Fx(kappa)
 - Lateral force vs. slip angle Fy(alpha)
 - Combined-slip force curves (Fy vs alpha at various kappa; Fx vs kappa at various alpha)

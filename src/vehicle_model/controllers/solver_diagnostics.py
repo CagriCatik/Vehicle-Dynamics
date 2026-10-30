@@ -1,4 +1,4 @@
-"""Solver diagnostics and degraded-mode bookkeeping for optimisation-based controllers (Plan.md, Abschnitt 10.4; M6).
+"""Solver diagnostics and degraded-mode bookkeeping for optimisation-based controllers.
 
 Every solve is classified; the classification is the controller's output status:
 
@@ -15,7 +15,7 @@ Every solve is classified; the classification is the controller's output status:
 A time budget can be set. SciPy solvers cannot be interrupted, so an overrun is
 reported (``over_budget``), not prevented.
 
-Solution quality (Plan V3.0 M10 5.2), reported per solve and summarised by
+Solution quality, reported per solve and summarised by
 :meth:`SolverMonitor.summary`:
 
     cost_improvement           J(warm start) - J(solution)
@@ -169,7 +169,7 @@ class SolverMonitor:
         return self.last
 
     def summary(self) -> dict:
-        """Aggregate solution quality over all solves since the last reset (Plan V3.0 M10 5.2)."""
+        """Aggregate solution quality over all solves since the last reset."""
         n = len(self.reports)
         if n == 0:
             return {"solves": 0}

@@ -1,4 +1,4 @@
-"""Strict loading of ``configs/drift/*.yaml`` (Drift plan section 8): unknown keys and wrong ranges are errors."""
+"""Strict loading of ``configs/drift/*.yaml``: unknown keys and wrong ranges are errors."""
 
 from __future__ import annotations
 

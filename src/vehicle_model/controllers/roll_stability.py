@@ -1,4 +1,4 @@
-"""Roll stability control, RSC (Plan V4.0 M19.1): a supervisor that requests, it does not actuate.
+"""Roll stability control, RSC: a supervisor that requests, it does not actuate.
 
 ``RollStabilitySupervisor`` judges the roll state of the 14-DOF vehicle and, by danger level, asks for
 

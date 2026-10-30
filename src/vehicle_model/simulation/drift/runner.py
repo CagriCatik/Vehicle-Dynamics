@@ -1,4 +1,4 @@
-"""Drift plan D6: recorded drift runs and their complete export.
+"""Recorded drift runs and their complete export.
 
 :func:`record` runs a controller on a fresh copy of the 7-DOF plant through the existing
 ScenarioRunner (via :func:`.hold.simulate`) and keeps, per step, the controller diagnostics

@@ -1,4 +1,4 @@
-"""M7: virtual sensor sampling, latency, lag and dropout (Plan.md, Abschnitt 11)."""
+"""Virtual sensor sampling, latency, lag and dropout."""
 
 from __future__ import annotations
 

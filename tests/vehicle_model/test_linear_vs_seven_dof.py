@@ -1,4 +1,4 @@
-"""Cross-model consistency: linear single track vs nonlinear 7-DOF (Plan.md, Abschnitt 6.3 and 15.4).
+"""Cross-model consistency: linear single track vs nonlinear 7-DOF.
 
 In the small-signal range (a_y = 0.3 m/s^2, constant speed, symmetric vehicle) the
 7-DOF model must reproduce the analytical linear reference. Remaining deviations

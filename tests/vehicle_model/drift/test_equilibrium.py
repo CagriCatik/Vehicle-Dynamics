@@ -1,4 +1,4 @@
-"""Drift plan D2: stationary drift equilibria (residuals, torque and force balance, symmetry, honest infeasibility)."""
+"""Stationary drift equilibria (residuals, torque and force balance, symmetry, honest infeasibility)."""
 
 from __future__ import annotations
 
@@ -105,7 +105,7 @@ def test_sweep_config_is_strict():
 
 
 def test_fast_cornering_is_not_accepted_as_a_drift(solver):
-    """beta < 0 at r > 0 alone also holds for fast ordinary cornering: the rear axle must be past its lateral peak."""
+    """Beta < 0 at r > 0 alone also holds for fast ordinary cornering: the rear axle must be past its lateral peak."""
     from vehicle_model.drift.types import REAR_NOT_SATURATED
     e = solver.solve(DriftReference(20.0, math.radians(-5.0), 0.9))
     assert REAR_NOT_SATURATED in e.reasons and e.validity == INFEASIBLE

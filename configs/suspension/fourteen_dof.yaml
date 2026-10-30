@@ -1,5 +1,5 @@
 # Fourteen-DOF Full Vehicle Dynamics Configuration
-# Conforms to Milestone M7 (Plan.md §4.5, §9, §19 M7)
+#md estimation robustness)
 
 sprung_mass: 1320.0             # kg (chassis + powertrain body mass)
 unsprung_mass_front: 45.0       # kg (per front wheel)

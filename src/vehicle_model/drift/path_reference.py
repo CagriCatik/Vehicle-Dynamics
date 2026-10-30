@@ -1,4 +1,4 @@
-"""Path references for drift tracking (Drift plan D5): circles and the figure-eight.
+"""Path references for drift tracking: circles and the figure-eight.
 
 Kinematics used throughout (plan 4.1): the direction of travel is ``chi = psi + beta``; only in
 a stationary drift is ``chi_dot = r``. The path error of a circle is radial: ``e = |p - c| - R``

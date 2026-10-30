@@ -1,4 +1,4 @@
-"""Electronic brakeforce distribution, EBD (Plan V4.0 M17.1): a strategy for the shared allocation, not a brake.
+"""Electronic brakeforce distribution, EBD: a strategy for the shared allocation, not a brake.
 
 EBD decides how a total braking demand is *shared* between the wheels and how much the rear
 axle may take; the bounded allocation (``WheelForceAllocator``) and the slip control after it
@@ -14,7 +14,7 @@ telemetry in information modes A/B, the sensor-based estimates in mode C: no gro
 Modes:
 
     grip      share = None, no limit: the allocation's own grip-proportional distribution
-              (the behaviour before M17)
+              (the behaviour before brake functions)
     static    fixed front share (default 0.6, the passive car's 60:40 bias), left/right equal;
               a reference, blind to load transfer and friction
     ebd       share proportional to the estimated grip ``mu_hat Fz_hat`` (dynamic load transfer
@@ -92,7 +92,7 @@ class BrakeDistributionStrategy:
 
 
 def brake_functions_config(path=None) -> dict:
-    """The four brake-function configurations from ``configs/braking/brake_functions.yaml`` (Plan V4.0 M17):
+    """The four brake-function configurations from ``configs/braking/brake_functions.yaml``:
     ``{"ebd": dict, "cbc": CorneringBrakeConfig, "ibc": dict, "regenerative_slip": dict}``; strict keys."""
     from pathlib import Path
 

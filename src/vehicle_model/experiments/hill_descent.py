@@ -1,4 +1,4 @@
-"""Experiment type ``hill_descent_benchmark``: Hill Descent Control on graded roads (Plan V4.0 M22, 7-DOF).
+"""Experiment type ``hill_descent_benchmark``: Hill Descent Control on graded roads (7-DOF).
 
 Scenarios (a synthetic grade x surface matrix plus named cases) x controllers, each run on the 7-DOF model with a
 :class:`~vehicle_model.roads.surface.GradedRoad` (gravity in the plant) through the shared MotionController chain::

@@ -1,4 +1,4 @@
-"""Experiment type ``robust_benchmark``: controllers x feedback modes x uncertainty cases (Plan V3.0 M12 7.4, §12).
+"""Experiment type ``robust_benchmark``: controllers x feedback modes x uncertainty cases.
 
 Every controller is designed once from the *nominal* vehicle (``vehicle``, ``tyres``) and
 runs unchanged against every uncertainty case (:mod:`vehicle_model.simulation.uncertainty`):
@@ -26,8 +26,8 @@ KPIs per run (Plan 7.4):
     rear_steer_effort_degs     integral of |delta_r|
     loss_of_control            1 if |beta| >= 30 deg was reached
 
-Baselines: controllers marked ``baseline: true`` are the fixed V2.0 laws (PI, GS-LQR as
-of M6, unchanged since); the report gives every controller's KPIs relative to the
+Baselines: controllers marked ``baseline: true`` are the fixed baseline laws (PI, GS-LQR as
+of controller library, unchanged since); the report gives every controller's KPIs relative to the
 first baseline per feedback mode and case, including the cases where an advanced
 controller does worse.
 
@@ -39,7 +39,7 @@ Example (``configs/experiments/robust_benchmark_sine_with_dwell.yaml``)::
     road: {type: uniform, mu: 1.0}
     manoeuvre: {type: sine_with_dwell, speed_kph: 80, amplitude_deg: 6}
     controllers:
-      - {name: V2.0 PI, law: pi, baseline: true}
+      - {name: baseline PI, law: pi, baseline: true}
       - {name: Robust LQR, law: robust_lqr, inputs: 4ws_tv, alpha: 3}
     feedback: [ideal, estimated, sensor_constrained]
     uncertainty:
@@ -497,7 +497,7 @@ def _report(spec, summary) -> str:
     for c in spec.controllers:
         opts = ", ".join(f"{k}: {v}" for k, v in c.items() if k in ("alpha", "bandwidth", "w_max_vy", "w_max_r")) or "–"
         sup = f"fallback {c['supervisor']['fallback']}" if c.get("supervisor") else "–"
-        L.append(f"| {c['name']} | {c['law']} | {c.get('inputs', 'tv')} | {'yes (V2.0)' if c.get('baseline') else '–'} | "
+        L.append(f"| {c['name']} | {c['law']} | {c.get('inputs', 'tv')} | {'yes' if c.get('baseline') else '–'} | "
                  f"{sup} | {opts} |")
     cols = [("yaw_rate_rms_error_degps", "r RMS err [deg/s]"), ("max_sideslip_deg", "max beta [deg]"),
             ("lateral_deviation_m", "lat. dev. [m]"), ("saturation_share", "saturated"),
@@ -516,7 +516,7 @@ def _report(spec, summary) -> str:
                     L.append(f"| {u['name']} | {r['controller']}{' (error: ' + r['error'] + ')' if r['error'] else ''} | {cells} |")
     comp = summary["comparison"]
     if comp:
-        L += ["", f"## Relative to the V2.0 baseline ({comp[0]['baseline']})", "",
+        L += ["", f"## Relative to the baseline ({comp[0]['baseline']})", "",
               "Ratios < 1 are better than the baseline; 'worse' lists the tracking KPIs more than 5 % worse.", "",
               "| feedback | case | controller | r RMS err | max beta | lat. dev. | worse | lost |", "|---|---|---|---|---|---|---|---|"]
         for row in comp:

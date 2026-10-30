@@ -24,7 +24,7 @@ DataClass = Literal["measured", "fitted", "synthetic"]
 
 @dataclass(frozen=True)
 class TyreProvenance:
-    """Origin and validity information required for every tyre parameter set (Plan.md §5.1)."""
+    """Origin and validity information required for every tyre parameter set."""
 
     formulation: str
     version: str

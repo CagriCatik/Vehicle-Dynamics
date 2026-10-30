@@ -1,4 +1,4 @@
-"""Model class V1 verification: kinematic single track with front/rear steering (Plan.md, Abschnitt 5).
+"""Verification of the kinematic single track with front/rear steering.
 
 Criteria: straight driving at zero steer, analytical radius, consistent signs (incl. reverse),
 limit case delta_f = delta_r, numerical convergence.

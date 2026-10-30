@@ -1,4 +1,4 @@
-"""Road-friction estimation from virtual sensors only (Plan.md V3.0, G02 / M10 Mode C)."""
+"""Road-friction estimation from virtual sensors only (G02 / state estimation Mode C)."""
 
 from __future__ import annotations
 

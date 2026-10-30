@@ -1,38 +1,38 @@
-# Fahrdynamikregelung: Reglerbibliothek, Solverdiagnostik und Benchmark (M6)
+# Fahrdynamikregelung: Reglerbibliothek, Solverdiagnostik und Benchmark
 
 Module:
 - [`controllers/motion_control.py`](../src/vehicle_model/controllers/motion_control.py): einheitliche Regelkette.
 - [`controllers/yaw_laws.py`](../src/vehicle_model/controllers/yaw_laws.py): PI, LQR, GS-LQR, LTV-MPC.
 - [`controllers/solver_diagnostics.py`](../src/vehicle_model/controllers/solver_diagnostics.py): Solverdiagnostik und Degraded Mode.
-- [`controllers/constraints.py`](../src/vehicle_model/controllers/constraints.py): Constraint-Semantik und Zulässigkeitsprüfung, getrennt vom Solverstatus (V3.0 M10).
+- [`controllers/constraints.py`](../src/vehicle_model/controllers/constraints.py): Constraint-Semantik und Zulässigkeitsprüfung, getrennt vom Solverstatus.
 - [`simulation/controller_benchmark.py`](../src/vehicle_model/simulation/controller_benchmark.py): Benchmark.
 
-**M6-Abnahme:** Unterschiedliche Regler werden mit derselben virtuellen Strecke, identischen Szenarien und definierten Kennzahlen verglichen. Siehe Abschnitt 4.
+**controller library-Abnahme:** Unterschiedliche Regler werden mit derselben virtuellen Strecke, identischen Szenarien und definierten Kennzahlen verglichen. Siehe Abschnitt 4.
 
 ---
 
 ## 1. Einheitliche Regelkette
 
-Die Kette trennt die Ebenen nach Plan.md, Abschnitt 10:
+Die Kette trennt die Ebenen nach chassis_control_platform_plan.md, Abschnitt 10:
 
 | Ebene | Umsetzung |
 |---|---|
 | Fahreranforderung | Lenkwinkel, Pedale (`ControlTarget`) |
 | Sollbewegung | `YawReference`: $r_\text{ref} = v\delta/(L + EG_\text{ref}v^2)$, $EG_\text{ref}$ ≈ 0,56 °/g, begrenzt auf $0{,}85\,\hat\mu g/v$; Soll-Schwimmwinkel 0 |
 | Regelgesetz | austauschbar (`MotionLaw`): Giermoment und/oder Hinterachslenkwinkel |
-| Control Allocation | `WheelForceAllocator` (M5) |
-| Aktuatorregelung | ABS/TCS (M5) |
+| Control Allocation | `WheelForceAllocator` |
+| Aktuatorregelung | ABS/TCS |
 | Fahrzeugphysik | Strecke, außerhalb der Kette |
 
-Alle Gesetze laufen über dieselbe Referenz und dieselbe Stellebene. Das ist die Voraussetzung für einen fairen Vergleich. Jedes Gesetz deklariert seinen Informationszugriff. Alle mitgelieferten Gesetze nutzen Zustand und Telemetrie einschließlich Fahrbahnreibwert, also `full_state_ideal` (Plan.md, Abschnitt 10.2: idealisierter Full-State-Feedback-Modus, ausdrücklich gekennzeichnet). Der M5-Regler `AllocatedStabilityController` ist jetzt diese Kette mit dem PI-Gesetz, mit unverändertem Verhalten.
+Alle Gesetze laufen über dieselbe Referenz und dieselbe Stellebene. Das ist die Voraussetzung für einen fairen Vergleich. Jedes Gesetz deklariert seinen Informationszugriff. Alle mitgelieferten Gesetze nutzen Zustand und Telemetrie einschließlich Fahrbahnreibwert, also `full_state_ideal` (idealisierter Full-State-Feedback-Modus, ausdrücklich gekennzeichnet). Der slip control and allocation-Regler `AllocatedStabilityController` ist jetzt diese Kette mit dem PI-Gesetz, mit unverändertem Verhalten.
 
-### 1.1 Stellgrößenkette je Regler (V3.0 M10 §5.3, Abnahmekriterium 1)
+### 1.1 Stellgrößenkette je Regler (Abnahmekriterium 1)
 
 Gemeinsame Stellebene: `ActuationLayer` = `WheelForceAllocator` (beschränkte Radkraftaufteilung mit Haft- und Aktuatorgrenzen, Ausfallmeldung) + ABS/TCS (`WheelSlipController`).
 
 | Regler | Stellgrößenkette | Bemerkung |
 |---|---|---|
-| `MotionController` mit PI, LQR, GS-LQR, LTV-MPC; `AllocatedStabilityController` | `ActuationLayer` | seit M6 |
+| `MotionController` mit PI, LQR, GS-LQR, LTV-MPC; `AllocatedStabilityController` | `ActuationLayer` | seit Reglerbibliothek |
 | `DynamicTwoTrackNMPC` | `ActuationLayer` (**neu**) | erste geplante Stellgröße $(m a_x, M_z)$ an die Allokation; vorher eigene Aufteilung (gleiche Anteile, negative Werte abgeschnitten, kein ABS/TCS) |
 | `NMPCPathTrackingController` (kinematisch) | `ActuationLayer` (**neu**), $M_z = 0$ | vorher feste Aufteilung (Antrieb gleich, Bremse 60/40), kein ABS/TCS |
 | `IntegratedChassisController` (IVMC) | `ActuationLayer` (**neu, Standard**) | Lenkung (4WS, Gegenlenken, Phasenebene) unverändert; Längskraftwunsch aus den Pedalen (minus Notverzögerung der Phasenebene) und Giermomentwunsch (TV + Phasenebene) gehen an die Allokation. Die alte additive Kette (TV addiert Differenzmoment, Alt-ABS/-TCS, heuristischer Split-µ-Begrenzer) bleibt als `actuation="legacy"` wählbar. Vergleich siehe 1.2. |
@@ -55,11 +55,11 @@ Split-µ-Vollbremsung mit gerader Lenkung (Konfigurationsmatrix): legacy 9,8° /
 
 **Gewichtung über der Geschwindigkeit:** Die Allokation gewichtet das Giermoment gegen die Längskraft (`yaw_priority`). Ein fester Wert scheitert an einem der beiden Fälle: Mit 100 bleibt das Fahrzeug bei Split-µ-Bremsung gerade, erreicht beim Split-µ-Anfahren aber nur 19,5 km/h nach 2,5 s (passiv 31, legacy 46), weil auch das Antriebsmoment auf der Hoch-µ-Seite auf das der Eisseite begrenzt wird. Mit 1 erreicht es 42 km/h, dreht sich aber bei der Bremsung aus 100 km/h um 19° ein. Deshalb wird die Gewichtung über der Geschwindigkeit geführt: 100 oberhalb von 54 km/h, 1 unterhalb von 29 km/h, dazwischen log-linear (`yaw_priority_speeds`, `yaw_priority_range`). Bei niedriger Geschwindigkeit ist die Folge eines asymmetrischen Moments gering, und die Lenkung kann es ausgleichen. Ergebnis: Anfahren 38 km/h bei 0,2° Gierwinkel, Split-µ-Bremsung 0,0° bei jedem Pedal in den ersten 3 s, Validierungswerte wie oben (alle Validierungsszenarien liegen über 54 km/h). **Preis:** Bremst das Fahrzeug auf Split-µ bis zum Stillstand (90 km/h, Benchmark), lässt die Allokation unter 29 km/h Asymmetrie zu: Gierwinkel am Ende 6,6°, Querversatz 0,61 m, dafür Bremsweg 132 m statt 151 m. Eine Bremsung mit gerader Lenkung bis zum Stand bleibt damit unter 10°, aber nicht bei 0°.
 
-Deshalb ist `allocation` seit V3.0 der Standard.
+Deshalb ist `allocation` der Standard.
 
 Die Diagnosedaten beider NMPCs trennen (`diagnostics["actuation"]`): Soll-Längskraft und Soll-Giermoment (`demand`), durch die Allokation erreichbare Werte (`allocation_achievable`, `allocation_status`, `at_bound`, `grip_limited`), die ausgegebene Aktuatoranforderung nach ABS/TCS (`issued`, Fahrzeugkoordinaten) und die von der Strecke im letzten Schritt tatsächlich erzeugten Reifenkräfte (`realised_previous_step`: $F_x$, Giermoment der Längskräfte, gesamtes Reifengiermoment; nur mit Telemetrie). Ausgabestatus wie beim `MotionController`: Solverstatus, wenn nicht nominal, sonst Allokationsstatus.
 
-**Befund E2E-Spurwechsel (90 km/h, µ = 0,75, mit Telemetrie):** Die Allokation meldet in 19 von 40 Schritten `infeasible`. Ursache: Die kurveninneren Reifen sind durch Seitenkraft voll ausgenutzt ($F_y > \mu F_z$ nach dem einfachen Reibkreis); bei gefordertem $M_z = 0$ können nur die Außenräder symmetrisch Längskraft liefern, und das NMPC fordert bis zu 1,2 kN Antrieb zum Halten der Geschwindigkeit. Das ist eine ehrliche Meldung, kein Fehler. Gegenüber der eigenen Momentenaufteilung (Abschnitt 3.1, ohne Telemetrie): Querabweichung nach 2 s 0,36 m statt 0,41 m, `degraded` in 22 % statt 15 % der Schritte. Das NMPC nutzt das Giermoment praktisch nicht (`r_yaw_moment = 1e-4` macht 1 kN m so teuer wie 3,5 m Querfehler); eine Abstimmung ist offen.
+**Befund E2E-Spurwechsel (90 km/h, µ = 0,75, mit Telemetrie):** Die Allokation meldet in 19 von 40 Schritten `infeasible`. Ursache: Die kurveninneren Reifen sind durch Seitenkraft voll ausgenutzt ($F_y > \mu F_z$ nach dem einfachen Reibkreis); bei gefordertem $M_z = 0$ können nur die Außenräder symmetrisch Längskraft liefern, und das NMPC fordert bis zu 1,2 kN Antrieb zum Halten der Geschwindigkeit. Das ist eine ehrliche Meldung, kein Fehler. Gegenüber der eigenen Momentenaufteilung (ohne Telemetrie): Querabweichung nach 2 s 0,36 m statt 0,41 m, `degraded` in 22 % statt 15 % der Schritte. Das NMPC nutzt das Giermoment praktisch nicht (`r_yaw_moment = 1e-4` macht 1 kN m so teuer wie 3,5 m Querfehler); eine Abstimmung ist offen.
 
 ## 2. Regelgesetze
 
@@ -87,7 +87,7 @@ Die MPC braucht ein stärkeres Integralgewicht, weil ihre Horizontkosten das pr�
 
 ## 3. Solverdiagnostik und Degraded Mode
 
-Beide SLSQP-NMPCs meldeten vor M6 unabhängig vom Solverergebnis den Status `nominal`. Im Spurwechsel konvergiert das dynamische NMPC in 83 % der Schritte; in den übrigen 17 % übernahm es die nicht konvergierte, aber verbesserte Lösung, ohne das zu melden. Das dynamische NMPC meldete außerdem die Giermoment-*Anforderung* als „allokiert“. Jetzt meldet es das Moment, das seine begrenzte Momentenaufteilung tatsächlich erzeugt.
+Beide SLSQP-NMPCs meldeten vor Reglerbibliothek unabhängig vom Solverergebnis den Status `nominal`. Im Spurwechsel konvergiert das dynamische NMPC in 83 % der Schritte; in den übrigen 17 % übernahm es die nicht konvergierte, aber verbesserte Lösung, ohne das zu melden. Das dynamische NMPC meldete außerdem die Giermoment-*Anforderung* als „allokiert“. Jetzt meldet es das Moment, das seine begrenzte Momentenaufteilung tatsächlich erzeugt.
 
 Jede Lösung wird klassifiziert, für NMPC und LTV-MPC gleich:
 
@@ -100,7 +100,7 @@ Jede Lösung wird klassifiziert, für NMPC und LTV-MPC gleich:
 
 Ein Zeitbudget kann gesetzt werden. SciPy-Solver lassen sich nicht unterbrechen; eine Überschreitung wird deshalb gemeldet (`over_budget`), nicht verhindert. Tests injizieren Solverfehler: erst `fallback` mit verschobenem Plan, dann `degraded`.
 
-### 3.1 Constraint-Semantik und Zulässigkeit (V3.0 M10 §5.1/§5.2)
+### 3.1 Constraint-Semantik und Zulässigkeit
 
 Ein konvergierter Solver hat seine Kosten im *eigenen* Modell minimiert; ob der Plan die maßgeblichen Grenzen einhält, sagt das nicht. Jeder Regler deklariert seine Grenzen deshalb mit einer eindeutigen Art und prüft den tatsächlich verwendeten Plan nach jeder Lösung dagegen. Der `FeasibilityReport` steht neben dem `SolverReport` in den Diagnosedaten (`diagnostics["feasibility"]`); der Ausgabestatus bleibt der Solverstatus.
 
@@ -119,9 +119,9 @@ Ein fehlender oder unbekannter Wert ist ein Fehler, kein stilles Bestehen. Ein n
 | LTV-MPC | Stellamplituden (BVLS-Schranken) | Stellraten nur über S, ohne Grenze | – | vorhergesagter Schwimmwinkel, Gierrate |
 | Dynamisches NMPC | Lenkwinkel vorn/hinten, Giermoment, Beschleunigung; **Lenkraten** (neu) | Reibkreisausnutzung > 0,90 | Reibkreisausnutzung ≤ 1 | vorhergesagter Schwimmwinkel, Gierrate |
 
-Stabilitätsgrenzen (advisory): $r_\max = \mu g / v$, $\beta_\max = \arctan(0{,}02\,\mu g)$ (≈ 11° bei µ = 1, 2° bei µ = 0,2). Faustregel, nicht aus der Fahrzeugdynamik abgeleitet; modellbasierte Grenzen folgen in M11 (G03).
+Stabilitätsgrenzen (advisory): $r_\max = \mu g / v$, $\beta_\max = \arctan(0{,}02\,\mu g)$ (≈ 11° bei µ = 1, 2° bei µ = 0,2). Faustregel, nicht aus der Fahrzeugdynamik abgeleitet; modellbasierte Grenzen folgen in nonlinear stability.
 
-**Befund Lenkrate (G01):** Das dynamische NMPC hatte eine konfigurierte Lenkratengrenze (`max_steer_rate_radps`, 60°/s), die nur über den Kostenterm wirkte. Im E2E-Spurwechsel (90 km/h, µ = 0,75) betrug die angewendete Vorderachslenkrate bis zu **196°/s**. Die Grenze ist jetzt eine harte lineare Ungleichung; der erste Schritt wird gegen den zuletzt angewendeten Befehl über die Regelperiode gemessen, die übrigen über den Prädiktionsschritt. Folge: angewendete Rate ≤ 60°/s, Querabweichung nach 2 s 0,40 m statt 0,20 m (vor der Reibkreiskorrektur), Rechenzeit unverändert. Toleranz der Prüfung: die SLSQP-Toleranz (`ftol`), weil SLSQP Ungleichungen nur bis dahin erfüllt. `enforce_steer_rate=False` stellt das alte Verhalten her; die Grenze wird dann als `advisory` geprüft und ihre Überschreitung gemeldet.
+**Befund Lenkrate:** Das dynamische NMPC hatte eine konfigurierte Lenkratengrenze (`max_steer_rate_radps`, 60°/s), die nur über den Kostenterm wirkte. Im E2E-Spurwechsel (90 km/h, µ = 0,75) betrug die angewendete Vorderachslenkrate bis zu **196°/s**. Die Grenze ist jetzt eine harte lineare Ungleichung; der erste Schritt wird gegen den zuletzt angewendeten Befehl über die Regelperiode gemessen, die übrigen über den Prädiktionsschritt. Folge: angewendete Rate ≤ 60°/s, Querabweichung nach 2 s 0,40 m statt 0,20 m (vor der Reibkreiskorrektur), Rechenzeit unverändert. Toleranz der Prüfung: die SLSQP-Toleranz (`ftol`), weil SLSQP Ungleichungen nur bis dahin erfüllt. `enforce_steer_rate=False` stellt das alte Verhalten her; die Grenze wird dann als `advisory` geprüft und ihre Überschreitung gemeldet.
 
 **Befund Reibkreis (behoben):** Die Prädiktion des dynamischen NMPC begrenzte die Längskraft nicht auf $\mu F_z$; ein Plan konnte Verzögerungen voraussetzen, die die Reifen nicht übertragen, und die vorhergesagte Bewegung war dann zu optimistisch. Jetzt sättigt die Prädiktion die Längskraft wie die Reifen der Strecke. Die Reibkreisausnutzung wird aus den *angeforderten* Kräften gebildet: Der Strafterm wirkt gegen Überanforderung, und die Prüfung `friction_utilisation` (plant) meldet eine Anforderung über der Haftgrenze als nicht realisierbar. Im E2E-Spurwechsel: Rechenzeit 25 s statt 44 s für 40 Schritte, `degraded` in 15 % statt 20 % der Schritte, Querabweichung nach 2 s 0,41 m (ohne Ratengrenze 0,17 m bei bis zu 372°/s).
 
@@ -129,7 +129,7 @@ Stabilitätsgrenzen (advisory): $r_\max = \mu g / v$, $\beta_\max = \arctan(0{,}
 
 Offen: `soft`-Grenzen mit Schlupfvariablen kommen in keinem Regler vor.
 
-### 3.2 Lösungsgüte: KKT-Residuen, Kostenverbesserung, Warmstart (V3.0 M10 §5.2)
+### 3.2 Lösungsgüte: KKT-Residuen, Kostenverbesserung, Warmstart
 
 „Konvergiert“ heißt bei SLSQP: Die relative Kostenänderung ist unter `ftol` gefallen. Ob die Lösung ein Optimum erster Ordnung ist, sagt das nicht. Jeder `SolverReport` enthält deshalb zusätzlich (alle drei Optimierer: LTV-MPC, dynamisches und kinematisches NMPC):
 
@@ -141,7 +141,7 @@ Offen: `soft`-Grenzen mit Schlupfvariablen kommen in keinem Regler vor.
 | `cost_improvement`, `relative_cost_improvement` | $J(\text{Warmstart}) - J(\text{Lösung})$, absolut und relativ |
 | `warm_start_step` | $\max\lvert x - x_\text{Warmstart}\rvert$ |
 
-Inaktive Grenzen erhalten $\mu = 0$ (Komplementarität per Konstruktion); aktiv heißt: innerhalb $10^{-6}(1 + \lvert\text{Grenze}\rvert)$. Der Gradient stammt vom Solver (SLSQP: Differenzenquotient, gegen zentrale Differenzen geprüft), bei der LTV-MPC analytisch. `SolverMonitor.summary()` fasst über alle Lösungen zusammen (Anteile je Status, Budgetüberschreitungen, Rechenzeit Mittel/P95/Max, Medianverbesserung, KKT Median/Max); NMPC-Diagnosedaten enthalten sie als `solver_summary`. Der Benchmark meldet `solver_kkt_stationarity_relative_max`, `solver_relative_improvement_median` und `solver_over_budget_steps`. Die Klassifikation (Abschnitt 3) bleibt unverändert; die Residuen sind Information, kein Annahmekriterium.
+Inaktive Grenzen erhalten $\mu = 0$ (Komplementarität per Konstruktion); aktiv heißt: innerhalb $10^{-6}(1 + \lvert\text{Grenze}\rvert)$. Der Gradient stammt vom Solver (SLSQP: Differenzenquotient, gegen zentrale Differenzen geprüft), bei der LTV-MPC analytisch. `SolverMonitor.summary()` fasst über alle Lösungen zusammen (Anteile je Status, Budgetüberschreitungen, Rechenzeit Mittel/P95/Max, Medianverbesserung, KKT Median/Max); NMPC-Diagnosedaten enthalten sie als `solver_summary`. Der Benchmark meldet `solver_kkt_stationarity_relative_max`, `solver_relative_improvement_median` und `solver_over_budget_steps`. Die Klassifikation bleibt unverändert; die Residuen sind Information, kein Annahmekriterium.
 
 Gemessen:
 
@@ -183,9 +183,9 @@ Gemessen:
 
 Alle Regler stoßen an das Momentenlimit von 4000 N m. Rund 20–30 % der Schritte melden `infeasible`, weil die Allokation das angeforderte Moment im Kraftschluss nicht vollständig stellen kann. Das wird gemeldet, nicht verschwiegen.
 
-**Split-µ-Bremsung:** passiv dreht sich ein (986°, also etwa 2,7 Umdrehungen auf 82 m Weg; ein Lauf endet erst, wenn der Geschwindigkeits*betrag* unter 1 m/s fällt, und der Bremsweg ist die Weglänge, nicht X). Alle Regler bleiben auf 0,01–0,02° und 2–4 cm Versatz, mit 151–152 m Bremsweg. Das entspricht der Select-low-Grenze bei fester Lenkung (M5); die Regler unterscheiden sich hier kaum, weil alle durch dieselbe Allokation begrenzt sind.
+**Split-µ-Bremsung:** passiv dreht sich ein (986°, also etwa 2,7 Umdrehungen auf 82 m Weg; ein Lauf endet erst, wenn der Geschwindigkeits*betrag* unter 1 m/s fällt, und der Bremsweg ist die Weglänge, nicht X). Alle Regler bleiben auf 0,01–0,02° und 2–4 cm Versatz, mit 151–152 m Bremsweg. Das entspricht der Select-low-Grenze bei fester Lenkung; die Regler unterscheiden sich hier kaum, weil alle durch dieselbe Allokation begrenzt sind.
 
-### Split-µ-Konfigurationsmatrix (V3.0 M10 §5.5)
+### Split-µ-Konfigurationsmatrix
 
 [`four_wheel_steering/split_mu_matrix.py`](../src/vehicle_model/simulation/four_wheel_steering/split_mu_matrix.py), 100 km/h, µ 1,0 / 0,2, gleiches Pedal für alle, Lenkung gerade gehalten. Giermomente: Spitze der ersten 0,3 s, aufgeteilt in Längskraft- (Bremse) und Querkraftanteil (Lenkung).
 
@@ -197,11 +197,11 @@ Alle Regler stoßen an das Momentenlimit von 4000 N m. Rund 20–30 % der Schrit
 | 4WS + ABS + ESC/TV | Bremsmoment addieren | 106,4° / 3502 / 1603 N m | 100,8° / 4091 / 1830 N m |
 | TV (Allokation) | Bremsmoment umverteilen | **0,0°** / 955 / 47 N m | **0,0°** / 1311 / 68 N m |
 | IVMC (legacy) | Bremsmoment addieren | 78,3° / 3502 / 1603 N m | 122,1° / 4091 / 1830 N m |
-| IVMC (allocation, Standard seit V3.0) | Bremsmoment umverteilen | **0,0°** / 1311 / 107 N m | **0,0°** / 1311 / 107 N m |
+| IVMC (allocation, Standard) | Bremsmoment umverteilen | **0,0°** / 1311 / 107 N m | **0,0°** / 1311 / 107 N m |
 
 Auf homogener Fahrbahn bremsen alle Konfigurationen gerade. Die Hinterachslenkung erreicht höchstens ein Drittel des Bremsgiermoments, weil die gebremsten Reifen kaum Seitenkraft übertragen (Kammscher Kreis). ESC, das Bremsmoment nur addiert, greift auf der Niedrig-µ-Seite ein und ändert die Asymmetrie kaum. Nur die Allokation senkt das Bremsmoment auf der Hoch-µ-Seite (Select-low-ähnlich) und bleibt gerade, mit 2,2 m/s² Verzögerung. Die eindrehenden Konfigurationen sind erwartete physikalische Grenzen und werden als solche getestet.
 
-**Robustheit** (Plan.md, Abschnitt 10.4), Sine with Dwell auf Streckenvarianten, Regler unverändert:
+**Robustheit**, Sine with Dwell auf Streckenvarianten, Regler unverändert:
 
 | Variante | passiv | ungünstigster Regler (Verhältnis 1,0 s) |
 |---|---|---|
@@ -213,17 +213,17 @@ Alle Regler halten die Grenzwerte in allen drei Varianten deutlich ein.
 ## 5. Befunde und Grenzen
 
 - **LTV-MPC (4WS+TV)** erzeugt im Sine with Dwell nach dem Ende des Lenkeingriffs eine Gierratenspitze von etwa +0,33 rad/s (bei ~2,75 s). Die Gierratenverhältnisse erfassen sie nicht, weil sie erst 1,0 s bzw. 1,75 s nach Lenkende gemessen werden. Eine Kennzahl für den Rückschwinger fehlt noch im Kennzahlensatz.
-- Die Regler arbeiten mit idealer Zustandsinformation, einschließlich Fahrbahnreibwert. Sensor- und Schätzerschicht folgen in M7.
+- Die Regler arbeiten mit idealer Zustandsinformation, einschließlich Fahrbahnreibwert. Sensor- und Schätzerschicht folgen in estimation robustness.
 - **LTV-MPC:** LTI-Modell über den Horizont; nur Box-Grenzen auf den Stellgrößen, keine Zustandsgrenzen; keine formale Stabilitätsgarantie (kein Endkostenterm aus der Riccati-Lösung).
 - **NMPC (Pfadfolge):** Die neue Diagnostik zeigt, dass das dynamische NMPC im anspruchsvollen Spurwechsel des E2E-Tests (90 km/h, µ = 0,75, 15 Iterationen) in 25–48 % der Schritte `degraded` ist (mit harter Lenkratengrenze, Regelperiode als `dt` und gesättigter Längskraft in der Prädiktion: 15 %, Abschnitt 3.1). Es erreicht den Zielversatz trotzdem (Y = 3,7–3,9 m bei Soll 3,5 m). Mehr Iterationen oder ein besserer Warmstart sind offen. Das Zeitbudget wird nur gemeldet. Die NMPCs sind nicht im Benchmark, weil sie eine andere Aufgabe lösen (Pfadfolge statt Gierstabilisierung bei Fahrervorgabe).
 - Nicht umgesetzt: ein separates Gierraten-PID mit D-Anteil (das PI-Gesetz deckt die Referenz ab).
-- **4WS-Split-µ-Szenario:** in V3.0 (M10 §5.5) als Konfigurationsmatrix aufgelöst, siehe Abschnitt „Split-µ-Konfigurationsmatrix“.
+- **4WS-Split-µ-Szenario:** als Konfigurationsmatrix aufgelöst, siehe Abschnitt „Split-µ-Konfigurationsmatrix“.
 
 ## 6. Verifikation
 
 | Test | Prüfung |
 |---|---|
-| [test_yaw_laws.py](../tests/vehicle_model/test_yaw_laws.py) | Gleichgewicht ist stationärer Punkt; Riccati-Residuum; geschlossener Kreis Hurwitz (alle Geschwindigkeiten); Interpolation und Klemmung der Verstärkungen; LQR und MPC folgen auf ihrem Entwurfsmodell exakt (4WS: Schwimmwinkel 0); Stellgrenzen im ganzen MPC-Plan; Solverausfall → `fallback` → `degraded`; Protokolle; PI-Kette = M5-Regler |
+| [test_yaw_laws.py](../tests/vehicle_model/test_yaw_laws.py) | Gleichgewicht ist stationärer Punkt; Riccati-Residuum; geschlossener Kreis Hurwitz (alle Geschwindigkeiten); Interpolation und Klemmung der Verstärkungen; LQR und MPC folgen auf ihrem Entwurfsmodell exakt (4WS: Schwimmwinkel 0); Stellgrenzen im ganzen MPC-Plan; Solverausfall → `fallback` → `degraded`; Protokolle; PI-Kette = slip control and allocation-Regler |
 | [test_constraints.py](../tests/vehicle_model/test_constraints.py) | nur `hard` entscheidet die Zulässigkeit, `plant` die Realisierbarkeit; alle Überschreitungen mit Betrag; fehlende/unbekannte Werte und nicht endliche Pläne; Toleranz; Stabilitätsgrenzen; LTV-MPC meldet Zulässigkeit neben dem Solverstatus; NMPC: harte Lenkrate auf dem angewendeten Befehl (abschaltbar: dann advisory und gemeldet); Bremsplan auf µ = 0,1 als nicht realisierbar erkannt |
 | [test_solver_diagnostics.py](../tests/vehicle_model/test_solver_diagnostics.py) | Klassifikation, Zeitbudget, Erholung; injizierter NMPC-Ausfall nutzt den verschobenen Plan; gemeldetes Giermoment = erzeugtes Moment; KKT-Residuen auf Problemen mit bekannter Lösung (aktive Schranke, Ungleichung, falsches Multiplikatorvorzeichen, Verletzung); Kostenverbesserung, Warmstartschritt, Zusammenfassung; NMPC meldet beides. LTV-MPC-Lösung ist KKT-Punkt auch mit aktiven Grenzen ([test_yaw_laws.py](../tests/vehicle_model/test_yaw_laws.py)) |
 | [test_controller_benchmark.py](../tests/vehicle_model/test_controller_benchmark.py) | Sine-with-Dwell-Signal; Kennzahlen an einer synthetischen Historie; Reproduzierbarkeit und Unabhängigkeit der Läufe; Abnahme: passiv dreht sich ein, PI und GS-LQR halten die Grenzwerte (Marker `slow`) |

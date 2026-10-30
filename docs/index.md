@@ -162,8 +162,8 @@ flowchart LR
 - [7-DOF Nichtlineares Zweispurmodell](VEHICLE_MODELS.md#1-the-7-dof-two-track-vehicle-model)
 - [Dynamischer Radlasttransfer ($F_{z,i}$)](VEHICLE_MODELS.md#12-dynamic-vertical-load-transfer)
 - [14-DOF Gesamtfahrzeugmodell](VEHICLE_MODELS.md#2-the-14-dof-full-vehicle-model)
-- [Fiala Reifenkraftmodell](TYRE_MODELS.md#3-models) (Abschnitt 3.2)
-- [Magic Formula 5.2-Teilmenge und Legacy-Pacejka-Adapter](TYRE_MODELS.md#3-models) (Abschnitte 3.4, 3.5)
+- [Fiala Reifenkraftmodell](TYRE_MODELS.md#3-models)
+- [Magic Formula 5.2-Teilmenge und Legacy-Pacejka-Adapter](TYRE_MODELS.md#3-models) (3.5)
 - [Reifenrelaxation](TYRE_MODELS.md#4-transient-behaviour-relaxation-length)
 - [Combined Slip](TYRE_MODELS.md#3-models) (Abschnitte 3.2–3.4)
 

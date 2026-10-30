@@ -1,4 +1,4 @@
-"""Supervisory control layer: mode logic around a primary and a fallback controller (Plan V3.0 M12 7.3).
+"""Supervisory control layer: mode logic around a primary and a fallback controller.
 
 :class:`SupervisoryController` is a ``VehicleController``. Each step it computes the
 primary controller (always, also while it is not used, so its health stays observable),

@@ -1,4 +1,4 @@
-"""M6: solver diagnostics and degraded mode of the optimisation-based controllers."""
+"""Solver diagnostics and degraded mode of the optimisation-based controllers."""
 
 from __future__ import annotations
 
@@ -70,7 +70,7 @@ def test_dynamic_nmpc_reports_the_yaw_moment_actually_produced():
 
 
 def test_dynamic_nmpc_acts_through_the_shared_actuation_layer():
-    """Plan V3.0 M10 5.3: demand, achievable, issued and realised are reported separately."""
+    """Demand, achievable, issued and realised are reported separately."""
     from vehicle_model.allocation import ActuatorHealth
     from vehicle_model.vehicle_models import SevenDOFModel
     from vehicle_model.core.types import SevenDOFControlInput
@@ -115,7 +115,7 @@ def test_kinematic_path_nmpc_acts_through_the_shared_actuation_layer():
     assert out.status == NOMINAL or out.status == out.diagnostics["solver"]["status"]
 
 
-# ----------------------------------------------------------------------------- solution quality (V3.0 M10 5.2)
+# ----------------------------------------------------------------------------- solution quality
 def test_kkt_residuals_on_known_problems():
     from vehicle_model.controllers.solver_diagnostics import kkt_residuals
 

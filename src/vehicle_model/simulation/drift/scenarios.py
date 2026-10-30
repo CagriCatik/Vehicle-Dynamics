@@ -1,4 +1,4 @@
-"""Drift plan D4: initiation from normal driving, hold, exit and recovery (scenarios S04, S05) with success rates.
+"""Initiation from normal driving, hold, exit and recovery (scenarios S04, S05) with success rates.
 
 Every run starts in straight driving at the drift speed (wheels rolling freely) and goes
 through the supervised controller (:class:`~vehicle_model.drift.control_adapter.DriftSupervisedController`)
@@ -67,7 +67,7 @@ def parse(data: dict, source: str = "<dict>") -> InitiationSpec:
     vehicle_model(data["vehicle"], tyres, source)
     pt = dict(data.get("powertrain") or {"layout": "rwd"})
     keys(pt, {"layout"}, f"{source}: powertrain")
-    require(pt.get("layout", "rwd") == "rwd", f"{source}: powertrain.layout: only 'rwd' is implemented (V1)")
+    require(pt.get("layout", "rwd") == "rwd", f"{source}: powertrain.layout: only 'rwd' is implemented")
     sw = data["sweep"]
     keys(sw, {"speed_mps", "beta_deg", "mu"}, f"{source}: sweep", {"speed_mps", "beta_deg", "mu"})
     speeds = numbers(sw["speed_mps"], f"{source}: sweep.speed_mps", 5.0, 40.0)
@@ -319,7 +319,7 @@ def _report(spec, res, summary) -> str:
 
 def main(argv=None) -> int:
     import argparse
-    ap = argparse.ArgumentParser(description="Drift initiation, hold and exit (Drift plan D4)")
+    ap = argparse.ArgumentParser(description="Drift initiation, hold and exit")
     ap.add_argument("config", nargs="?", default="configs/drift/initiation.yaml")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)

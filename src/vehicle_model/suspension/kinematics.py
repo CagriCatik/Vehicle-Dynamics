@@ -1,4 +1,4 @@
-"""Quasi-static suspension kinematics & compliance (K&C) for planar vehicle models (Plan.md, Abschnitt 8; M4).
+"""Quasi-static suspension kinematics & compliance (K&C) for planar vehicle models.
 
 The planar 7-DOF model has no roll or pitch degree of freedom. This module
 supplies what the suspension does in quasi-static equilibrium:

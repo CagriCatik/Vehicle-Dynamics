@@ -1,4 +1,4 @@
-"""Slip-stiffness scaling for any :class:`~vehicle_model.tire_model.framework.TyreModel` (Plan V3.0 M11 6.2).
+"""Slip-stiffness scaling for any :class:`~vehicle_model.tire_model.framework.TyreModel`.
 
 :class:`SlipStiffnessScaledTyre` stretches the slip axes of a base tyre:
 

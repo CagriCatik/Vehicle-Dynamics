@@ -1,0 +1,41 @@
+# fault catalogue on the 7-DOF closed loop. Same controller with and without the health monitor
+# and degraded modes; deterministic fault events; actuator self-reports after 50 ms. Synthetic parameters.
+type: fault_tolerance_benchmark
+name: fault_tolerance_catalogue
+description: >
+  One, two and three failed actuator paths, limited and stuck brakes, lost IMU, invalid and frozen wheel speed,
+  friction-estimate drift (not detectable by plausibility), load-sensor bias, delayed and stale messages, stuck
+  front and rear steering, and a fault sequence with recovery, on split-mu braking, sine with dwell and braking
+  in a turn.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+dt: 0.005
+detection_delay: 0.05
+manoeuvres:
+  - {name: split_mu_braking_90, type: split_mu_braking, speed_kph: 90}
+  - {name: sine_with_dwell_80, type: sine_with_dwell, speed_kph: 80, amplitude_deg: 6}
+  - {name: brake_in_turn_80, type: brake_in_turn, speed_kph: 80, steer_deg: 2.0, brake_pedal: 0.5}
+fault_sets:
+  - {name: none, faults: []}
+  - {name: brake_RR_failed, faults: [{t_start: 0.5, channel: brake, mode: failed, wheel: RR}]}
+  - {name: brakes_RR_FL_failed, faults: [{t_start: 0.5, channel: brake, mode: failed, wheel: RR},
+                                         {t_start: 0.5, channel: brake, mode: failed, wheel: FL}]}
+  - {name: brakes_RR_FL_FR_failed, faults: [{t_start: 0.5, channel: brake, mode: failed, wheel: RR},
+                                            {t_start: 0.5, channel: brake, mode: failed, wheel: FL},
+                                            {t_start: 0.5, channel: brake, mode: failed, wheel: FR}]}
+  - {name: brake_FL_limited_15pct, faults: [{t_start: 0.5, channel: brake, mode: limited, severity: 0.15, wheel: FL}]}
+  - {name: brake_RR_stuck, faults: [{t_start: 1.0, channel: brake, mode: stuck, wheel: RR}]}
+  - {name: imu_lost, faults: [{t_start: 0.5, channel: imu, mode: lost}]}
+  - {name: wheel_speed_FL_invalid, faults: [{t_start: 0.5, channel: wheel_speed, mode: invalid, wheel: FL}]}
+  - {name: wheel_speed_RL_frozen, faults: [{t_start: 0.5, channel: wheel_speed, mode: frozen, wheel: RL}]}
+  - {name: mu_drift_plus_60pct, faults: [{t_start: 0.5, channel: mu_estimate, mode: drift, severity: 0.6}]}
+  - {name: load_FL_bias_plus_80pct, faults: [{t_start: 0.5, channel: load_sensor, mode: bias, severity: 0.8, wheel: FL}]}
+  - {name: delay_8_ticks, faults: [{t_start: 0.5, channel: delay, mode: ticks, severity: 8}]}
+  - {name: delay_30_ticks, faults: [{t_start: 0.5, channel: delay, mode: ticks, severity: 30}]}
+  - {name: stale_0.3s, faults: [{t_start: 1.0, duration: 0.3, channel: stale, mode: frozen}]}
+  - {name: steer_front_stuck, faults: [{t_start: 1.2, channel: steer_front, mode: stuck}]}
+  - {name: sequence_recovery, faults: [{t_start: 0.5, duration: 1.0, channel: brake, mode: failed, wheel: RR},
+                                       {t_start: 2.0, duration: 0.5, channel: imu, mode: lost}]}
+controllers:
+  - {name: PI unaware, law: pi, aware: false}
+  - {name: PI fault tolerant, law: pi, aware: true}
+outputs: {directory: output/fault_tolerance/catalogue, formats: [csv, json, md]}

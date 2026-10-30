@@ -1,4 +1,4 @@
-"""M2 acceptance for the 7-DOF two-track model (Plan.md, M2).
+"""Acceptance for the 7-DOF two-track model.
 
 Force, moment and wheel-torque balances of ``evaluate_dynamics``, symmetric
 limit cases, temporal convergence of the integrator and explicit contact-loss

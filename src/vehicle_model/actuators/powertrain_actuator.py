@@ -1,7 +1,6 @@
 """Electric powertrain actuator models with torque envelopes, response lag, and power limits.
 
-Implements electric drive dynamics for 4 independently driven wheels (or e-axles)
-as required by Plan.md §7.3 and §19 (Milestone M4).
+Implements electric drive dynamics for 4 independently driven wheels (or e-axles).3 ().
 """
 
 from __future__ import annotations

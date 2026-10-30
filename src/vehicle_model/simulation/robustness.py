@@ -1,4 +1,4 @@
-"""Monte Carlo robustness studies with documented spread and limit violations (Plan.md, Abschnitt 10.4; M7).
+"""Monte Carlo robustness studies with documented spread and limit violations.
 
 A study draws ``n`` parameter samples from declared distributions with one seeded
 generator (``numpy.random.default_rng(seed)``), builds a fresh plant per sample,

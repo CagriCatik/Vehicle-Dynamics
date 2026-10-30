@@ -1,43 +1,43 @@
-# Drift-Regler: Verfahren (Drift-Plan D1–D7)
+# Drift-Regler: Verfahren
 
-Autonomer Drift auf der bestehenden 7-DOF-Strecke nach `Plan_v3.md`. Dieses Dokument beschreibt die Verfahren;
+Autonomer Drift auf der bestehenden 7-DOF-Strecke nach `drift_controller_plan.md`. Dieses Dokument beschreibt die Verfahren;
 Ergebnisse stehen in [DRIFT_RESULTS.md](DRIFT_RESULTS.md), Modellgrenzen und Konventionen in
 [DRIFT_MODEL_VALIDITY.md](DRIFT_MODEL_VALIDITY.md). Alle Parameter sind synthetisch; es gibt keine Aussage über ein
 reales Fahrzeug.
 
 | Teil | Modul | Paket |
 |---|---|---|
-| Reifenaudit | `drift/tyre_audit.py` | D1 |
-| Deterministische Streckenauswertung | `drift/plant_adapter.py` | D1 |
-| Domänentypen | `drift/types.py` | D2 |
-| Driftgleichgewichte | `drift/equilibrium.py`, `simulation/drift/equilibrium_sweep.py` | D2 |
-| Linearisierung | `drift/linearization.py` | D3 |
-| LQR | `drift/lqr.py` | D3 |
-| Regler-Adapter | `drift/control_adapter.py` | D3 |
-| Kennzahlen | `drift/metrics.py` | D3 |
-| Halten und Störung | `simulation/drift/hold.py` | D3 |
-| Zustandsautomat | `drift/supervisor.py` | D4 |
-| Gain-Schedule entlang eines Gleichgewichtszweigs | `drift/schedule.py` | D4 (für D5) |
-| Überwachter Regler (Einleitung, Halten, Austritt) | `drift/control_adapter.py` (`DriftSupervisedController`) | D4 |
-| Einleitung, Austritt, Erfolgsquoten | `simulation/drift/scenarios.py` | D4 |
-| Pfadreferenzen (Kreis, Acht) | `drift/path_reference.py` | D5 |
-| Geplanter Drift-LQR mit Sollpunktrampe und Radial-Außenschleife | `drift/control_adapter.py` (`ScheduledDriftController`) | D5 |
-| Kreisführung, Übergang, Acht | `simulation/drift/tracking.py` | D5 |
-| Aufzeichnung und vollständiger Export | `simulation/drift/runner.py` | D6 |
-| Animierte Läufe (Konfiguration) | `simulation/drift/showcase.py`, `configs/drift/animation.yaml` | D6 |
-| GIF-Renderer | `visualization/drift_animation.py` | D6 |
-| Robustheitsstudie | `simulation/drift/robustness.py`, `configs/drift/robustness.yaml`, `robustness_integral.yaml` | D7 |
-| Driftfähiger Geschwindigkeitsbeobachter | `drift/estimator.py` (`DriftVelocityObserver`) | D7-Nachtrag |
-| Integralanteil im LQR | `drift/lqr.py` (`integral=True`), `drift/control_adapter.py` | D7-Nachtrag |
-| Plots | `visualization/drift_plots.py` | D1–D3 |
+| Reifenaudit | `drift/tyre_audit.py` | Drift-Auswertung |
+| Deterministische Streckenauswertung | `drift/plant_adapter.py` | Drift-Auswertung |
+| Domänentypen | `drift/types.py` | Driftgleichgewichte |
+| Driftgleichgewichte | `drift/equilibrium.py`, `simulation/drift/equilibrium_sweep.py` | Driftgleichgewichte |
+| Linearisierung | `drift/linearization.py` | Drift-LQR |
+| LQR | `drift/lqr.py` | Drift-LQR |
+| Regler-Adapter | `drift/control_adapter.py` | Drift-LQR |
+| Kennzahlen | `drift/metrics.py` | Drift-LQR |
+| Halten und Störung | `simulation/drift/hold.py` | Drift-LQR |
+| Zustandsautomat | `drift/supervisor.py` | Drift-Einleitung und -Rückkehr |
+| Gain-Schedule entlang eines Gleichgewichtszweigs | `drift/schedule.py` | Drift-Einleitung und -Rückkehr (für Drift-Bahnführung) |
+| Überwachter Regler (Einleitung, Halten, Austritt) | `drift/control_adapter.py` (`DriftSupervisedController`) | Drift-Einleitung und -Rückkehr |
+| Einleitung, Austritt, Erfolgsquoten | `simulation/drift/scenarios.py` | Drift-Einleitung und -Rückkehr |
+| Pfadreferenzen (Kreis, Acht) | `drift/path_reference.py` | Drift-Bahnführung |
+| Geplanter Drift-LQR mit Sollpunktrampe und Radial-Außenschleife | `drift/control_adapter.py` (`ScheduledDriftController`) | Drift-Bahnführung |
+| Kreisführung, Übergang, Acht | `simulation/drift/tracking.py` | Drift-Bahnführung |
+| Aufzeichnung und vollständiger Export | `simulation/drift/runner.py` | Drift-Animation |
+| Animierte Läufe (Konfiguration) | `simulation/drift/showcase.py`, `configs/drift/animation.yaml` | Drift-Animation |
+| GIF-Renderer | `visualization/drift_animation.py` | Drift-Animation |
+| Robustheitsstudie | `simulation/drift/robustness.py`, `configs/drift/robustness.yaml`, `robustness_integral.yaml` | Drift-Robustheit |
+| Driftfähiger Geschwindigkeitsbeobachter | `drift/estimator.py` (`DriftVelocityObserver`) | drift robustness-Nachtrag |
+| Integralanteil im LQR | `drift/lqr.py` (`integral=True`), `drift/control_adapter.py` | drift robustness-Nachtrag |
+| Plots | `visualization/drift_plots.py` | Drift-Auswertung–Drift-LQR |
 
 Abhängigkeitsrichtung wie im Plan (3.2): `drift/` kennt weder Matplotlib noch Dateien; `simulation/drift/` liest
 Konfigurationen, ruft den bestehenden `ScenarioRunner` und schreibt Ergebnisse; `visualization/` bekommt nur Daten.
 Kräfte entstehen ausschließlich in `SevenDOFModel.evaluate_dynamics`.
 
-## 1. Stationäre Driftgleichgewichte (D2)
+## 1. Stationäre Driftgleichgewichte
 
-**Konfiguration V1:** Hinterradantrieb mit gleichem Moment an beiden Hinterrädern (offenes Differential,
+**Antriebskonfiguration:** Hinterradantrieb mit gleichem Moment an beiden Hinterrädern (offenes Differential,
 `T_drive = [0, 0, T, T]`), nur Vorderachslenkung, keine Bremse, Vorderräder frei rollend.
 
 **Problem.** Zustände `q = [v_x, v_y, r, ω_FL, ω_FR, ω_RL, ω_RR]`. Die Sollbedingungen `|v| = v_ref` und
@@ -58,7 +58,7 @@ Schwimmwinkel × Reibwert setzen benachbarte Punkte warm fort (je Richtung und R
 
 | Bedingung | Begründung |
 |---|---|
-| Residuen je Gruppe innerhalb `RESIDUAL_TOL` (wie M11) | Gleichgewicht |
+| Residuen je Gruppe innerhalb `RESIDUAL_TOL` (wie nichtlineare Stabilität) | Gleichgewicht |
 | Lastverlagerung konvergiert, vier Räder in Kontakt | Kontaktbedingung |
 | Lenkwinkel und Moment nicht auf der Grenze | sonst reicht der Aktuator nicht (`actuator_limit`) |
 | `|r| ≥ 0,05 rad/s`, `|β| ≥ 2°` | keine triviale Geradeausfahrt |
@@ -72,7 +72,7 @@ Schwimmwinkel × Reibwert setzen benachbarte Punkte warm fort (je Richtung und R
 **Befund beim Entwurf:** Die Bedingung `r · β < 0` allein ließ schnelle normale Kurvenfahrt durch (bei 20 m/s und
 β = −5° liegt der Hinterachs-Schräglauf mit 6,6° unter dem Maximum bei 6,7°). Deshalb die Sättigungsbedingung.
 
-## 2. Linearisierung (D3)
+## 2. Linearisierung
 
 `Δq̇ = A Δq + B Δu` mit `u = [δ_f, T]`, zentrale Differenzen der deterministischen Auswertung mit Schrittweitenstudie
 (1e-2 … 1e-7 relativ; verwendet wird der Schritt nach der kleinsten Änderung von Eigenwerten und `B`). Geprüft und
@@ -80,7 +80,7 @@ berichtet: endliche Matrizen, Eigenwerte, instabile Moden, PBH-Test `rang [A −
 (Stabilisierbarkeit), Rang der Steuerbarkeitsmatrix (informativ) und Konditionszahlen in skalierten Koordinaten. Ein
 unzulässiges Gleichgewicht wird nicht linearisiert.
 
-## 3. LQR (D3)
+## 3. LQR
 
 **Grundform:** `u = u* − K (q − q*)` mit `K = R⁻¹ Bᵀ P` aus der Riccati-Gleichung, entworfen in skalierten Koordinaten
 (Zustände durch typische Größen, Eingänge durch die Stellgrenzen geteilt), Gewichte dimensionslos.
@@ -105,7 +105,7 @@ Gewichtsvektoren falscher Länge werden abgewiesen.
 Hinterachsmoment in `[0, 1000 N·m]` gleich an beiden Hinterrädern, keine Bremse, Hinterachslenkung 0. Die begrenzte
 Stellgröße geht an die Strecke; Sättigung steht in der Diagnose (`DriftControlDiagnostics`).
 
-## 4. Halten und Störungen (D3, Szenarien S01–S03)
+## 4. Halten und Störungen (Szenarien S01–S03)
 
 `simulation/drift/hold.py`: je Richtung Gleichgewicht, Linearisierung, Entwurf; dann Simulation der 7-DOF-Strecke über
 den bestehenden `ScenarioRunner` aus dem Gleichgewicht (`hold`) und aus definierten Störungen (Schwimmwinkel ±3°,
@@ -116,7 +116,7 @@ Kennzahlen (`drift/metrics.py`, Plan 7.1): RMS von `β − β_ref`, `r − r_ref
 (`t ≥ settle_s`), maximaler Schwimmwinkelfehler, Fehlernorm am Anfang und Ende
 (`√((Δβ/0,05 rad)² + (Δr/0,1 rad/s)² + (Δv/1 m/s)²)`), Sättigungsanteil, Driftverlust (`|β − β_ref| ≥ 30°`).
 
-## 5. Einleitung, Austritt und Recovery (D4)
+## 5. Einleitung, Austritt und Recovery
 
 **Ausgangslage, gemessen (13 m/s, µ 0,9).** Die Driftgleichgewichte bilden über β einen stetigen, überall offen
 instabilen und stabilisierbaren Zweig von β = −1° bis −25° (R 20–27 m, δ_f von +18,6° bis −19,9°). Geradeausfahrt
@@ -139,7 +139,7 @@ DISABLED → APPROACH (Driftanforderung, v ≥ 5 m/s) → INITIATE (stationäre 
 |---|---|
 | DISABLED | Lenkwinkel mit Ratengrenze auf 0, Moment P-geregelt auf eine mit ≤ 1,5 m/s² **rampierte** Sollgeschwindigkeit |
 | APPROACH | Lenkwinkel auf δ_c der stabilen Kurvenfahrt bei 0,6 µ g (`approach_equilibrium`, Bisektion über δ), Moment T_c + P |
-| INITIATE, HOLD | Drift-LQR (D3), stoßfrei übernommen (Lenkzustand = letzter Befehl). **Kein Momentenstoß**: Der LQR bricht aus der Kurvenfahrt heraus selbst das Heck aus und fängt das Fahrzeug |
+| INITIATE, HOLD | Drift-LQR, stoßfrei übernommen (Lenkzustand = letzter Befehl). **Kein Momentenstoß**: Der LQR bricht aus der Kurvenfahrt heraus selbst das Heck aus und fängt das Fahrzeug |
 | EXIT, RECOVER | `release`: Moment T_c, Lenkziel `δ_c + k_β β_d` (β_d Schwimmwinkel nur in Driftlage, β·r < 0), dann `straight`: Lenkrampe auf 0 mit Geschwindigkeitsregelung |
 | FAILED | Moment 0, Lenkrampe auf 0 (definierte, begrenzte Stellgröße, keine Rettung) |
 
@@ -169,7 +169,7 @@ Teilweises Gegenlenken ist schlechter als keines; k_β = 1 ist Standard (`exit_c
 - Gegenlenken des gesamten Schwimmwinkels im Austritt: Bei 11 m/s hat normale Kurvenfahrt β = +4°; Gegenlenken lenkt
   dann weiter ein und das Austrittskriterium |β| < 3° wird nie erreicht. Deshalb nur der Driftanteil (β·r < 0).
 
-## 6. Kreisführung, Sollpunktwechsel und Acht (D5)
+## 6. Kreisführung, Sollpunktwechsel und Acht
 
 **Kinematik** (Plan 4.1): Bahnrichtung `χ = ψ + β`, `χ̇ = r + β̇`; nur stationär ist `R = v/|r|`. Der Pfadfehler eines
 Kreises ist radial, `e = |p − c| − R` (> 0 außen), unabhängig von der Position auf dem Kreis.
@@ -184,11 +184,11 @@ Schwimmwinkel mit dem bewegten Sollpunkt (`retarget`).
 
 **Radiale Außenschleife:** `β_Ziel = β(R_ref) − sign(β) (k_p e + k_d ė)`, auf den Zweig begrenzt und über die Rampe
 geführt (Standard k_p = 1°/m, k_d = 0,5°/(m/s)). Liegt das Fahrzeug außen (e > 0), wird |β| kleiner und damit der Radius
-enger. Die Außenschleife verschiebt nur den Sollpunkt, sie greift nicht in den LQR ein (Plan D5 4).
+enger. Die Außenschleife verschiebt nur den Sollpunkt, sie greift nicht in den LQR ein (Plan Drift-Bahnführung 4).
 
 **Vergleich S06** (gleiches Fahrzeug, Reifen, Straße): offener Kreis mit `u*`; das bestehende ESC
 (`AllocatedStabilityController`, Totband 2°/s, Allokation auf die Hinterräder) mit den Gleichgewichtsstellgrößen als
-Fahrervorgabe; Drift-LQR fest (D3); Drift-LQR mit Schedule und Außenschleife.
+Fahrervorgabe; Drift-LQR fest; Drift-LQR mit Schedule und Außenschleife.
 
 **Acht (S07):** Linksdrift halten, überwachter Austritt, aus der Normalfahrt Rechtsdrift einleiten, halten, Austritt.
 Bewertet je Abschnitt (links, Übergang, rechts) mit Kreisausgleich (Kåsa) und geometrisch: Eine Acht verlangt sich
@@ -196,9 +196,9 @@ berührende Kreise, Mittelpunktabstand / (R_links + R_rechts) = 1 (Toleranz 0,15
 
 **Reproduzierbarkeit:** Jeder Simulationslauf beginnt mit einer frischen Kopie der Strecke (`fresh_plant`). Eine
 wiederverwendete Strecke trug den Startwert der Lastverlagerungsiteration von Lauf zu Lauf weiter; auf dem instabilen
-Driftgleichgewicht entschied das (1e-7) darüber, wann der offene Kreis abfällt (Befund in D5, Regressionstest).
+Driftgleichgewicht entschied das (1e-7) darüber, wann der offene Kreis abfällt (Befund in Drift-Bahnführung, Regressionstest).
 
-## 7. Animation und Export (D6)
+## 7. Animation und Export
 
 **Aufzeichnung** (`simulation/drift/runner.py`): `record` simuliert über `simulate` (frische Streckenkopie,
 ScenarioRunner) und hält je Schritt die Reglerdiagnose fest (Modus, Status, Sättigung, Sollwerte). `export_run` schreibt je
@@ -217,10 +217,10 @@ dazwischen ist β, Gegenlenken sichtbar), HUD (Zeit, km/h, β, r, δ_v, κ HL/HR
 Wiedergabegeschwindigkeit aus `configs/drift/animation.yaml`. Die bestehenden Animationen und Live-Plots bleiben
 unverändert.
 
-## 8. Robustheit (D7)
+## 8. Robustheit
 
 Der Drift-LQR wird einmal für das nominale Fahrzeug entworfen (13 m/s, β −20°, µ 0,9) und in jedem Fall unverändert
-eingesetzt. Abweichungen: das Unsicherheitsmodell aus M12 (`UncertaintyCase`: Masse, Gierträgheit, Schwerpunktlage,
+eingesetzt. Abweichungen: das Unsicherheitsmodell aus robuste Regelung (`UncertaintyCase`: Masse, Gierträgheit, Schwerpunktlage,
 Schräglaufsteifigkeit, Reibwert, Aktuatortotzeit und -verzögerung, Regellatenz, Sensorrauschen, -bias, -latenz) und
 driftspezifisch: Schwerpunkthöhe, die Strecke mit Reifenrelaxation (`TransientSevenDOFModel`, Startzustand mit
 stationären Relaxationszuständen), eine Split-µ-Fahrbahn quer durch den Kreis (der Drift wechselt zweimal je Runde den
@@ -247,31 +247,31 @@ und eine weitere Kombination; die Geschwindigkeit stellt sich frei ein.
 ## 9. Reproduktion
 
 ```bash
-python examples/drift_tyre_audit.py                      # D1
-python examples/drift_equilibria_demo.py                 # D2, configs/drift/equilibrium_sweep.yaml (~8 min)
-python examples/drift_hold_demo.py                       # D3, configs/drift/drift_lqr.yaml (~3 min)
-python examples/drift_initiation_demo.py                 # D4, configs/drift/initiation.yaml (36 Läufe, ~16 min parallel)
-python examples/drift_circle_demo.py                     # D5, configs/drift/circle_hold.yaml (~10 min)
-python examples/drift_figure_eight_demo.py               # D6, configs/drift/animation.yaml (GIFs, ~6 min)
-python examples/drift_robustness_demo.py                 # D7, configs/drift/robustness.yaml (~15 min parallel)
-python examples/drift_robustness_demo.py configs/drift/robustness_integral.yaml   # D7-Nachtrag, mit Integralanteil
+python examples/drift_tyre_audit.py                      # Drift-Auswertung
+python examples/drift_equilibria_demo.py                 # Driftgleichgewichte, configs/drift/equilibrium_sweep.yaml (~8 min)
+python examples/drift_hold_demo.py                       # Drift-LQR, configs/drift/drift_lqr.yaml (~3 min)
+python examples/drift_initiation_demo.py                 # Drift-Einleitung und -Rückkehr, configs/drift/initiation.yaml (36 Läufe, ~16 min parallel)
+python examples/drift_circle_demo.py                     # Drift-Bahnführung, configs/drift/circle_hold.yaml (~10 min)
+python examples/drift_figure_eight_demo.py               # Drift-Animation, configs/drift/animation.yaml (GIFs, ~6 min)
+python examples/drift_robustness_demo.py                 # Drift-Robustheit, configs/drift/robustness.yaml (~15 min parallel)
+python examples/drift_robustness_demo.py configs/drift/robustness_integral.yaml   # drift robustness-Nachtrag, mit Integralanteil
 python -m pytest tests/vehicle_model/drift -q
 ```
 
 Konfigurationen werden streng geprüft (unbekannte Schlüssel, Wertebereiche, Dateien, Reifennamen, Gewichtsdimensionen)
 und aufgelöst in den Ergebnisordner geschrieben (`run_config_resolved.yaml`).
 
-## 10. Grenzen (Stand D7)
+## 10. Grenzen (Stand Drift-Robustheit)
 
-- Nur Hinterradantrieb mit offenem Differential und Frontlenkung; Torque Vectoring und Allrad folgen nicht vor D7.
-- Der allgemeine Schwimmwinkelbeobachter ist für den Drift ungeeignet (D7); der Driftbeobachter schätzt keine
+- Nur Hinterradantrieb mit offenem Differential und Frontlenkung; Torque Vectoring und Allrad folgen nicht vor drift robustness.
+- Der allgemeine Schwimmwinkelbeobachter ist für den Drift ungeeignet; der Driftbeobachter schätzt keine
   Sensor-Biasse und braucht frei rollende Vorderräder.
 - Integralanteil nur im Halteregler (opt-in); ohne ihn bleibt bei abweichender Strecke eine stationäre Abweichung
-  (bis 4,8° in D7), mit ihm weicht stattdessen die Geschwindigkeit ab (bis 1,2 m/s).
+  (bis 4,8° in Drift-Robustheit), mit ihm weicht stattdessen die Geschwindigkeit ab (bis 1,2 m/s).
 - Lokale Aussage: Die Linearisierung gilt nahe dem Gleichgewicht; Einfangbereich und globales Verhalten sind nicht
   bewiesen, nur für die simulierten Störungen und die 36 Einleitungen des Sweeps gezeigt.
 - Einleitung nur über den Einfangbereich des LQR aus stationärer Kurvenfahrt; bei 25° und µ 0,9 reicht er nicht direkt,
-  wohl aber gestuft (15° einleiten, dann Sollpunktwechsel, D5).
+  wohl aber gestuft (15° einleiten, dann Sollpunktwechsel, Drift-Bahnführung).
 - Die Außenschleife verändert nur den Radius innerhalb des Zweigs (etwa 20–27 m bei 13 m/s), nicht den Mittelpunkt; eine
   geometrische Acht entsteht so nicht.
 - Driftwinkel ab etwa 15–20° liegen an der Hinterachse außerhalb der erklärten Reifengültigkeit (`valid_extrapolated`).

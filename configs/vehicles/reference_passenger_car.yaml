@@ -1,5 +1,5 @@
-# Virtual reference vehicle (Plan.md, Abschnitt 4) – conventional front-steered passenger car,
-# symmetric left/right. Basis for M1+ analyses; variants (drive layout, 4WS, active chassis)
+# Virtual reference vehicle – conventional front-steered passenger car,
+# symmetric left/right. Basis for reference vehicle+ analyses; variants (drive layout, 4WS, active chassis)
 # are derived from this set.
 id: reference_passenger_car
 version: "1.0"
@@ -50,7 +50,7 @@ max_steer_rate: 1.047198 # [rad/s] 60 deg/s road-wheel rate
 max_drive_torque: 800.0  # [N m] per wheel
 max_brake_torque: 2500.0 # [N m] per wheel
 
-# ---- Extended chassis parameters (not used by the 7-DOF model; for M4/M8) ----
+# ---- Extended chassis parameters (not used by the 7-DOF model; for chassis kinematics/vertical dynamics) ----
 chassis_extended:
   sprung_mass: 1290.0            # [kg]
   unsprung_mass_per_wheel: 40.0  # [kg]  (1290 + 4*40 = 1450)

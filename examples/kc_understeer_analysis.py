@@ -1,4 +1,4 @@
-"""Influence of suspension kinematics & compliance on understeer (Plan.md, M4).
+"""Influence of suspension kinematics & compliance on understeer.
 
 Quasi-steady steer ramp at constant speed (ISO 4138, constant-speed method) with
 the 7-DOF reference car, switching the K&C effects on one by one, plus a sweep

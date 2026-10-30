@@ -1,4 +1,4 @@
-"""Milestone M7 Demonstration: Vertical Suspension & 14-DOF Full Vehicle Dynamics.
+"""Demonstration: Vertical Suspension & 14-DOF Full Vehicle Dynamics.
 
 Demonstrates:
 1. Quarter-car road bump traversal comparing:
@@ -6,9 +6,7 @@ Demonstrates:
    - Semi-active Skyhook comfort controller
    - Semi-active Groundhook road-holding controller
 2. 14-DOF full vehicle combined braking and steering on uneven road with dynamic load transfer.
-3. Export of engineering diagnostic plots to output/suspension/.
-
-Conforms to Milestone M7 (Plan.md §9, §19 M7).
+3. Export of engineering diagnostic plots to output/suspension/.md estimation robustness).
 """
 
 from __future__ import annotations
@@ -57,7 +55,7 @@ def main() -> None:
     apply_dark_theme()
     logger = setup_logger(log_file=Path("logs/suspension_demo.log"))
 
-    logger.info("Starting Milestone M7 Suspension Dynamics Demonstration...")
+    logger.info("Starting Suspension Dynamics Demonstration...")
 
     output_dir = Path("output/suspension")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -308,7 +306,7 @@ def main() -> None:
     plt.close()
 
     logger.info(f"Saved diagnostic telemetry figure to {plot_file}")
-    logger.info("Milestone M7 Demonstration Successfully Completed!")
+    logger.info("Demonstration Successfully Completed!")
 
 
 if __name__ == "__main__":

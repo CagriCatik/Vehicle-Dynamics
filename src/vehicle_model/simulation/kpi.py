@@ -1,6 +1,6 @@
 """Standardized Engineering Key Performance Indicators (KPIs) for vehicle dynamics evaluation.
 
-Implements all engineering metrics specified in Plan.md §16.1 and §19 (Milestone M5)
+Implements all engineering metrics
 with documented mathematical definitions and units.
 """
 
@@ -15,7 +15,7 @@ from vehicle_model.simulation.scenario_runner import SimulationHistory
 
 @dataclass(frozen=True)
 class EngineeringKPIs:
-    """Documented vehicle dynamics and control metrics (Plan.md §16.1)."""
+    """Documented vehicle dynamics and control metrics."""
 
     controller_name: str
 

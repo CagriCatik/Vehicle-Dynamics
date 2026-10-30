@@ -1,4 +1,4 @@
-"""Integrated brake slip control, IBC (Plan V4.0 M17.3): physical slip targets for the existing slip controller.
+"""Integrated brake slip control, IBC: physical slip targets for the existing slip controller.
 
 The existing ``WheelSlipController`` (ABS mode) tracks a target slip ``kappa*(mu_hat)`` taken from a
 calibration table. IBC does not replace it; it *derives* that table from the tyre model the

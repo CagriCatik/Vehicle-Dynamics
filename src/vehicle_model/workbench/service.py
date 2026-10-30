@@ -1,4 +1,4 @@
-"""Application layer of the workbench (Plan V3.0 M15): everything the HTTP adapter needs, testable without it.
+"""Application layer of the workbench: everything the HTTP adapter needs, testable without it.
 
 No second configuration logic: options come from the experiment specification module
 (``experiments.spec``: laws, inputs, feedback modes, roads, manoeuvres, formats), every

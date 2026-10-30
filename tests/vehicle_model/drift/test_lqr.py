@@ -1,4 +1,4 @@
-"""Drift plan D3: LQR design and closed-loop hold on the 7-DOF plant (scenarios S01-S03, short)."""
+"""LQR design and closed-loop hold on the 7-DOF plant (scenarios S01-S03, short)."""
 
 from __future__ import annotations
 
@@ -95,7 +95,7 @@ def test_actuator_limits_act_on_the_command(drift):
 
 
 def test_simulation_results_do_not_depend_on_the_run_order(drift):
-    """Regression (D5): a reused plant carried its load-transfer start value from run to run; on the unstable
+    """Regression: a reused plant carried its load-transfer start value from run to run; on the unstable
     drift equilibrium that changed when the open loop fell off. Every run now starts from a fresh plant copy."""
     params, plant, out = drift
     eq, _, lqr = out["left"]

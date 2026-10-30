@@ -1,4 +1,4 @@
-# Virtuelle Sensorik, Zustandsschätzung und Robustheit (M7)
+# Virtuelle Sensorik, Zustandsschätzung und Robustheit
 
 Module:
 - [`estimation/sensors.py`](../src/vehicle_model/estimation/sensors.py), [`estimation/blended_sideslip.py`](../src/vehicle_model/estimation/blended_sideslip.py)
@@ -6,7 +6,7 @@ Module:
 
 Die bestehenden Bausteine sind beschrieben in [STATE_ESTIMATION.md](STATE_ESTIMATION.md): EKF, RLS-Reibwertschätzer und PSO.
 
-**M7-Abnahme:** Beobachter besitzen keinen unerlaubten Ground-Truth-Zugriff; Robustheitsversuche sind wiederholbar und dokumentieren ihre Streuungen sowie Grenzverletzungen.
+**estimation robustness-Abnahme:** Beobachter besitzen keinen unerlaubten Ground-Truth-Zugriff; Robustheitsversuche sind wiederholbar und dokumentieren ihre Streuungen sowie Grenzverletzungen.
 
 ---
 
@@ -36,7 +36,7 @@ Jeder Beobachter deklariert `information`:
 
 `run_estimation_study` übergibt Beobachtern ausschließlich `SensorMeasurements` (ohne Positionen, Schwimmwinkel, Schlüpfe oder Kräfte) und weist Beobachter ohne `sensors_only` ab. Die Wahrheit nutzt nur die Fehlermetrik. `EstimatedStateFeedback` speist einen beliebigen Regler mit $v_x$ und $v_y$ aus dem Beobachter und der gemessenen Gierrate.
 
-### 2.1 Betriebsarten A, B, C (V3.0 M10 §5.4)
+### 2.1 Betriebsarten A, B, C
 
 | Mode | Umsetzung | Regler erhält | `information` |
 |---|---|---|---|
@@ -44,7 +44,7 @@ Jeder Beobachter deklariert `information`:
 | B – Estimated Motion State | `EstimatedStateFeedback(..., mode="B")` | $v_x$, $v_y$ aus dem Beobachter, gemessene Gierrate; Allokation und Schlupfregelung weiter mit Telemetrie | `estimated_motion_state; …` |
 | C – Sensor-Constrained | `EstimatedStateFeedback(..., mode="C")` | wie B; statt der Telemetrie eine **Sensor-Telemetrie** aus `SensorFrictionEstimator.as_telemetry`: Radlasten quasi-statisch aus gemessenen Beschleunigungen, Längskräfte aus Raddynamik und den *eigenen* Momentenbefehlen, Seitenkräfte aus der Einspurbilanz nach Last aufgeteilt, Schlüpfe aus Geschwindigkeitsreferenz und Schwimmwinkelschätzung, Reibwert geschätzt | `sensor_constrained; …` |
 
-In Mode C erreicht nichts von der Strecke den Regler außer über das Sensormodell; ein Test mit einem aufzeichnenden Regler prüft, dass das Telemetrieobjekt der Strecke nie durchgereicht wird. Beobachter und Reibwertschätzer starten in Mode B und C mit der Geschwindigkeit aus der ersten Raddrehzahlmessung (mittlere zwei Räder), nicht mit der wahren Geschwindigkeit; bis zur M10-Abnahme erhielten EKF und Reibwertschätzer hier den wahren Wert (behoben, Test). Vor der Initialisierung der Geschwindigkeitsreferenz erhält der Regler `None` und rechnet mit Nennlasten und `target.mu_estimated`. In YAML-Experimenten: `feedback: ideal | estimated | sensor_constrained` (`estimated_state: true` bleibt als Kurzform für `estimated` gültig).
+In Mode C erreicht nichts von der Strecke den Regler außer über das Sensormodell; ein Test mit einem aufzeichnenden Regler prüft, dass das Telemetrieobjekt der Strecke nie durchgereicht wird. Beobachter und Reibwertschätzer starten in Mode B und C mit der Geschwindigkeit aus der ersten Raddrehzahlmessung (mittlere zwei Räder), nicht mit der wahren Geschwindigkeit; bis zur state estimation-Abnahme erhielten EKF und Reibwertschätzer hier den wahren Wert (behoben, Test). Vor der Initialisierung der Geschwindigkeitsreferenz erhält der Regler `None` und rechnet mit Nennlasten und `target.mu_estimated`. In YAML-Experimenten: `feedback: ideal | estimated | sensor_constrained` (`estimated_state: true` bleibt als Kurzform für `estimated` gültig).
 
 **Gemessene Kosten** (synthetisches Fahrzeug, Sensorrauschen und Gyro-Offset nach den Standardwerten von `SensorConfig`, Seed 3):
 
@@ -59,7 +59,7 @@ In Mode C erreicht nichts von der Strecke den Regler außer über das Sensormode
 
 Befunde:
 
-1. **Gyro-Offset (Mode B und C).** Der Drehratensensor hat 0,45°/s Offset. Der Gierregler regelt diese scheinbare Gierrate mit einem echten Giermoment aus: Bei der Eisbremsung dreht das Fahrzeug um −5°. Ohne Offset 0,35°, ohne Offset und Rauschen 0,0° und 151 m. Das Rauschen kostet weitere 15 m Bremsweg, weil das Gesetz es in Giermomentwünsche umsetzt und die Allokation dafür Bremskraft abgibt. Offset-Kompensation (Stillstand, Geradeausfahrt) und Totzone fehlen; das ist ein Schätz- und Robustheitsthema für M12.
+1. **Gyro-Offset (Mode B und C).** Der Drehratensensor hat 0,45°/s Offset. Der Gierregler regelt diese scheinbare Gierrate mit einem echten Giermoment aus: Bei der Eisbremsung dreht das Fahrzeug um −5°. Ohne Offset 0,35°, ohne Offset und Rauschen 0,0° und 151 m. Das Rauschen kostet weitere 15 m Bremsweg, weil das Gesetz es in Giermomentwünsche umsetzt und die Allokation dafür Bremskraft abgibt. Offset-Kompensation (Stillstand, Geradeausfahrt) und Totzone fehlen; das ist ein Schätz- und Robustheitsthema für robust control.
 2. **Reibwert auf Eis überschätzt (Mode C).** Der Schätzer liefert 0,30–0,47 auf µ = 0,2. Die Schlupfregelung wählt danach einen zu großen Sollschlupf und bremst bei ≈ 0,11 statt 0,03 Schlupf, jenseits des Kraftmaximums: weniger Verzögerung.
 3. **Geschwindigkeitsreferenz** (Mode C): bei Dauerbremsung aller Räder nur über die integrierte Längsbeschleunigung gestützt; im PI-Fall bis zu 2,7 m/s über der wahren Geschwindigkeit (die bekannte Beobachtbarkeitsgrenze, Abschnitt 3a).
 4. **Blockieren unter ≈ 14 km/h** (IVMC, Mode C): Schlupf bis 0,97 bei 2–4 m/s, darüber 0,07–0,12. Die Schlupfnormierung und die Referenz werden bei kleiner Geschwindigkeit ungenau.
@@ -92,7 +92,7 @@ Sine with Dwell, 80 km/h, Referenzfahrzeug mit MF-Reifen, Standard-Sensorrausche
 
 Beide halten den Grenzwert 0,35 weiterhin deutlich ein.
 
-## 3a. Sensorbasierte Reibwertschätzung (V3.0, G02)
+## 3a. Sensorbasierte Reibwertschätzung
 
 [`estimation/sensor_friction.py`](../src/vehicle_model/estimation/sensor_friction.py), `information = "sensors_only"`. Eingänge: Sensormessungen, die vom Regler **kommandierten** Radmomente, eine Schwimmwinkelschätzung (optional) und nominelle Fahrzeugdaten. Keine Reifenkräfte, Schlüpfe, Radlasten oder Reibwerte aus der Simulation.
 
@@ -115,7 +115,7 @@ Beide halten den Grenzwert 0,35 weiterhin deutlich ein.
 
 Hinten liegt der Schätzwert höher. Das ist teilweise physikalisch: Die Spitzenreibung des MF-Reifens liegt bei der geringen Hinterachslast unter Bremsung über µ.
 
-Auf Split-µ (1,0/0,3 und 0,6/0,2, mit der Stabilitätsregelung aus M5) ergeben die konfidenzgewichteten Seitenwerte 0,87/0,33 bzw. 0,61/0,25; Split-µ wird erkannt.
+Auf Split-µ (1,0/0,3 und 0,6/0,2, mit der Stabilitätsregelung aus Schlupfregelung und Allokation) ergeben die konfidenzgewichteten Seitenwerte 0,87/0,33 bzw. 0,61/0,25; Split-µ wird erkannt.
 
 **Grenzen der Identifizierbarkeit:**
 - **Linearer Reifenbereich:** Die Kraft hängt nicht von µ ab, es gibt keine Aussage (Konfidenz 0).

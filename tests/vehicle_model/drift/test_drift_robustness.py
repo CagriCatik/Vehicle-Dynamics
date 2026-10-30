@@ -1,4 +1,4 @@
-"""Drift plan D7: robustness study plumbing (plant variants, strict config, classification)."""
+"""Robustness study plumbing (plant variants, strict config, classification)."""
 
 from __future__ import annotations
 

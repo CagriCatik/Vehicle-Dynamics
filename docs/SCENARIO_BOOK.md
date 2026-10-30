@@ -45,27 +45,27 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 
 | name | scenario | parameters (defaults) | runtime | outputs |
 |---|---|---|---|---|
+| `exp_active_front_steering_sine_with_dwell` | **YAML experiment active_front_steering_sine_with_dwell** – Runs configs/experiments/active_front_steering_sine_with_dwell.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_active_front_steering_step_steer` | **YAML experiment active_front_steering_step_steer** – Runs configs/experiments/active_front_steering_step_steer.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_actuator_dynamics_split_mu_braking` | **YAML experiment actuator_dynamics_split_mu_braking** – Runs configs/experiments/actuator_dynamics_split_mu_braking.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_brake_functions_brake_in_turn` | **YAML experiment brake_functions_brake_in_turn** – Runs configs/experiments/brake_functions_brake_in_turn.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_brake_functions_brake_in_turn_low_mu` | **YAML experiment brake_functions_brake_in_turn_low_mu** – Runs configs/experiments/brake_functions_brake_in_turn_low_mu.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_brake_functions_mu_step` | **YAML experiment brake_functions_mu_step** – Runs configs/experiments/brake_functions_mu_step.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_brake_functions_split_mu` | **YAML experiment brake_functions_split_mu** – Runs configs/experiments/brake_functions_split_mu.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_brake_functions_straight_braking` | **YAML experiment brake_functions_straight_braking** – Runs configs/experiments/brake_functions_straight_braking.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_g_vectoring_emergency_braking` | **YAML experiment g_vectoring_emergency_braking** – Runs configs/experiments/g_vectoring_emergency_braking.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_g_vectoring_lane_change` | **YAML experiment g_vectoring_lane_change** – Runs configs/experiments/g_vectoring_lane_change.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_g_vectoring_lift_off` | **YAML experiment g_vectoring_lift_off** – Runs configs/experiments/g_vectoring_lift_off.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_g_vectoring_steer_ramp` | **YAML experiment g_vectoring_steer_ramp** – Runs configs/experiments/g_vectoring_steer_ramp.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_regen_slip_braking` | **YAML experiment regen_slip_braking** – Runs configs/experiments/regen_slip_braking.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_regen_slip_coast_low_mu` | **YAML experiment regen_slip_coast_low_mu** – Runs configs/experiments/regen_slip_coast_low_mu.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 | `exp_sine_with_dwell_comparison` | **YAML experiment sine_with_dwell_comparison** – Runs configs/experiments/sine_with_dwell_comparison.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 | `exp_split_mu_braking` | **YAML experiment split_mu_braking** – Runs configs/experiments/split_mu_braking.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 | `exp_step_steer_speed_sweep` | **YAML experiment step_steer_speed_sweep** – Runs configs/experiments/step_steer_speed_sweep.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m16_split_mu_actuators` | **YAML experiment v4_m16_split_mu_actuators** – Runs configs/experiments/v4_m16_split_mu_actuators.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m17_brake_in_turn` | **YAML experiment v4_m17_brake_in_turn** – Runs configs/experiments/v4_m17_brake_in_turn.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m17_brake_in_turn_low_mu` | **YAML experiment v4_m17_brake_in_turn_low_mu** – Runs configs/experiments/v4_m17_brake_in_turn_low_mu.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m17_mu_step` | **YAML experiment v4_m17_mu_step** – Runs configs/experiments/v4_m17_mu_step.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m17_regen` | **YAML experiment v4_m17_regen** – Runs configs/experiments/v4_m17_regen.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m17_regen_braking` | **YAML experiment v4_m17_regen_braking** – Runs configs/experiments/v4_m17_regen_braking.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m17_split_mu` | **YAML experiment v4_m17_split_mu** – Runs configs/experiments/v4_m17_split_mu.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m17_straight_braking` | **YAML experiment v4_m17_straight_braking** – Runs configs/experiments/v4_m17_straight_braking.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m18_corner_exit` | **YAML experiment v4_m18_corner_exit** – Runs configs/experiments/v4_m18_corner_exit.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m18_drive_faults` | **YAML experiment v4_m18_drive_faults** – Runs configs/experiments/v4_m18_drive_faults.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m18_mu_step_launch` | **YAML experiment v4_m18_mu_step_launch** – Runs configs/experiments/v4_m18_mu_step_launch.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m18_split_mu_launch` | **YAML experiment v4_m18_split_mu_launch** – Runs configs/experiments/v4_m18_split_mu_launch.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m19_afs_step` | **YAML experiment v4_m19_afs_step** – Runs configs/experiments/v4_m19_afs_step.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m19_afs_swd` | **YAML experiment v4_m19_afs_swd** – Runs configs/experiments/v4_m19_afs_swd.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m20_gvc_emergency` | **YAML experiment v4_m20_gvc_emergency** – Runs configs/experiments/v4_m20_gvc_emergency.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m20_gvc_lane_change` | **YAML experiment v4_m20_gvc_lane_change** – Runs configs/experiments/v4_m20_gvc_lane_change.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m20_gvc_lift_off` | **YAML experiment v4_m20_gvc_lift_off** – Runs configs/experiments/v4_m20_gvc_lift_off.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
-| `exp_v4_m20_gvc_steer_ramp` | **YAML experiment v4_m20_gvc_steer_ramp** – Runs configs/experiments/v4_m20_gvc_steer_ramp.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_traction_corner_exit` | **YAML experiment traction_corner_exit** – Runs configs/experiments/traction_corner_exit.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_traction_motor_faults` | **YAML experiment traction_motor_faults** – Runs configs/experiments/traction_motor_faults.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_traction_mu_step_launch` | **YAML experiment traction_mu_step_launch** – Runs configs/experiments/traction_mu_step_launch.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_traction_split_mu_launch` | **YAML experiment traction_split_mu_launch** – Runs configs/experiments/traction_split_mu_launch.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 
 ## solver
 
@@ -106,31 +106,31 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 
 | name | scenario | parameters (defaults) | runtime | outputs |
 |---|---|---|---|---|
-| `exp_v4_m19_rollover` | **Roll stability benchmark v4_m19_rollover** – Runs configs/experiments/v4_m19_rollover.yaml (edit the YAML to change variants, manoeuvres, friction, controllers). | – | ~3-5 min (parallel, 14-DOF at 1 ms) | report.md, kpis.csv, results.json, histories, rollover_timeseries.png |
+| `exp_roll_stability_fishhook_evasive` | **Roll stability benchmark roll_stability_fishhook_evasive** – Runs configs/experiments/roll_stability_fishhook_evasive.yaml (edit the YAML to change variants, manoeuvres, friction, controllers). | – | ~3-5 min (parallel, 14-DOF at 1 ms) | report.md, kpis.csv, results.json, histories, rollover_timeseries.png |
 
 ## ride_comfort
 
 | name | scenario | parameters (defaults) | runtime | outputs |
 |---|---|---|---|---|
-| `exp_v4_m21_ride` | **Ride and pitch benchmark v4_m21_ride** – Runs configs/experiments/v4_m21_ride.yaml (edit the YAML to change roads, manoeuvres, damping modes, preview, active pitch). | – | ~1-2 min (parallel, 14-DOF at 1 ms) | report.md, kpis.csv, results.json, histories |
+| `exp_ride_preview_damping_active_pitch` | **Ride and pitch benchmark ride_preview_damping_active_pitch** – Runs configs/experiments/ride_preview_damping_active_pitch.yaml (edit the YAML to change roads, manoeuvres, damping modes, preview, active pitch). | – | ~1-2 min (parallel, 14-DOF at 1 ms) | report.md, kpis.csv, results.json, histories |
 
 ## hill_descent
 
 | name | scenario | parameters (defaults) | runtime | outputs |
 |---|---|---|---|---|
-| `exp_v4_m22_hdc` | **Hill descent benchmark v4_m22_hdc** – Runs configs/experiments/v4_m22_hdc.yaml (edit the YAML to change grades, surfaces, named cases, controllers). | – | ~10 min (parallel, 7-DOF with road grade) | report.md, kpis.csv, results.json, histories |
+| `exp_hill_descent_control` | **Hill descent benchmark hill_descent_control** – Runs configs/experiments/hill_descent_control.yaml (edit the YAML to change grades, surfaces, named cases, controllers). | – | ~10 min (parallel, 7-DOF with road grade) | report.md, kpis.csv, results.json, histories |
 
 ## fault_tolerance
 
 | name | scenario | parameters (defaults) | runtime | outputs |
 |---|---|---|---|---|
-| `exp_v4_m23_faults` | **Fault tolerance benchmark v4_m23_faults** – Runs configs/experiments/v4_m23_faults.yaml (edit the YAML to change manoeuvres, fault sets, controllers). | – | ~5-10 min (parallel, 7-DOF) | report.md, kpis.csv, results.json, histories |
+| `exp_fault_tolerance_catalogue` | **Fault tolerance benchmark fault_tolerance_catalogue** – Runs configs/experiments/fault_tolerance_catalogue.yaml (edit the YAML to change manoeuvres, fault sets, controllers). | – | ~5-10 min (parallel, 7-DOF) | report.md, kpis.csv, results.json, histories |
 
 ## integration
 
 | name | scenario | parameters (defaults) | runtime | outputs |
 |---|---|---|---|---|
-| `exp_v4_m24_vmm` | **Vehicle motion benchmark matrix v4_m24_vmm** – Runs configs/experiments/v4_m24_vmm.yaml (edit the YAML to change levels, manoeuvres, paired variations). | – | ~25 min (parallel, 7-DOF and 14-DOF) | report.md, kpis.csv, stats.csv, results.json, matrix.png, histories |
+| `exp_motion_management_matrix` | **Vehicle motion benchmark matrix motion_management_matrix** – Runs configs/experiments/motion_management_matrix.yaml (edit the YAML to change levels, manoeuvres, paired variations). | – | ~25 min (parallel, 7-DOF and 14-DOF) | report.md, kpis.csv, stats.csv, results.json, matrix.png, histories |
 
 ## validation
 

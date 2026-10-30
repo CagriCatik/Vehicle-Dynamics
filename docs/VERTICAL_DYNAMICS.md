@@ -1,11 +1,11 @@
-# Vertikaldynamik: Verifikation und Straßenanregung (M8)
+# Vertikaldynamik: Verifikation und Straßenanregung
 
 Module:
 - [`suspension/vertical_analysis.py`](../src/vehicle_model/suspension/vertical_analysis.py): analytische Referenzen.
 - [`roads/road_profile.py`](../src/vehicle_model/roads/road_profile.py): Straßenprofile.
 - [`suspension/quarter_car.py`](../src/vehicle_model/suspension/quarter_car.py): `step_with_road`.
 
-Die Modelle bestanden schon vor M8: Viertelfahrzeug, 14-DOF-Modell, Skyhook/Groundhook, aktive Wankstabilisierung (siehe [SUSPENSION_DYNAMICS.md](SUSPENSION_DYNAMICS.md)). Die bisherigen Tests prüften nur Plausibilitätsbereiche, etwa „Aufbaueigenfrequenz zwischen 1 und 2 Hz“. M8 ergänzt die Abnahme: **Freie Schwingungen, Energieverhalten, Frequenzgänge und definierte Straßenanregungen werden korrekt berechnet.**
+Die Modelle bestanden schon vor Vertikaldynamik: Viertelfahrzeug, 14-DOF-Modell, Skyhook/Groundhook, aktive Wankstabilisierung (siehe [SUSPENSION_DYNAMICS.md](SUSPENSION_DYNAMICS.md)). Die bisherigen Tests prüften nur Plausibilitätsbereiche, etwa „Aufbaueigenfrequenz zwischen 1 und 2 Hz“. Vertikaldynamik ergänzt die Abnahme: **Freie Schwingungen, Energieverhalten, Frequenzgänge und definierte Straßenanregungen werden korrekt berechnet.**
 
 ---
 
@@ -18,7 +18,7 @@ Koordinaten ab statischer Ruhelage, Zustand $x = [z_s, \dot z_s, z_u, \dot z_u]$
 - **Energie:** $E = \tfrac12 m_s\dot z_s^2 + \tfrac12 m_u\dot z_u^2 + \tfrac12 k_s(z_s - z_u)^2 + \tfrac12 k_t(z_u - z_r)^2$. Die Schwerkraft entfällt durch die statischen Vorspannungen.
 - **Leistungsbilanz:** $\dot E = -c_s(\dot z_s - \dot z_u)^2 - c_t(\dot z_u - \dot z_r)^2 + P_\text{Straße}$ mit $P_\text{Straße} = -[k_t(z_u - z_r) + c_t(\dot z_u - \dot z_r)]\,\dot z_r$ (hergeleitet und am Modell geprüft).
 
-Die Referenzen gelten, solange der Reifen Kontakt hat und die Anschläge nicht erreicht sind. Das nichtlineare Modell löst den Kontakt (M2).
+Die Referenzen gelten, solange der Reifen Kontakt hat und die Anschläge nicht erreicht sind. Das nichtlineare Modell löst den Kontakt.
 
 ## 2. Befund: Straßenanregung im Integrationsschritt
 
@@ -65,7 +65,7 @@ Skyhook verbessert den Komfort und bezahlt das mit Radlastschwankungen nahe der 
 
 **Grenzen:**
 - Halbfahrzeugmodell nicht umgesetzt (laut Plan „nach Bedarf“); Heben, Wanken und Nicken bildet das 14-DOF-Modell ab.
-- Die Kopplung mit der Planardynamik besteht nur im 14-DOF-Modell. Das 7-DOF-Modell bleibt quasistatisch (M4).
+- Die Kopplung mit der Planardynamik besteht nur im 14-DOF-Modell. Das 7-DOF-Modell bleibt quasistatisch.
 - Der Groundhook ist nicht nachoptimiert.
 - Keine ISO-2631-Komfortbewertung (frequenzgewichtete Beschleunigung).
 

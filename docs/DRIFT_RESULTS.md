@@ -1,6 +1,6 @@
-# Drift-Regler: Ergebnisse und Abnahme (Drift-Plan)
+# Drift-Regler: Ergebnisse und Abnahme
 
-Ergebnisse der Pakete D0–D7 mit Gate-Bewertung (PASS / FAIL / INFEASIBLE). Verfahren:
+Ergebnisse der Pakete Drift-Audit–Drift-Robustheit mit Gate-Bewertung (PASS / FAIL / INFEASIBLE). Verfahren:
 [DRIFT_CONTROLLER.md](DRIFT_CONTROLLER.md); Modellgrenzen: [DRIFT_MODEL_VALIDITY.md](DRIFT_MODEL_VALIDITY.md). Alle
 Parameter synthetisch, nur virtuelle Modellvalidierung.
 
@@ -8,16 +8,16 @@ Parameter synthetisch, nur virtuelle Modellvalidierung.
 
 | Gate | Bewertung | Nachweis |
 |---|---|---|
-| D0 Audit, Baseline | PASS | Testbasis 607 bestanden, 2 übersprungen bei `9a1dbf4`; Wiederverwendungsstellen im Code geprüft; Referenzbeispiel läuft unverändert ([DRIFT_MODEL_VALIDITY.md](DRIFT_MODEL_VALIDITY.md) 1–2) |
-| D1 Reifen, deterministische Auswertung | PASS | Audit aller drei Reifen bestanden (mit Extrapolationswarnung jenseits 20°); Rohmodell reihenfolgeabhängig um 1,6e-7, `DeterministicPlant` bitgleich; Nichtkonvergenz gemeldet bzw. im strengen Modus Ausnahme (Tests) |
-| D2 Driftgleichgewichte | PASS (mit Extrapolation) | nichttriviale, physikalisch geprüfte Gleichgewichte in beiden Richtungen; innerhalb der Reifengültigkeit nur bis etwa 15° Schwimmwinkel (`valid`), darüber `valid_extrapolated`; 6 von 140 Punkten ohne Gleichgewicht, 2 als Kurvenfahrt statt Drift erkannt |
-| D3 Halten mit LQR | PASS | Gleichgewicht offen instabil (Eigenwert +3,4 1/s), stabilisierbar (PBH 7/7); LQR hält in beiden Richtungen und regelt alle 14 Störfälle aus, ohne Driftverlust; offen geht jede Störung verloren |
-| D4 Einleitung, Austritt, Recovery | PASS mit Grenze | End-to-End aus Geradeausfahrt ohne Zustandseingriff: 30 von 36 Läufen erfolgreich (83 %), µ 0,6 18/18, µ 0,9 12/18; nicht erreicht: 25° bei µ 0,9 (Einleitung überschwingt, korrekter Abbruch bei 13 und 15 m/s, Dreher in der Recovery bei 11 m/s → FAILED gemeldet). Überwachter Austritt ohne Überschwingen gegenüber 21–47° bei sofortiger Abschaltung |
-| D5 Kreisführung, Übergang, Acht | Kreis PASS, Übergang PASS, Acht: Ablauf PASS / Geometrie FAIL | Radiale Außenschleife beseitigt ±2 m Startversatz (0,00 / 0,06 m), fester LQR behält 1,4 m; gestufte Einleitung auf 25° bei µ 0,9 erreicht (die D4-Grenze), mit 8° Überschwingen; Acht: beide Driftkreise erreicht und symmetrisch, aber Mittelpunktabstand 1,34 × (R_l + R_r) statt 1 (Kreise berühren sich nicht) |
-| D6 Animation und Export | PASS | Vier Läufe mit je allen 13 Pflichtdateien; GIF öffnet, 280–420 Bilder, jedes Bild eine aufgezeichnete Probe; Bahn in CSV = Aufzeichnung (Test, 1e-9 m); Etiketten für gescheiterte Läufe und Abschnitte |
-| D7 Robustheit | PASS (Bericht), Grenzen benannt | Strukturierter Bericht über 19 Fälle (31 Läufe): ideal 14 held, 2 degraded (Split-µ), 0 lost; geschätzte und sensorbeschränkte Rückführung mit dem allgemeinen Beobachter 15/15 lost mit Ursache; stationäre Abweichungen ohne Integralanteil bis 4,8°; Schrittweitenordnung 1,5; Radlastbilanz exakt. **Nachtrag:** driftfähiger Beobachter (Vorderräder + IMU): Sensormodi 15/15 held; mit Integralanteil alle 16 idealen Fälle held (Split-µ eingeschlossen), Endfehler ≤ 0,33° |
+| Drift-Audit Audit, Baseline | PASS | Testbasis 607 bestanden, 2 übersprungen bei `9a1dbf4`; Wiederverwendungsstellen im Code geprüft; Referenzbeispiel läuft unverändert ([DRIFT_MODEL_VALIDITY.md](DRIFT_MODEL_VALIDITY.md) 1–2) |
+| Drift-Auswertung Reifen, deterministische Auswertung | PASS | Audit aller drei Reifen bestanden (mit Extrapolationswarnung jenseits 20°); Rohmodell reihenfolgeabhängig um 1,6e-7, `DeterministicPlant` bitgleich; Nichtkonvergenz gemeldet bzw. im strengen Modus Ausnahme (Tests) |
+| Driftgleichgewichte Driftgleichgewichte | PASS (mit Extrapolation) | nichttriviale, physikalisch geprüfte Gleichgewichte in beiden Richtungen; innerhalb der Reifengültigkeit nur bis etwa 15° Schwimmwinkel (`valid`), darüber `valid_extrapolated`; 6 von 140 Punkten ohne Gleichgewicht, 2 als Kurvenfahrt statt Drift erkannt |
+| Drift-LQR Halten mit LQR | PASS | Gleichgewicht offen instabil (Eigenwert +3,4 1/s), stabilisierbar (PBH 7/7); LQR hält in beiden Richtungen und regelt alle 14 Störfälle aus, ohne Driftverlust; offen geht jede Störung verloren |
+| Drift-Einleitung und -Rückkehr Einleitung, Austritt, Recovery | PASS mit Grenze | End-to-End aus Geradeausfahrt ohne Zustandseingriff: 30 von 36 Läufen erfolgreich (83 %), µ 0,6 18/18, µ 0,9 12/18; nicht erreicht: 25° bei µ 0,9 (Einleitung überschwingt, korrekter Abbruch bei 13 und 15 m/s, Dreher in der Recovery bei 11 m/s → FAILED gemeldet). Überwachter Austritt ohne Überschwingen gegenüber 21–47° bei sofortiger Abschaltung |
+| Drift-Bahnführung Kreisführung, Übergang, Acht | Kreis PASS, Übergang PASS, Acht: Ablauf PASS / Geometrie FAIL | Radiale Außenschleife beseitigt ±2 m Startversatz (0,00 / 0,06 m), fester LQR behält 1,4 m; gestufte Einleitung auf 25° bei µ 0,9 erreicht (die drift initiation and recovery-Grenze), mit 8° Überschwingen; Acht: beide Driftkreise erreicht und symmetrisch, aber Mittelpunktabstand 1,34 × (R_l + R_r) statt 1 (Kreise berühren sich nicht) |
+| Drift-Animation Animation und Export | PASS | Vier Läufe mit je allen 13 Pflichtdateien; GIF öffnet, 280–420 Bilder, jedes Bild eine aufgezeichnete Probe; Bahn in CSV = Aufzeichnung (Test, 1e-9 m); Etiketten für gescheiterte Läufe und Abschnitte |
+| Drift-Robustheit Robustheit | PASS (Bericht), Grenzen benannt | Strukturierter Bericht über 19 Fälle (31 Läufe): ideal 14 held, 2 degraded (Split-µ), 0 lost; geschätzte und sensorbeschränkte Rückführung mit dem allgemeinen Beobachter 15/15 lost mit Ursache; stationäre Abweichungen ohne Integralanteil bis 4,8°; Schrittweitenordnung 1,5; Radlastbilanz exakt. **Nachtrag:** driftfähiger Beobachter (Vorderräder + IMU): Sensormodi 15/15 held; mit Integralanteil alle 16 idealen Fälle held (Split-µ eingeschlossen), Endfehler ≤ 0,33° |
 
-## D2: Driftgleichgewichte
+## Driftgleichgewichte: Driftgleichgewichte
 
 `configs/drift/equilibrium_sweep.yaml`: v = 8/10/13/16/20 m/s × |β| = 5…35° × µ = 0,9/0,6 × links/rechts = 140 Punkte
 (8 min). Ergebnisse: `output/drift/equilibrium_sweep/` (CSV, JSON, PNG, Bericht).
@@ -49,7 +49,7 @@ Befunde:
 - Ab etwa 20° Schwimmwinkel liegen die Hinterachs-Schräglaufwinkel jenseits der erklärten Gültigkeit des MF-Reifens
   (20°); diese Ergebnisse beruhen auf dem extrapolierten Reifenmodell.
 
-## D3: Halten und Störungen (S01–S03)
+## Drift-LQR: Halten und Störungen (S01–S03)
 
 `configs/drift/drift_lqr.yaml`: 13 m/s, |β| = 20°, µ = 0,9 (R 25,6 m, r 29,1°/s, δ_f −14,4°, T 333 N·m;
 `valid_extrapolated`), 6 s, RMS ab 2 s. Ergebnisse: `output/drift/lqr_hold/`.
@@ -81,7 +81,7 @@ Gleichgewichts.
 Störung zuverlässig; die Ursache war die Lenkratengrenze (gefordert bis 4200°/s). Mit der Lenkrate als Eingang im
 Entwurf ist die Begrenzung kaum noch aktiv ([DRIFT_CONTROLLER.md](DRIFT_CONTROLLER.md) 3).
 
-## D4: Einleitung, Halten, Austritt (S04, S05)
+## Drift-Einleitung und -Rückkehr: Einleitung, Halten, Austritt (S04, S05)
 
 `configs/drift/initiation.yaml`: Start in Geradeausfahrt bei Driftgeschwindigkeit, Driftanforderung bei 0,5 s,
 Austrittsanforderung bei 25 s, 45 s je Lauf; v = 11/13/15 m/s × β* = 15/20/25° × µ = 0,9/0,6 × links/rechts = 36 Läufe
@@ -105,7 +105,7 @@ demselben HOLD: kein Dreher in den 30 Fällen, aber Schwimmwinkelspitzen von 21�
 **Grenze 25° bei µ 0,9:** Der LQR, aus der Kurvenfahrt gestartet, überschwingt auf etwa −36°, das Moment sättigt und
 die Geschwindigkeit steigt bis 25 m/s; der Einfangbereich wird in 15 s nicht erreicht. Der Automat bricht korrekt ab
 (INITIATE → RECOVER); bei 11 m/s dreht sich das Fahrzeug in der Recovery, was als FAILED gemeldet wird. Ein gestufter
-Weg (zuerst 15°, dann Sollpunktwechsel entlang des Zweigs) gehört zu D5.
+Weg (zuerst 15°, dann Sollpunktwechsel entlang des Zweigs) gehört zu drift tracking.
 
 **Entwurfsbefunde** (Verfahren und Zahlen in [DRIFT_CONTROLLER.md](DRIFT_CONTROLLER.md) 5): kein stationärer Weg aus
 der Geradeausfahrt in den Drift (getrennte Gleichgewichtszweige); Einleitung ohne Momentenstoß, der LQR bricht das
@@ -113,7 +113,7 @@ Heck selbst aus; Austritt mit Gegenlenken in Fahrtrichtung (`k_β = 1`), teilwei
 rampierte Sollgeschwindigkeit nötig (Sollsprung erzeugte einen Dreher bei 3 m/s); Gegenlenken nur des Driftanteils
 (bei 11 m/s hat normale Kurvenfahrt β = +4°; vorher blieb der Austritt dort hängen, 26/36 → 30/36).
 
-## D5: Kreisführung, Sollpunktwechsel, Acht (S06, S07)
+## Drift-Bahnführung: Kreisführung, Sollpunktwechsel, Acht (S06, S07)
 
 `configs/drift/circle_hold.yaml`: Gleichgewicht 13 m/s, β −20°, R 25,6 m, µ 0,9; Schedule über 6…26°; Kreis mit
 Gleichgewichtsradius, radial um 0 / +2 / −2 m versetzt (außen / innen); 25 s. Ergebnisse: `output/drift/circle_tracking/`.
@@ -126,7 +126,7 @@ Gleichgewichtsradius, radial um 0 / +2 / −2 m versetzt (außen / innen); 25 s.
 
 (Radialfehler RMS der letzten 10 s.) Befunde:
 
-- Der offene Kreis fällt auch ohne Störung nach 8,6 s vom instabilen Gleichgewicht ab (in D3 über 6 s noch nicht sichtbar).
+- Der offene Kreis fällt auch ohne Störung nach 8,6 s vom instabilen Gleichgewicht ab (in Drift-LQR über 6 s noch nicht sichtbar).
 - **ESC und Drift widersprechen sich:** Das ESC regelt die Gierrate auf die Referenz aus dem Fahrerlenkwinkel; der ist im
   Drift ein Gegenlenkwinkel nach rechts. Es beendet den Drift (β-RMSE 15,6°), und das Fahrzeug fährt danach einen
   Rechtskreis. Der Drift braucht deshalb die exklusive Drift-Regelung (Plan 5.2).
@@ -135,7 +135,7 @@ Gleichgewichtsradius, radial um 0 / +2 / −2 m versetzt (außen / innen); 25 s.
 
 **Gestufte Einleitung (Sollpunktwechsel):** aus der Geradeausfahrt auf 15° eingeleitet (HOLD nach 2,7 s), dann
 TRANSITION entlang des Zweigs auf 25° mit 1°/s (bis 12,7 s), Halten bis 50 s, Austritt, Normalfahrt bei 52,8 s: PASS.
-Damit ist der 25°-Drift bei µ 0,9 erreichbar, den die direkte Einleitung in D4 nicht schafft. Schwäche: Nach Erreichen
+Damit ist der 25°-Drift bei µ 0,9 erreichbar, den die direkte Einleitung in Drift-Einleitung und -Rückkehr nicht schafft. Schwäche: Nach Erreichen
 des Sollpunkts schwingt β auf 33° über (8° über dem Ziel), die Geschwindigkeit steigt bis 16 m/s; β-RMSE im
 anschließenden HOLD 3,2° (langsame Geschwindigkeitsmode).
 
@@ -152,7 +152,7 @@ Ablauf: PASS (beide Abschnitte, kein FAILED, exakt gespiegelt). **Geometrie: FAI
 Außenschleife kann nur den Radius, nicht den Mittelpunkt verschieben. Eine echte Acht braucht eine Mittelpunkt- bzw.
 Querablagenführung oder einen direkten Wechsel links → rechts ohne Austritt (offen).
 
-## D6: Animation und Export
+## Drift-Animation: Animation und Export
 
 `configs/drift/animation.yaml` → `output/drift/runs/` (Beispiel `examples/drift_figure_eight_demo.py`):
 
@@ -167,11 +167,11 @@ Querablagenführung oder einen direkten Wechsel links → rechts ohne Austritt (
 Jeder Ordner enthält die 13 Pflichtdateien. Die GIFs sind 10–18 MB groß; in die Dokumentation übernommen ist nur die
 vollständige Sequenz (verkleinert, 4,2 MB).
 
-## D7: Robustheit
+## Drift-Robustheit: Robustheit
 
 `configs/drift/robustness.yaml`: nominaler Entwurf 13 m/s, β −20°, µ 0,9; Gleichgewicht + 3° Schwimmwinkel, 10 s.
 Ergebnisse: `output/drift/robustness/` (`report.md`, `kpi.json`). Die Tabelle ist der Ausgangsbefund mit dem
-D3-Entwurf und dem allgemeinen Beobachter (Commit `e1226b8`); die Behebung folgt im Nachtrag unten.
+drift LQR-Entwurf und dem allgemeinen Beobachter (Commit `e1226b8`); die Behebung folgt im Nachtrag unten.
 
 | Fall | Abweichung | Klasse | β-RMSE (2. Hälfte) | Endfehler β |
 |---|---|---|---|---|
@@ -210,9 +210,9 @@ Befunde:
   5 ms liegt damit bei etwa 7e-4 im Endzustand.
 - Die bisherigen Tests des gesamten Repositories (Nicht-Drift-Funktionen) laufen unverändert (volle Suite).
 
-## D7-Nachtrag: driftfähiger Beobachter und Integralanteil
+## drift robustness-Nachtrag: driftfähiger Beobachter und Integralanteil
 
-Zwei Ursachen aus D7 behoben, ohne Testgrenzen zu ändern:
+Zwei Ursachen aus Drift-Robustheit behoben, ohne Testgrenzen zu ändern:
 
 - **`drift.DriftVelocityObserver`** (nur Sensoren): Kalman-Filter auf `[v_x, v_y]` mit der IMU-Kinematik
   `v̇_x = a_x + r v_y`, `v̇_y = a_y − r v_x` als Prozessmodell (kein Reifenmodell) und den beiden **Vorderrädern** als
@@ -221,7 +221,7 @@ Zwei Ursachen aus D7 behoben, ohne Testgrenzen zu ändern:
   beobachtbar. Start aus der ersten Vorderradmessung mit `v_y = 0` und großer Varianz: keine Annahme über den Schwimmwinkel.
 - **Integralanteil** (`design_lqr(..., integral=True)`, `LQRWeights.q_integral`, Standard 10): zusätzlicher Zustand
   `z = ∫(β − β*) dt` im LQR-Entwurf, Anti-Windup durch bedingte Integration (kein Integrieren in gesättigten Schritten).
-  Opt-in; D3–D6 bleiben beim bisherigen Entwurf.
+  Opt-in; Drift-LQR–Drift-Animation bleiben beim bisherigen Entwurf.
 
 Ergebnisse (`output/drift/robustness/` mit dem neuen Beobachter, `output/drift/robustness_integral/` zusätzlich mit
 Integralanteil, `configs/drift/robustness_integral.yaml`):
@@ -255,17 +255,17 @@ Befunde:
 - Numerik mit Integral: Fehler gegen den feinsten Schritt 1,4e-3 / 2,3e-4 / 2,9e-4 (10 / 5 / 2,5 ms); keine saubere
   Ordnung, weil die bedingte Integration mit der Sättigung schaltet. Radlastbilanz weiterhin < 1e-6.
 
-## Offene Punkte nach D7
+## Offene Punkte nach Drift-Robustheit
 
-- Einfangbereich systematisch bestimmen (größere Störungen, Rasterung wie in M11), statt nur der definierten Störungen.
-- 25° bei µ 0,9 direkt nicht einleitbar; gestuft (D5) erreicht, mit 8° Überschwingen nach dem Sollpunktwechsel.
+- Einfangbereich systematisch bestimmen (größere Störungen, Rasterung wie in nichtlineare Stabilität), statt nur der definierten Störungen.
+- 25° bei µ 0,9 direkt nicht einleitbar; gestuft erreicht, mit 8° Überschwingen nach dem Sollpunktwechsel.
 - Der Austritt verliert bis 16 % Geschwindigkeit; die Recovery bei 11 m/s nach misslungener Einleitung dreht sich.
 - Acht geometrisch nicht erreicht (Mittelpunktführung fehlt).
 - GIFs sind groß (10–18 MB); für die Dokumentation wird nur eine verkleinerte Sequenz veröffentlicht.
 - Driftbeobachter: Sensor-Biasse nicht geschätzt; in Geradeausfahrt ist `v_y` nicht beobachtbar; Bremsen oder
   Frontantrieb verfälschen die Vorderradmessung. Rauschen sättigt die Lenkrate häufig.
-- Integralanteil nur im Halteregler (`DriftLQRController`); Einleitung, geplante Übergänge (D4/D5) nutzen ihn nicht.
-- D8 (NMPC) ist im Plan optional und erst nach bestandenen Basisgates vorgesehen.
+- Integralanteil nur im Halteregler (`DriftLQRController`); Einleitung, geplante Übergänge nutzen ihn nicht.
+- Drift-NMPC (NMPC) ist im Plan optional und erst nach bestandenen Basisgates vorgesehen.
 
 ---
 
@@ -281,18 +281,18 @@ Befunde:
 
 ![equilibrium_sweep](assets/drift_results/equilibrium_sweep.png)
 
-*Stationäre Driftgleichgewichte (D2) über |β| je Geschwindigkeit und Reibwert: Radius, Lenkwinkel, Moment je Hinterrad, Hinterradschlupf; offene Kreise: Reifen extrapoliert, Kreuze: kein Gleichgewicht. Quelle: `python examples/drift_equilibria_demo.py`.*
+*Stationäre Driftgleichgewichte über |β| je Geschwindigkeit und Reibwert: Radius, Lenkwinkel, Moment je Hinterrad, Hinterradschlupf; offene Kreise: Reifen extrapoliert, Kreuze: kein Gleichgewicht. Quelle: `python examples/drift_equilibria_demo.py`.*
 
 ![sideslip_and_yaw](assets/drift_results/sideslip_and_yaw.png)
 
-*D3: Halten und Störungen links/rechts, offen (gestrichelt) gegen LQR (durchgezogen). Quelle: `python examples/drift_hold_demo.py`.*
+*Drift-LQR: Halten und Störungen links/rechts, offen (gestrichelt) gegen LQR (durchgezogen). Quelle: `python examples/drift_hold_demo.py`.*
 
 ![initiation_sequence](assets/drift_results/initiation_sequence.png)
 
-*D4: Moduswechsel und Zeitverläufe einer Einleitung bis zum Austritt (11 m/s, 15°, µ 0,9). Quelle: `python examples/drift_initiation_demo.py`.*
+*Drift-Einleitung und -Rückkehr: Moduswechsel und Zeitverläufe einer Einleitung bis zum Austritt (11 m/s, 15°, µ 0,9). Quelle: `python examples/drift_initiation_demo.py`.*
 
 ![trajectory](assets/drift_results/trajectory.png)
 
-*D5: Kreisbahnen bei ±2 m Startversatz (offen, ESC, Drift-LQR fest, mit Außenschleife) und die Acht-Sequenz (Geometrie nicht erreicht). Quelle: `python examples/drift_circle_demo.py`.*
+*Drift-Bahnführung: Kreisbahnen bei ±2 m Startversatz (offen, ESC, Drift-LQR fest, mit Außenschleife) und die Acht-Sequenz (Geometrie nicht erreicht). Quelle: `python examples/drift_circle_demo.py`.*
 
 <!-- figures:end -->

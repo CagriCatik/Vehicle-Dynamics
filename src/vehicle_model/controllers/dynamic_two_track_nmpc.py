@@ -34,7 +34,7 @@ Features:
 6. Solver outcome classified by :mod:`.solver_diagnostics` (nominal / suboptimal /
    fallback / degraded). Output status as in :class:`.motion_control.MotionController`:
    the solver status if it is not nominal, otherwise the allocation status.
-8. Actuation through the shared :class:`.motion_control.ActuationLayer` (Plan V3.0 M10
+8. Actuation through the shared :class:`.motion_control.ActuationLayer` (
    5.3): the first planned ``(m a_x, M_z)`` goes to the bounded wheel-force allocation
    and ABS/TCS, like every other controller. ``allocated_yaw_moment`` is the moment of
    the issued wheel torques. ``diagnostics["actuation"]`` separates the demand, what
@@ -43,7 +43,7 @@ Features:
    prediction splits forces equally per axle and side; the allocation distributes by
    grip, so prediction and actuation differ on purpose (reported, not hidden).
 
-9. Constraint-aware options (Plan V3.0 M12 7.2 E, both off by default so earlier results
+9. Constraint-aware options (both off by default so earlier results
    stay reproducible):
    ``soft_stability_constraints``: the advisory sideslip and yaw-rate limits become soft
    constraints with slack variables ``s >= 0`` (exact-penalty reformulation):
@@ -65,9 +65,8 @@ Features:
 
 Information access (``information``): state, ``target.mu_estimated`` for the
 prediction; with telemetry the allocation and slip control use wheel loads, lateral
-forces, slips and road friction (idealised, as in the M6 benchmark).
+forces, slips and road friction (idealised, as in the controller library benchmark).
 
-Conforms to Plan.md §4.3, §5, §10.2, §19.
 """
 
 from __future__ import annotations
@@ -632,7 +631,7 @@ class DynamicTwoTrackNMPC(VehicleController):
         Mz_tv_cmd = float(u_0[2])
         ax_req_cmd = float(u_0[3])
 
-        # Shared actuation chain: bounded wheel-force allocation, then ABS/TCS (Plan V3.0 M10 5.3)
+        # Shared actuation chain: bounded wheel-force allocation, then ABS/TCS
         p = self.params
         if telemetry is not None:
             Fz, mu_w, Fy, wheel_steer = telemetry.Fz, telemetry.mu, telemetry.Fy_wheel, telemetry.steer_angles

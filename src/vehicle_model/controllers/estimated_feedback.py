@@ -1,4 +1,4 @@
-"""Controller fed by virtual sensors and observers instead of the true vehicle state (Plan.md 10.2, 11; M7; V3.0 M10 5.4).
+"""Controller fed by virtual sensors and observers instead of the true vehicle state (chassis_control_platform_plan.md 10.2, 11; estimation robustness).
 
 ``EstimatedStateFeedback`` wraps any ``VehicleController``. Each step it
 
@@ -9,7 +9,7 @@
 3. passes the inner controller a state with ``v_x``, ``v_y`` from the observer and the
    measured yaw rate ``r`` (positions and heading are not measured and set to 0).
 
-Operating modes (Plan V3.0 M10 5.4; Mode A, ideal feedback, is the unwrapped controller):
+Operating modes (Mode A, ideal feedback, is the unwrapped controller):
 
     "B"  Estimated Motion State. The simulation's wheel telemetry (loads, lateral
          forces, slips, road friction) is still passed to allocation and slip

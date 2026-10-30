@@ -1,4 +1,4 @@
-# Drift plan D5: circle tracking (S06), staged initiation with set-point transition, figure-eight (S07).
+# circle tracking (S06), staged initiation with set-point transition, figure-eight (S07).
 name: drift_circle_tracking
 vehicle: configs/vehicles/seven_dof_passenger.yaml
 tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}

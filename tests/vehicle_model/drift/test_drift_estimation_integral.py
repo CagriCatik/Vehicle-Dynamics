@@ -1,4 +1,4 @@
-"""Drift D7 follow-up: drift-capable velocity observer and integral action in the drift LQR."""
+"""Drift drift robustness follow-up: drift-capable velocity observer and integral action in the drift LQR."""
 
 from __future__ import annotations
 
@@ -71,7 +71,7 @@ def test_observer_reconstructs_the_drift_without_a_sideslip_prior(drift):
 
 
 def test_general_blended_observer_is_not_drift_capable(drift):
-    """Expected limit (D7): speed from the spinning rear wheel, start at beta = 0 -> drift lost."""
+    """Expected limit: speed from the spinning rear wheel, start at beta = 0 -> drift lost."""
     rows, h, eq = _closed_loop(drift, BlendedSideslipObserver(drift[0]))
     beta = np.arctan2(h.vy, h.vx)
     assert np.max(np.abs(beta - eq.beta)) > math.radians(30.0)
@@ -115,7 +115,7 @@ def test_integral_does_not_wind_up_while_saturated(drift):
 
 @pytest.mark.slow
 def test_integral_removes_the_steady_offset_of_a_deviating_plant(drift):
-    """mu 0.8 instead of the design mu 0.9: D7 offset -3.4 deg without integral action."""
+    """Mu 0.8 instead of the design mu 0.9: drift robustness offset -3.4 deg without integral action."""
     params, _, eq, lin = drift
     plant = SevenDOFModel.from_yaml(road=UniformRoad(mu=0.8))
     final = {}

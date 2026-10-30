@@ -1,4 +1,4 @@
-"""Sideslip observer blending kinematic integration with a model-based estimate (Plan.md, Abschnitt 11; M7).
+"""Sideslip observer blending kinematic integration with a model-based estimate.
 
 Two classic sideslip observers fail in complementary ranges:
 

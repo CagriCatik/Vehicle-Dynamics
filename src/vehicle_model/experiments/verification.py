@@ -1,4 +1,4 @@
-"""Physics and numerics checks on the configured vehicle (Plan.md M9).
+"""Physics and numerics checks on the configured vehicle.
 
 Run for every experiment (unless disabled) and reported next to the results, so
 a comparison is only read together with evidence that the configured model is

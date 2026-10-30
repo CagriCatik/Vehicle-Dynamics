@@ -1,4 +1,4 @@
-"""Nonlinear equilibria and their local stability (Plan V3.0 M11 6.1, 6.2).
+"""Nonlinear equilibria and their local stability (6.2).
 
 States of the analysis are the body-fixed states of the model: ``vx, vy, r``, the four
 wheel speeds and, for :class:`~vehicle_model.vehicle_models.TransientSevenDOFModel`,
