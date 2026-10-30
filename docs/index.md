@@ -9,31 +9,32 @@ Dieses Verzeichnis stellt die vollständige mathematische Herleitung, physikalis
 ## 1. Systematische Dokumentations-Roadmap
 
 ```mermaid
-graph TD
-    HUB([Dokumentations-Hub])
 
-    subgraph Grundlagen & Physik
-        ARCH[01. Systemarchitektur & ISO 8855<br/>docs/ARCHITECTURE.md]
-        PLANT[02. Mehrkörper-Fahrzeugmodelle 7-DOF / 14-DOF<br/>docs/VEHICLE_MODELS.md]
-        TYRE[03. Reifenmodelle Fiala, MF 5.2, Relaxation<br/>docs/TYRE_MODELS.md]
-        ACT[04. Aktorik, EPS & Bremsdynamik<br/>docs/ACTUATORS.md]
+flowchart LR
+    HUB(["Dokumentations-Hub"])
+
+    subgraph fundamentals["Grundlagen & Physik"]
+        ARCH["01. Systemarchitektur & ISO 8855<br/>docs/ARCHITECTURE.md"]
+        PLANT["02. Mehrkörper-Fahrzeugmodelle 7-DOF / 14-DOF<br/>docs/VEHICLE_MODELS.md"]
+        TYRE["03. Reifenmodelle Fiala, MF 5.2, Relaxation<br/>docs/TYRE_MODELS.md"]
+        ACT["04. Aktorik, EPS & Bremsdynamik<br/>docs/ACTUATORS.md"]
     end
 
-    subgraph Aktive Fahrwerksregelung & Lenkung
-        CTRL[05. Integrierte Regelung IVMC & Torque Vectoring<br/>docs/CHASSIS_CONTROL.md]
-        RWS[06. Allradlenkung & Hinterachslenkung 4WS<br/>docs/REAR_WHEEL_STEERING.md]
-        NMPC[07. Nichtlineares MPC & Pfadverfolgung (SLSQP)<br/>docs/NMPC_CONTROL.md & docs/NMPC_PATH_TRACKING.md]
-        DRV[08. Neuromuskuläres Preview-Fahrermodell<br/>docs/DRIVER_MODEL.md]
-        SUSP[09. Vertikal- & Wankdynamik Skyhook / ARSDC<br/>docs/SUSPENSION_DYNAMICS.md]
+    subgraph control["Aktive Fahrwerksregelung & Lenkung"]
+        CTRL["05. Integrierte Regelung IVMC & Torque Vectoring<br/>docs/CHASSIS_CONTROL.md"]
+        RWS["06. Allradlenkung & Hinterachslenkung 4WS<br/>docs/REAR_WHEEL_STEERING.md"]
+        NMPC["07. Nichtlineares MPC & Pfadverfolgung (SLSQP)<br/>docs/NMPC_CONTROL.md & docs/NMPC_PATH_TRACKING.md"]
+        DRV["08. Neuromuskuläres Preview-Fahrermodell<br/>docs/DRIVER_MODEL.md"]
+        SUSP["09. Vertikal- & Wankdynamik Skyhook / ARSDC<br/>docs/SUSPENSION_DYNAMICS.md"]
     end
 
-    subgraph Schätzung, Grenzbereich & Validierung
-        EST[10. Zustandsschätzung EKF, RLS & PSO<br/>docs/STATE_ESTIMATION.md]
-        VAL[11. Virtuelle Validierungsplattform ISO/ECE<br/>docs/VALIDATION_PLATFORM.md]
-        LIM[12. Fahrzeughandling & Eigenlenkgradient ISO 4138<br/>docs/HANDLING_LIMITS.md]
-        SPLIT[13. Split-Mu Dynamik & Multi-Mu Benchmark<br/>docs/SPLIT_MU_DYNAMICS.md]
-        VIZ[14. Visualisierung, Telemetrie & Animationen<br/>docs/VISUALIZATION_GUIDE.md]
-        REF_LIT[15. Literatur- & Quellenverzeichnis<br/>docs/REFERENCES.md]
+    subgraph validation["Schätzung, Grenzbereich & Validierung"]
+        EST["10. Zustandsschätzung EKF, RLS & PSO<br/>docs/STATE_ESTIMATION.md"]
+        VAL["11. Virtuelle Validierungsplattform ISO/ECE<br/>docs/VALIDATION_PLATFORM.md"]
+        LIM["12. Fahrzeughandling & Eigenlenkgradient ISO 4138<br/>docs/HANDLING_LIMITS.md"]
+        SPLIT["13. Split-Mu Dynamik & Multi-Mu Benchmark<br/>docs/SPLIT_MU_DYNAMICS.md"]
+        VIZ["14. Visualisierung, Telemetrie & Animationen<br/>docs/VISUALIZATION_GUIDE.md"]
+        REF_LIT["15. Literatur- & Quellenverzeichnis<br/>docs/REFERENCES.md"]
     end
 
     HUB --> ARCH
@@ -51,6 +52,7 @@ graph TD
     HUB --> SPLIT
     HUB --> VIZ
     HUB --> REF_LIT
+
 ```
 
 ---

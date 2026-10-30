@@ -4,7 +4,7 @@ __pycache__
 *.egg-info
 dist
 build
-output/
+#output/
 logs/*.log
 logs/*.csv
 logs/*.json
