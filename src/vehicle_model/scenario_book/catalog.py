@@ -14,6 +14,7 @@ Categories:
     nonlinear_stability   YAML equilibrium analyses and recovery maps (equilibria, eigenvalues, stability regions)
     robust_control        YAML robust benchmarks: controllers x feedback modes x uncertainty cases
     critical_scenarios    YAML critical scenario searches (M13): search, verification, minimal cases, replay
+    design                YAML design optimisations (M14): NSGA-II Pareto analysis, independent re-check
     validation            the validation matrix (configs/validation/matrix.yaml), one scenario at a time
 """
 
@@ -25,7 +26,7 @@ from pathlib import Path
 from typing import Callable
 
 CATEGORIES = ("parking", "four_wheel_steering", "split_mu", "yaw_stability", "solver", "nonlinear_stability",
-              "robust_control", "critical_scenarios", "validation")
+              "robust_control", "critical_scenarios", "design", "validation")
 VEHICLE = "configs/vehicles/seven_dof_passenger.yaml"
 
 
@@ -226,6 +227,13 @@ def _build() -> dict[str, ScenarioEntry]:
                              _experiment(str(path)), {}, "~5-10 min (parallel search, serial verification)",
                              "report.md, evaluations.csv, results.json, search.png, critical/<id>/ (replay YAML, "
                              "metadata, CSV, PNG, GIF, report)"))
+            continue
+        if kind == "design_optimization":
+            entries.append(E(f"exp_{path.stem}", "design", f"Design optimisation {path.stem}",
+                             f"Runs {path} (edit the YAML to change design parameters, objectives, scenario sets, search).",
+                             _experiment(str(path)), {}, "~5-10 min (parallel)",
+                             "report.md, evaluations.csv, pareto_designs.csv, design_<label>.yaml, Pareto fronts, "
+                             "distributions, sensitivities, results.json"))
             continue
         if kind == "stability_map":
             entries.append(E(f"exp_{path.stem}", "nonlinear_stability", f"Stability map {path.stem}",

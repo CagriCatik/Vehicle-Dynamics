@@ -15,6 +15,8 @@ existing specifications stay valid.
     robust_benchmark       :mod:`.robust_benchmark`                 controllers x feedback modes x uncertainty cases
     critical_scenario_search :mod:`.critical_search`                offline search for critical scenarios, verified
                                                                     and minimised counterexamples, replay
+    design_optimization    :mod:`.design_optimization`              vehicle design: NSGA-II Pareto analysis, independent
+                                                                    re-check of the selected designs
 
 Interface of a type (:class:`ExperimentType`):
 
@@ -49,7 +51,7 @@ class ExperimentType:
 
 def _registry() -> dict[str, ExperimentType]:
     # imported here: the type modules import the shared helpers of this module
-    from . import critical_search, equilibrium_analysis, robust_benchmark, runner, solver_benchmark, spec, stability_map
+    from . import critical_search, design_optimization, equilibrium_analysis, robust_benchmark, runner, solver_benchmark, spec, stability_map
 
     types = (
         ExperimentType(DEFAULT_TYPE, spec.parse_controller_comparison, runner.run_controller_comparison,
@@ -60,6 +62,8 @@ def _registry() -> dict[str, ExperimentType]:
         ExperimentType("stability_map", stability_map.parse, stability_map.run, stability_map.describe),
         ExperimentType("robust_benchmark", robust_benchmark.parse, robust_benchmark.run, robust_benchmark.describe),
         ExperimentType(critical_search.KIND, critical_search.parse, critical_search.run, critical_search.describe),
+        ExperimentType(design_optimization.KIND, design_optimization.parse, design_optimization.run,
+                       design_optimization.describe),
     )
     return {t.name: t for t in types}
 

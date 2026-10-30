@@ -159,3 +159,24 @@ Stand: 2026-10-30. Grundlage: [CRITICAL_SCENARIOS.md](CRITICAL_SCENARIOS.md), Ex
 - Der Befund verschärft den offenen Punkt aus M12: Der V2.0 GS-LQR mit Hinterachslenkung verliert das Fahrzeug schon
   bei 24 ms Totzeit und kleiner Lenkamplitude; verzögerungsbewusster Entwurf und Begrenzung der Hinterachslenkung fehlen.
 
+## 10. Abnahme M14 (Plan §9.5)
+
+Stand: 2026-10-30. Grundlage: [DESIGN_OPTIMIZATION.md](DESIGN_OPTIMIZATION.md), Experiment `design_chassis_tv`, Tests
+`test_design_optimization.py`.
+
+| # | Kriterium | Bewertung | Nachweis |
+|---|---|---|---|
+| 1 | Optimierung verwendet die bestehenden Fahrzeugmodelle | erfüllt | 7-DOF-Zweispurmodell mit dem Motion Controller und 14-DOF-Modell, unverändert; Kopplung über die Wankverteilung nach dem Kraftgesetz des 14-DOF-Modells (Test) |
+| 2 | Parameter bleiben durch YAML nachvollziehbar | erfüllt | Auslegungsraum, Ziele, Szenariosätze und Suche in der Spezifikation; jeder ausgewählte Entwurf als YAML mit allen Modellparametern, Zielen und Nachprüfung; `evaluations.csv` mit jedem Entwurf |
+| 3 | Ungültige Fahrzeugkonfigurationen werden ausgeschlossen | erfüllt | Grenzen, Eigenfrequenz, Dämpfungsmaß, Wankverteilung, Lenkverhältnisse, scheiternder Reglerentwurf: nicht simuliert bzw. ungültig mit Grund, nie in der Front (Tests); im Beispiel lag kein Entwurf außerhalb |
+| 4 | Optimierungsergebnisse sind reproduzierbar | erfüllt | NSGA-II vollständig über `seed`; gleiche Spezifikation ergibt dieselben Entwürfe (Test); Auswertungen deterministisch (Test) |
+| 5 | Pareto-Dominanz wird korrekt berechnet | erfüllt | Dominanz, nicht-dominierte Sortierung und Crowding gegen Definition und Brute Force getestet (mit Gleichständen) |
+| 6 | Ausgewählte Designs bestehen unabhängige Nachprüfungen | erfüllt mit Einschränkung | getrennter Evaluationssatz (andere Manöver, Straße, Geschwindigkeit, Streckenfälle); drei von vier ausgewählten Entwürfen bestehen, darunter der Kniepunkt; der Komfort-Bestwert besteht nicht (Überanpassung an die Optimierungsstraße), wird ausgewiesen und nicht empfohlen |
+| 7 | Verbesserungen und Zielkonflikte quantitativ dokumentiert | erfüllt | Knie gegenüber Referenz −21/−10/−2/−23 % (Evaluation −20/−5/−2/−4 %); Komfort gegen Handling (−8 % gegen +27 % Gierfehler), Stabilität gegen Aufwand (−61 % gegen +33 %); Sensitivitäten mit R² |
+
+**Offene Punkte aus M14:**
+
+- Komfort ohne Frequenzbewertung und ohne Wank-/Nickbeschleunigung; Spur/Sturz, K&C und MPC-Gewichte noch nicht als
+  Auslegungsparameter verdrahtet.
+- Kleines Optimierungsbudget; die Front ist eine Näherung.
+

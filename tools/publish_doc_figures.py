@@ -180,6 +180,17 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Fall 01 als Animation aus den aufgezeichneten Daten: kritischer Lauf (rot) gegen Nominalparameter (blau). "
          "Quelle: wie oben."),
     ],
+    "DESIGN_OPTIMIZATION.md": [
+        ("experiments/design_chassis_tv/pareto_fronts.png",
+         "Pareto-Analyse der Fahrwerks-, Lenk- und TV-Auslegung: alle Zielpaare (grau gültige Entwürfe, blau die "
+         "Pareto-Menge über alle vier Ziele, Kreuz Referenzfahrzeug, Sterne ausgewählte Entwürfe). Quelle: "
+         "`python -m vehicle_model.experiments run configs/experiments/design_chassis_tv.yaml`."),
+        ("experiments/design_chassis_tv/sensitivities.png",
+         "Standardisierte Regressionskoeffizienten jedes Ziels auf die normierten Auslegungsparameter (R² je Zeile). "
+         "Quelle: wie oben."),
+        ("experiments/design_chassis_tv/objective_distributions.png",
+         "Verteilung der Zielwerte über alle gültigen Entwürfe, Referenz grün. Quelle: wie oben."),
+    ],
     "DRIFT_MODEL_VALIDITY.md": [
         ("drift/tyre_audit/tyre_audit.png",
          "Reifenaudit bis ±45° Schräglauf: Seitenkraft (grau: außerhalb der erklärten Gültigkeit), Längskraft und "

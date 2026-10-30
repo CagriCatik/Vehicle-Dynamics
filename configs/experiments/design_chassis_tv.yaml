@@ -1,0 +1,43 @@
+type: design_optimization
+name: design_chassis_tv
+description: >
+  M14: anti-roll bars, dampers, the rear-axle steer ratio at speed and the yaw-rate PI of the torque vectoring,
+  laid out for handling (yaw-rate tracking), stability (sideslip over plant cases), comfort (14-DOF heave
+  acceleration on an ISO 8608 class C road) and actuator effort. Selected designs are re-checked on separate
+  manoeuvres, another road and other plant deviations.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+ride_vehicle: configs/suspension/fourteen_dof.yaml
+controller: {law: pi}
+design:
+  - {name: arb_front, low: 150, high: 1200}
+  - {name: arb_rear, low: 50, high: 800}
+  - {name: damper_front, low: 1200, high: 4000}
+  - {name: damper_rear, low: 1200, high: 4000}
+  - {name: rear_ratio_high, low: -0.05, high: 0.4}
+  - {name: tv_kp, low: 4000, high: 30000}
+objectives: [handling_yaw_error, stability_sideslip, comfort_body_accel, actuator_effort]
+report: [roll_gradient]
+optimisation:
+  manoeuvres:
+    - {type: sine_with_dwell, speed_kph: 80, amplitude_deg: 5}
+    - {type: step_steer, speed_kph: 72, steer_deg: 2}
+  uncertainty:
+    - {name: nominal}
+    - {name: low_mu, mu: 0.6}
+  ride: {road_class: C, seed: 1, speed_mps: 20, duration_s: 4}
+  roll: {speed_mps: 20, lateral_accel_mps2: 4}
+evaluation:
+  manoeuvres:
+    - {type: sine_with_dwell, speed_kph: 100, amplitude_deg: 4}
+    - {type: step_steer, speed_kph: 100, steer_deg: 1.5}
+  uncertainty:
+    - {name: nominal}
+    - {name: heavy_rear, mass_factor: 1.15, Iz_factor: 1.2, cog_shift_m: -0.08}
+    - {name: worn_rear_tyres, cornering_scale_rear: 0.8}
+    - {name: wet, mu: 0.7}
+  ride: {road_class: C, seed: 11, speed_mps: 25, duration_s: 4}
+  roll: {speed_mps: 25, lateral_accel_mps2: 5}
+search: {method: nsga2, population: 20, generations: 5, seed: 3}
+selection: {count: 4}
+recheck: {max_sideslip_deg: 15.0, tolerance: 0.05}
+outputs: {directory: output/experiments/design_chassis_tv}

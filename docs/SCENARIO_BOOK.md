@@ -78,6 +78,12 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 |---|---|---|---|---|
 | `exp_critical_search_sine_with_dwell` | **Critical scenario search critical_search_sine_with_dwell** – Runs configs/experiments/critical_search_sine_with_dwell.yaml (edit the YAML to change parameter space, constraints, criterion, search). | – | ~5-10 min (parallel search, serial verification) | report.md, evaluations.csv, results.json, search.png, critical/<id>/ (replay YAML, metadata, CSV, PNG, GIF, report) |
 
+## design
+
+| name | scenario | parameters (defaults) | runtime | outputs |
+|---|---|---|---|---|
+| `exp_design_chassis_tv` | **Design optimisation design_chassis_tv** – Runs configs/experiments/design_chassis_tv.yaml (edit the YAML to change design parameters, objectives, scenario sets, search). | – | ~5-10 min (parallel) | report.md, evaluations.csv, pareto_designs.csv, design_<label>.yaml, Pareto fronts, distributions, sensitivities, results.json |
+
 ## validation
 
 | name | scenario | parameters (defaults) | runtime | outputs |
