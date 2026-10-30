@@ -55,6 +55,21 @@ _INDEX = {"rear_steer": 1, "yaw_moment": 2}  # columns of the full input matrix 
 
 # ----------------------------------------------------------------------------- PI
 @dataclass
+class NoYawLaw:
+    """No yaw-moment or rear-steer request: the motion chain runs only its brake/traction functions
+    (allocation, EBD, ABS/TCS, ...). Reference for brake-function comparisons (Plan V4.0 M17)."""
+
+    name: str = "brake functions only"
+    information: str = INFORMATION_FULL_STATE
+
+    def reset(self) -> None:
+        pass
+
+    def request(self, state: SevenDOFState, ctx: MotionContext) -> MotionRequest:
+        return MotionRequest(yaw_moment=None)          # no yaw request: the allocation leaves M_z free
+
+
+@dataclass
 class YawRatePI:
     """PI on the yaw-rate error with anti-windup (the M5 stability controller law)."""
 
@@ -321,6 +336,7 @@ class LTVMPCYawLaw:
 
 
 __all__ = (
+    "NoYawLaw",
     "INPUTS_4WS_TV",
     "INPUTS_TV",
     "LQRWeights",

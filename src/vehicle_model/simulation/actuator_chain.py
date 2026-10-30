@@ -17,6 +17,11 @@ machine torque cannot appear twice. Per wheel the machine torque is ``T_drive - 
 mechanical power and the recovered energy are reported (``regen_power_w``), but no battery or
 thermal model is claimed.
 
+Regenerative slip control (Plan V4.0 M17.4, optional ``regen``): a
+:class:`~vehicle_model.controllers.regenerative_slip.RegenSlipController` sets the per-wheel regen limit
+(``cut_on_abs``: the brake actuator's own cut under ABS; ``modulated``: a slip loop) and the coast
+drag torque of one-pedal driving, which only regen may deliver (never converted to friction).
+
 With ``ideal=True`` the chain is a pass-through (bit-identical to the unwrapped controller,
 tested); the existing ideal behaviour therefore stays the comparison baseline.
 
@@ -45,11 +50,12 @@ class ActuatorChainConfig:
     steer_rear: SteeringActuatorConfig = field(
         default_factory=lambda: SteeringActuatorConfig(tau=0.035, max_angle=np.radians(10.0), max_rate=np.radians(35.0)))
     ideal: bool = False
+    regen: object = None                  # RegenSlipConfig or None (brake actuator's own cut under ABS)
 
     @classmethod
-    def from_yaml(cls, ideal: bool = False) -> "ActuatorChainConfig":
+    def from_yaml(cls, ideal: bool = False, regen=None) -> "ActuatorChainConfig":
         """Bundled actuator configurations (configs/braking, configs/powertrains, configs/steering)."""
-        return cls(brake=BrakeActuatorConfig.from_yaml(), drive=ElectricDriveConfig.from_yaml(), ideal=ideal)
+        return cls(brake=BrakeActuatorConfig.from_yaml(), drive=ElectricDriveConfig.from_yaml(), ideal=ideal, regen=regen)
 
 
 def generalised_forces(params, T_drive, T_brake, steer_angles) -> np.ndarray:
@@ -75,6 +81,10 @@ class ActuatorChain:
             self.drive = ElectricPowertrainActuator(copy.deepcopy(c.drive))
             self.front = SteeringActuator(copy.deepcopy(c.steer_front))
             self.rear = SteeringActuator(copy.deepcopy(c.steer_rear))
+        self.regen = None
+        if c.regen is not None and not c.ideal:
+            from vehicle_model.controllers.regenerative_slip import RegenSlipController
+            self.regen = RegenSlipController(c.regen, c.brake.max_regen_torque)
         self.reset()
 
     @property
@@ -90,6 +100,8 @@ class ActuatorChain:
         for a in (self.front, self.rear):
             if a is not None:
                 a.reset(0.0)
+        if getattr(self, "regen", None) is not None:
+            self.regen.reset()
 
     def compute_control(self, state, target, telemetry=None, dt: float = 0.01):
         out = self.inner.compute_control(state, target, telemetry, dt)
@@ -99,7 +111,14 @@ class ActuatorChain:
         issued_brake = np.asarray(out.T_brake, float).copy()
         issued_steer = (float(out.steer_f), float(out.steer_r))
         abs_active = (out.diagnostics or {}).get("abs_active")
-        friction, regen = self.brake.step(issued_brake, float(state.vx), abs_active, dt)
+        coast = np.zeros(4)
+        if self.regen is None:
+            friction, regen = self.brake.step(issued_brake, float(state.vx), abs_active, dt)
+        else:
+            cap = self.regen.regen_limit(abs_active, telemetry, float(state.vx), dt)
+            coast = self.regen.coast_request(target, float(state.vx))
+            cut = abs_active if self.regen.config.policy == "cut_on_abs" else None
+            friction, regen = self.brake.step(issued_brake, float(state.vx), cut, dt, regen_limit=cap, regen_only=coast)
         drive = self.drive.step(issued_drive, np.asarray(state.omega, float), dt)
         sf, sr = self.front.step(issued_steer[0], dt), self.rear.step(issued_steer[1], dt)
         realised_brake = friction + regen                      # regen enters here and nowhere else
@@ -119,6 +138,8 @@ class ActuatorChain:
                       "realised_steer": [float(sf), float(sr)], "friction_torque": friction.tolist(),
                       "regen_torque": regen.tolist(), "regen_power_w": float(np.sum(regen * omega)),
                       "drive_power_limited": bool(self.drive.telemetry.power_limited),
+                      "coast_request": coast.tolist(),
+                      "regen_slip_active": [] if self.regen is None else self.regen.active.tolist(),
                       "steer_rate_limited": bool(self.front.saturated_rate or self.rear.saturated_rate)})
         res.diagnostics["trace"] = trace
         res.diagnostics["actuators"] = "dynamic"

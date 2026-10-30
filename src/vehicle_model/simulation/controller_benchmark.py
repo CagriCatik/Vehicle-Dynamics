@@ -111,6 +111,36 @@ def split_mu_braking_scenario(v0: float = 25.0, mu_high: float = 1.0, mu_low: fl
     )
 
 
+BRAKE_KPIS = ("stopping_distance", "mean_deceleration", "max_sideslip_deg", "max_sideslip_braking_deg",
+              "max_yaw_rate_error_degps",
+              "final_heading_deg", "max_lateral_offset", "abs_active_time_s", "abs_switches", "hydraulic_share",
+              "torque_slew_max_knmps", "alloc_residual_fx_max_n", "wheel_lock_time_s")
+
+
+def straight_braking_scenario(v0: float = 25.0, brake_pedal: float = 1.0) -> Scenario:
+    """Straight braking to standstill with a constant pedal (Plan V4.0 M17)."""
+    return Scenario("straight_braking", lambda: UniformRoad(mu=1.0), v0, 20.0,
+                    lambda t, s: ControlTarget(driver_brake_pedal=brake_pedal), kpis=BRAKE_KPIS, stop_speed=1.0,
+                    params={"brake_start": 0.0})
+
+
+def brake_in_turn_scenario(v0: float = 22.0, steer: float = math.radians(2.0), brake_pedal: float = 0.4,
+                           brake_start: float = 2.0, duration: float = 6.0) -> Scenario:
+    """Steady cornering, then braking with the steering held (ISO 7975-inspired, open loop; Plan V4.0 M17)."""
+    return Scenario(
+        "brake_in_turn", lambda: UniformRoad(mu=1.0), v0, duration,
+        lambda t, s: ControlTarget(driver_steer_f=steer,
+                                   driver_accel_pedal=0.0 if t >= brake_start else max(0.08 + 0.05 * (v0 - s.vx), 0.0),
+                                   driver_brake_pedal=brake_pedal if t >= brake_start else 0.0),
+        kpis=BRAKE_KPIS, stop_speed=1.0, params={"brake_start": brake_start})
+
+
+def coast_scenario(v0: float = 22.0, duration: float = 8.0) -> Scenario:
+    """Both pedals released, steering straight: coast (drag-torque) deceleration (Plan V4.0 M17.4, MSR)."""
+    return Scenario("coast", lambda: UniformRoad(mu=1.0), v0, duration, lambda t, s: ControlTarget(),
+                    kpis=BRAKE_KPIS, stop_speed=1.0, params={"brake_start": 0.0})
+
+
 # ----------------------------------------------------------------------------- KPIs
 def _first_crossing(t, y, level):
     idx = np.flatnonzero(y >= level)
@@ -149,7 +179,29 @@ def compute_kpis(h: dict, sc: Scenario) -> dict:
         elif k == "max_abs_slip":
             out[k] = float(np.max(h["max_abs_slip"]))
         elif k == "mean_deceleration":  # from the speed magnitude: v_x alone drops when the car turns sideways
-            out[k] = float((sc.v0 - h["speed"][-1]) / t[-1])
+            t0 = sc.params.get("brake_start", 0.0)
+            i0 = int(np.searchsorted(t, t0))
+            v_start = sc.v0 if i0 == 0 else h["speed"][max(i0 - 1, 0)]
+            out[k] = float((v_start - h["speed"][-1]) / max(t[-1] - t0, 1e-9))
+        elif k == "max_sideslip_braking_deg":    # from the start of braking (excludes steady cornering before)
+            sel = t >= sc.params.get("brake_start", 0.0)
+            out[k] = float(np.degrees(np.max(np.abs(h["beta"][sel])))) if np.any(sel) else 0.0
+        elif k == "max_yaw_rate_error_degps":
+            out[k] = float(np.degrees(np.max(np.abs(r - r_ref))))
+        elif k == "abs_active_time_s":
+            out[k] = float(np.sum(np.asarray(h["abs_active_n"]) > 0) * (t[1] - t[0])) if len(t) > 1 else 0.0
+        elif k == "abs_switches":          # on/off transitions summed over the wheels
+            a = np.asarray(h["abs_active_mask"], int)
+            out[k] = int(np.sum(np.abs(np.diff(a, axis=0)))) if len(a) > 1 else 0
+        elif k == "hydraulic_share":       # friction share of the braking energy at the wheels
+            fr, rg = float(np.sum(h["friction_power_w"])), float(np.sum(h["regen_power_w"]))
+            out[k] = fr / (fr + rg) if fr + rg > 0 else float("nan")
+        elif k == "torque_slew_max_knmps":
+            out[k] = float(np.max(np.abs(np.diff(h["T_realised_abs"]))) / (t[1] - t[0]) / 1e3) if len(t) > 1 else 0.0
+        elif k == "wheel_lock_time_s":     # time with at least one wheel at |kappa| > 0.5 (locked or nearly)
+            out[k] = float(np.sum(np.asarray(h["max_abs_slip"]) > 0.5) * (t[1] - t[0])) if len(t) > 1 else 0.0
+        elif k == "alloc_residual_fx_max_n":
+            out[k] = float(np.nanmax(np.abs(h["alloc_residual_fx"]))) if np.any(np.isfinite(h["alloc_residual_fx"])) else 0.0
         else:
             raise ValueError(f"unknown KPI {k!r}")
     if "T_issued_abs" in h and len(h["t"]) > 2:   # actuation trace (Plan V4.0 M16)
@@ -213,7 +265,7 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
             "Mz_tyre_lateral", "speed", "feasibility", "solver", "tyre_utilisation", "supervisor_mode", "vy", "ax", "ay",
             *(f"{q}_{w}" for q in ("Fz", "Fx", "Fy") for w in WHEELS),
             "Mz_requested", "Mz_alloc_pre_slip", "Mz_issued", "Mz_realised", "T_issued_abs", "T_realised_abs",
-            "regen_power_w")
+            "regen_power_w", "friction_power_w", "abs_active_n", "abs_active_mask", "alloc_residual_fx")
     pos = model.wheel_positions
     h = {k: [] for k in keys}
     t = 0.0
@@ -237,6 +289,14 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
         h["T_issued_abs"].append(float(np.sum(np.abs(T_iss))))
         h["T_realised_abs"].append(float(np.sum(np.abs(F_real * p.Reff))))
         h["regen_power_w"].append(float(trace.get("regen_power_w", 0.0)))
+        omega_abs = np.abs(np.asarray(s.omega, float))
+        fr_t = np.asarray(trace["friction_torque"], float) if "friction_torque" in trace else np.asarray(out.T_brake, float)
+        h["friction_power_w"].append(float(np.sum(fr_t * omega_abs)))
+        am = np.asarray((out.diagnostics or {}).get("abs_active", np.zeros(4)), bool).reshape(4)
+        h["abs_active_mask"].append(am.astype(int))
+        h["abs_active_n"].append(int(am.sum()))
+        res = (out.diagnostics or {}).get("allocation_residual")
+        h["alloc_residual_fx"].append(float(res[0]) if res is not None else float("nan"))
         s, tel = model.step(s, SevenDOFControlInput(steer_f=out.steer_f, steer_r=out.steer_r,
                                                     T_drive=out.T_drive, T_brake=out.T_brake), dt)
         t += dt
@@ -268,6 +328,8 @@ def run_scenario(plant_factory: PlantFactory, controller_factory: ControllerFact
             h[k].append(v)
     h = {k: (np.array(v, dtype=object) if k in ("status", "feasibility", "solver", "supervisor_mode") else np.array(v))
          for k, v in h.items()}
+    if not len(h["abs_active_mask"]):
+        h["abs_active_mask"] = np.zeros((0, 4), int)
     name = getattr(ctrl, "name", type(ctrl).__name__)
     return RunResult(sc.name, "passive" if controller_factory is None else name, h, compute_kpis(h, sc))
 

@@ -100,10 +100,15 @@ class WheelForceAllocator:
         lower = -np.minimum(brake, avail)
         return lower, upper, avail, drive, brake
 
-    def allocate(self, Fx_demand: float, Mz_demand: float, steer, Fz, mu, Fy=None,
-                 health: ActuatorHealth | None = None) -> AllocationResult:
+    def allocate(self, Fx_demand: float, Mz_demand: float | None, steer, Fz, mu, Fy=None,
+                 health: ActuatorHealth | None = None, share=None, brake_limit=None) -> AllocationResult:
+        """``share`` (4, > 0): optional distribution weights replacing the available grip in the secondary
+        objective (``F_i`` proportional to ``share_i`` among equally good solutions); ``brake_limit`` (4, >= 0) [N]:
+        optional additional bound on the braking force per wheel. Both come from a brake-distribution
+        strategy (Plan V4.0 M17, EBD); without them the allocation is unchanged."""
         cfg = self.config
-        demand = np.array([Fx_demand, Mz_demand], dtype=float)
+        free_yaw = Mz_demand is None          # no yaw request: M_z unweighted (reported as achieved, residual 0)
+        demand = np.array([Fx_demand, 0.0 if free_yaw else Mz_demand], dtype=float)
         steer = np.asarray(steer, dtype=float).reshape(4)
         Fz, mu = np.asarray(Fz, dtype=float).reshape(4), np.asarray(mu, dtype=float).reshape(4)
         Fy = np.zeros(4) if Fy is None else np.asarray(Fy, dtype=float).reshape(4)
@@ -112,16 +117,28 @@ class WheelForceAllocator:
             raise ValueError("allocation request contains non-finite values")
 
         lower, upper, avail, drive, brake = self.bounds(Fz, mu, Fy, health)
+        if brake_limit is not None:
+            bl = np.asarray(brake_limit, dtype=float).reshape(4)
+            if not (np.all(np.isfinite(bl)) and np.all(bl >= 0.0)):
+                raise ValueError("brake_limit must be finite and >= 0")
+            lower = np.maximum(lower, -bl)
         B = self.effectiveness(steer)
-        W_v = np.array([1.0 / cfg.force_ref, cfg.yaw_priority / cfg.moment_ref])
-        W_u = 1.0 / np.sqrt(np.maximum(avail, 1.0))  # sum F^2/F_avail -> F proportional to F_avail
+        W_v = np.array([1.0 / cfg.force_ref, 0.0 if free_yaw else cfg.yaw_priority / cfg.moment_ref])
+        weight = avail if share is None else np.asarray(share, dtype=float).reshape(4) * np.mean(np.maximum(avail, 1.0))
+        if share is not None and not (np.all(np.isfinite(weight)) and np.all(weight > 0.0)):
+            raise ValueError("share must be finite and > 0")
+        W_u = 1.0 / np.sqrt(np.maximum(weight, 1.0))  # sum F^2/w -> F proportional to w (default w = F_avail)
         sol = solve_box_wls(B, demand, lower, upper, W_v=W_v, W_u=W_u, eps=1e-9)  # bias on demands ~1e-7 rel.
 
         F = sol.u
+        residual = sol.residual.copy()
+        if free_yaw:
+            demand[1] = sol.achieved[1]
+            residual[1] = 0.0
         at_bound = (sol.at_lower | sol.at_upper) & (upper > lower)
         grip_limited = (sol.at_upper & (avail <= drive)) | (sol.at_lower & (avail <= brake))
         tol = cfg.rel_tol * np.abs(demand) + np.array(cfg.abs_tol)
-        if np.any(np.abs(sol.residual) > tol):
+        if np.any(np.abs(residual) > tol):
             status = STATUS_INFEASIBLE
         elif np.any(at_bound) or np.any(upper == lower):
             status = STATUS_SATURATED
@@ -130,7 +147,7 @@ class WheelForceAllocator:
         T = F * self.Reff
         return AllocationResult(
             F=F, T_drive=np.maximum(T, 0.0), T_brake=np.maximum(-T, 0.0), demand=demand,
-            achieved=sol.achieved, residual=sol.residual, lower=lower, upper=upper,
+            achieved=sol.achieved, residual=residual, lower=lower, upper=upper,
             at_bound=at_bound, grip_limited=grip_limited & at_bound, status=status,
             diagnostics={"available_grip": avail, "utilisation": np.abs(F) / np.maximum(avail, 1e-9)},
         )

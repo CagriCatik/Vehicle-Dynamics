@@ -1,0 +1,30 @@
+# Brake functions of the shared motion chain (Plan V4.0 M17). Synthetic values for the reference car (no
+# measured calibration). Each entry: value, unit, allowed range, meaning; the source of a value is the reasoning
+# given here or a measurement in docs/V4_BRAKING.md. Loaded by vehicle_model.controllers.brake_functions_config;
+# an experiment switches the functions on per controller (controllers[i].brake), not here.
+
+ebd:                                  # Electronic brakeforce distribution (controllers/brake_distribution.py)
+  static_front_share: 0.6             # [-] (0, 1)   static mode: front axle share; the passive car's 60:40 bias
+  rear_margin: 0.85                   # [-] (0, 1]   rear braking force <= rear_margin * mu_hat * Fz_hat
+                                      #              (rear must not reach its limit before the front; measured cost:
+                                      #              +4 % stopping distance on mu 0.5 in information mode A)
+  hold_on_abs: true                   # [bool]       freeze a rear limit while ABS works on that wheel
+
+cbc:                                  # Cornering brake control (controllers/cornering_brake.py)
+  c_ff: 0.5                           # [-] >= 0     share of the load-transfer yaw moment m a_x h a_y / g
+  k_fb: 6000.0                        # [N m/(rad/s)] >= 0  oversteer feedback gain
+  deadband: 0.02                      # [rad/s] >= 0 oversteer feedback deadband
+  min_decel: 1.0                      # [m/s^2] >= 0 active above this (achievable) braking deceleration
+  min_lat: 2.0                        # [m/s^2] >= 0 active above this lateral acceleration
+
+ibc:                                  # Integrated brake slip control (controllers/integrated_brake.py)
+  tyre: magic_formula_passenger_synthetic   # design tyre set from which the slip targets are derived
+  Fz_nominal: 3500.0                  # [N] > 0      load of the slip curve (static wheel load of the reference car)
+  mu_grid: [0.1, 0.2, 0.3, 0.5, 0.7, 1.0]   # [-] increasing  friction values of the target table
+  peak_fraction: 1.0                  # [-] [0.5, 1] 1: target at the force peak; < 1: stable side of the peak
+
+regenerative_slip:                    # Regen slip / drag-torque control, MSR (controllers/regenerative_slip.py)
+  target_slip: 0.04                   # [-] (0, 0.5) |kappa| target of the regen slip loop (modulated policy)
+  kp: 4000.0                          # [N m] per unit slip
+  ki: 80000.0                         # [N m/s] per unit slip
+  min_speed: 1.5                      # [m/s] >= 0   no regen and no loop below

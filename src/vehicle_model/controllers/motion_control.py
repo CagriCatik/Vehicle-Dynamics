@@ -29,6 +29,13 @@ current command, so without actuator dynamics the two agree up to that one-step 
 What the plant receives after actuator dynamics (``realised``) is added outside the
 controller (:mod:`vehicle_model.simulation.actuator_chain`).
 
+Brake functions (Plan V4.0 M17, all optional, default off = unchanged behaviour):
+
+    ActuationConfig.distribution   EBD strategy: shares and rear limits for the allocation while braking
+    ActuationConfig.ibc            IBC: tyre-derived slip targets for the ABS slip controller
+    MotionControllerConfig.cbc     CBC: yaw-moment request while braking in a turn, arbitrated with the
+                                   law's request by :func:`arbitrate_yaw` (never summed)
+
 Output status: the law's solver status if it is not nominal (see
 solver_diagnostics), otherwise the allocation status (nominal / saturated /
 infeasible); both are in the diagnostics. A law that checks its plan against declared
@@ -82,7 +89,7 @@ class MotionContext:
 
 @dataclass(frozen=True)
 class MotionRequest:
-    yaw_moment: float = 0.0       # [N m] demand to the allocation
+    yaw_moment: float | None = 0.0  # [N m] demand to the allocation; None: no yaw request (yaw left free), not 0
     rear_steer: float = 0.0       # [rad] rear road-wheel angle command
     status: str = "nominal"       # law/solver status
     diagnostics: dict = field(default_factory=dict)
@@ -104,6 +111,8 @@ class ActuationConfig:
     abs_config: SlipControlConfig = field(default_factory=lambda: SlipControlConfig(mode="brake"))
     tcs_config: SlipControlConfig = field(default_factory=lambda: SlipControlConfig(mode="drive"))
     enable_slip_control: bool = True
+    distribution: object = None     # BrakeDistributionConfig (EBD) or None: allocation's own grip distribution
+    ibc: object = None              # IntegratedBrakeConfig or None: ABS targets from the calibration table
 
 
 class ActuationLayer:
@@ -118,7 +127,15 @@ class ActuationLayer:
             raise ValueError("allocator limits exceed the vehicle's actuator limits")
         self.allocator = WheelForceAllocator(wheel_contact_positions(params), params.Reff, a)
         self.health = health or ActuatorHealth()
-        self.abs = WheelSlipController(self.config.abs_config)
+        abs_cfg = self.config.abs_config
+        if self.config.ibc is not None:
+            from vehicle_model.controllers.integrated_brake import ibc_slip_config
+            abs_cfg = ibc_slip_config(self.config.ibc, abs_cfg)
+        self.abs = WheelSlipController(abs_cfg)
+        self.distribution = None
+        if self.config.distribution is not None:
+            from vehicle_model.controllers.brake_distribution import BrakeDistributionStrategy
+            self.distribution = BrakeDistributionStrategy(self.config.distribution)
         self.tcs = WheelSlipController(self.config.tcs_config)
         self.last_allocation = None
         self.last_issued = np.zeros(2)                # (F_x, M_z) of the last issued wheel torques
@@ -126,11 +143,24 @@ class ActuationLayer:
     def reset(self) -> None:
         self.abs.reset()
         self.tcs.reset()
+        if self.distribution is not None:
+            self.distribution.reset()
         self.last_allocation = None
         self.last_issued = np.zeros(2)
 
     def actuate(self, Fx_des: float, Mz_des: float, wheel_steer, Fz, mu, Fy, telemetry, vx, dt):
-        alloc = self.allocator.allocate(Fx_des, Mz_des, wheel_steer, Fz, mu, Fy, self.health)
+        share = limit = None
+        if self.distribution is not None and Fx_des < 0.0:       # EBD acts on braking demands only
+            prev = None if self.last_allocation is None else np.maximum(-self.last_allocation.F, 0.0)
+            share, limit = self.distribution.distribute(Fz, mu, self.abs.active, prev)
+        if Mz_des is None and Fx_des >= 0.0 and share is None:
+            # no yaw request while driving: left/right equal per axle (open-differential behaviour); a grip-
+            # proportional split would vector torque to the loaded outer wheels (measured: -6 deg sideslip in a
+            # steady turn at 80 km/h with the brake-functions-only law)
+            g = np.asarray(mu, float) * np.maximum(np.asarray(Fz, float), 1.0)
+            share = np.repeat([(g[0] + g[1]) / 2.0, (g[2] + g[3]) / 2.0], 2) / np.sum(g)
+        alloc = self.allocator.allocate(Fx_des, Mz_des, wheel_steer, Fz, mu, Fy, self.health, share=share,
+                                        brake_limit=limit)
         self.last_allocation = alloc
         T_drive, T_brake = alloc.T_drive, alloc.T_brake
         if self.config.enable_slip_control:
@@ -150,6 +180,7 @@ class MotionControllerConfig:
     max_yaw_moment: float = 4000.0            # [N m]
     min_speed: float = 3.0                    # [m/s] law inactive below
     actuation: ActuationConfig = field(default_factory=ActuationConfig)
+    cbc: object = None                        # CorneringBrakeConfig (Plan V4.0 M17.2) or None
 
 
 class MotionController:
@@ -163,6 +194,10 @@ class MotionController:
         c = self.mc_config
         self.reference = YawReference(params.wheelbase, params.g, c.understeer_gradient_ref, c.mu_utilisation)
         self.actuation = ActuationLayer(params, c.actuation, health)
+        self.cbc = None
+        if c.cbc is not None:
+            from vehicle_model.controllers.cornering_brake import CorneringBrakeControl
+            self.cbc = CorneringBrakeControl(params, c.cbc)
 
     @property
     def name(self) -> str:
@@ -207,12 +242,15 @@ class MotionController:
         else:
             self.law.reset()
             req = MotionRequest()
-        Mz_des = float(np.clip(req.yaw_moment, -c.max_yaw_moment, c.max_yaw_moment))
         steer_r = float(np.clip(req.rear_steer, -p.max_steer_r, p.max_steer_r))
 
         acfg = c.actuation.allocator
         Fx_des = (target.driver_accel_pedal * sum(acfg.driven) * acfg.max_drive_torque
                   - target.driver_brake_pedal * 4.0 * acfg.max_brake_torque) / p.Reff
+        law_mz = None if req.yaw_moment is None else float(req.yaw_moment)
+        cbc_mz = self.cbc.request(state, r_ref, Fx_des, mu_hat) if (self.cbc is not None and abs(state.vx) >= c.min_speed) else None
+        Mz_raw, winner = arbitrate_yaw(law_mz, cbc_mz)
+        Mz_des = None if Mz_raw is None else float(np.clip(Mz_raw, -c.max_yaw_moment, c.max_yaw_moment))
         T_drive, T_brake, alloc, achieved_Mz, slip_active = self.actuation.actuate(
             Fx_des, Mz_des, wheel_steer, Fz, mu, Fy, telemetry, state.vx, dt)
 
@@ -223,7 +261,7 @@ class MotionController:
             status = req.status
         return ControlOutput(
             steer_f=steer, steer_r=steer_r, T_drive=T_drive, T_brake=T_brake,
-            desired_yaw_moment=Mz_des, allocated_yaw_moment=achieved_Mz, status=status,
+            desired_yaw_moment=0.0 if Mz_des is None else Mz_des, allocated_yaw_moment=achieved_Mz, status=status,
             computation_time_ms=(time.perf_counter() - t0) * 1e3,
             diagnostics={
                 "r_ref": r_ref, "Fx_demand": Fx_des, "law_status": req.status, "law": req.diagnostics,
@@ -232,13 +270,33 @@ class MotionController:
                 "abs_active": self.actuation.abs.active.copy(), "tcs_active": self.actuation.tcs.active.copy(),
                 "information": self.law.information,
                 "feasibility": req.diagnostics.get("feasibility"),
-                "trace": {"requested": [float(Fx_des), Mz_des], "allocated": [float(x) for x in alloc.achieved],
+                "arbitration": {"law": law_mz, "cbc": cbc_mz, "winner": winner},
+                "trace": {"requested": [float(Fx_des), float("nan") if Mz_des is None else Mz_des], "allocated": [float(x) for x in alloc.achieved],
                           "issued": [float(x) for x in self.actuation.last_issued]},
             },
         )
 
 
+def arbitrate_yaw(law_mz: float | None, cbc_mz: float | None) -> tuple[float | None, str]:
+    """Deterministic yaw-moment arbitration of the yaw law (ESC/TV) and CBC (Plan V4.0 M17.2, 3.4).
+
+    No summation of two interventions on the same brakes:
+
+        CBC inactive (None)              -> the law's request                         ("law")
+        same sign (or one of them 0)     -> the request of larger magnitude           ("law" / "cbc")
+        opposite signs                   -> the law's request (stability priority)    ("law, cbc suppressed")
+    """
+    if cbc_mz is None:
+        return law_mz, ("law" if law_mz is not None else "none")
+    if law_mz is None:
+        return cbc_mz, "cbc"
+    if law_mz * cbc_mz >= 0.0:
+        return (cbc_mz, "cbc") if abs(cbc_mz) > abs(law_mz) else (law_mz, "law")
+    return law_mz, "law, cbc suppressed"
+
+
 __all__ = (
+    "arbitrate_yaw",
     "INFORMATION_FULL_STATE",
     "ActuationConfig",
     "ActuationLayer",

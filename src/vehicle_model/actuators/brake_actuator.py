@@ -94,6 +94,8 @@ class BrakeByWireActuator:
         vx: float,
         abs_active: np.ndarray | list[bool] | None = None,
         dt: float = 0.005,
+        regen_limit: np.ndarray | list[float] | None = None,
+        regen_only: np.ndarray | list[float] | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Update brake actuator states forward by dt.
 
@@ -107,6 +109,11 @@ class BrakeByWireActuator:
             Flags indicating whether ABS is actively modulating wheel pressure.
         dt : float
             Time step [s].
+        regen_limit : array_like of shape (4,), optional
+            Upper limit of the regenerative torque per wheel [Nm] (regenerative slip control, Plan V4.0 M17.4).
+        regen_only : array_like of shape (4,), optional
+            Braking torque that only the electric machine may deliver (coast drag torque) [Nm]; regen serves
+            it first, the rest of the regen covers ``cmd_brake_torque``; it is never converted to friction.
 
         Returns
         -------
@@ -133,14 +140,17 @@ class BrakeByWireActuator:
 
         target_regen = np.zeros(4, dtype=float)
         target_friction = cmd.copy()
+        only = np.zeros(4) if regen_only is None else np.maximum(np.asarray(regen_only, dtype=float), 0.0)
+        cap = np.full(4, self.config.max_regen_torque) if regen_limit is None else \
+            np.clip(np.asarray(regen_limit, dtype=float), 0.0, self.config.max_regen_torque)
 
         if self.config.enable_regen_blending and speed_blend > 1e-3:
             for i in range(4):
                 if not abs_flag[i]:
                     # Wheel has grip, no ABS: utilize regenerative braking up to limit
-                    r_des = min(cmd[i], self.config.max_regen_torque) * speed_blend
+                    r_des = min(cmd[i] + only[i], cap[i]) * speed_blend
                     target_regen[i] = r_des
-                    target_friction[i] = max(0.0, cmd[i] - r_des)
+                    target_friction[i] = max(0.0, cmd[i] - max(0.0, r_des - only[i]))
                 else:
                     # ABS active: dump regen immediately to 0 for rapid hydraulic anti-lock control
                     target_regen[i] = 0.0
