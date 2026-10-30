@@ -101,11 +101,14 @@ class WheelForceAllocator:
         return lower, upper, avail, drive, brake
 
     def allocate(self, Fx_demand: float, Mz_demand: float | None, steer, Fz, mu, Fy=None,
-                 health: ActuatorHealth | None = None, share=None, brake_limit=None) -> AllocationResult:
+                 health: ActuatorHealth | None = None, share=None, brake_limit=None,
+                 drive_limit=None) -> AllocationResult:
         """``share`` (4, > 0): optional distribution weights replacing the available grip in the secondary
         objective (``F_i`` proportional to ``share_i`` among equally good solutions); ``brake_limit`` (4, >= 0) [N]:
         optional additional bound on the braking force per wheel. Both come from a brake-distribution
-        strategy (Plan V4.0 M17, EBD); without them the allocation is unchanged."""
+        strategy (Plan V4.0 M17, EBD); ``drive_limit`` (4, >= 0) [N]: optional additional bound on the drive
+        force per wheel (traction distribution / eLSD / motor envelope, M18). Without them the allocation is
+        unchanged."""
         cfg = self.config
         free_yaw = Mz_demand is None          # no yaw request: M_z unweighted (reported as achieved, residual 0)
         demand = np.array([Fx_demand, 0.0 if free_yaw else Mz_demand], dtype=float)
@@ -122,6 +125,11 @@ class WheelForceAllocator:
             if not (np.all(np.isfinite(bl)) and np.all(bl >= 0.0)):
                 raise ValueError("brake_limit must be finite and >= 0")
             lower = np.maximum(lower, -bl)
+        if drive_limit is not None:
+            dl = np.asarray(drive_limit, dtype=float).reshape(4)
+            if not (np.all(np.isfinite(dl)) and np.all(dl >= 0.0)):
+                raise ValueError("drive_limit must be finite and >= 0")
+            upper = np.minimum(upper, dl)
         B = self.effectiveness(steer)
         W_v = np.array([1.0 / cfg.force_ref, 0.0 if free_yaw else cfg.yaw_priority / cfg.moment_ref])
         weight = avail if share is None else np.asarray(share, dtype=float).reshape(4) * np.mean(np.maximum(avail, 1.0))

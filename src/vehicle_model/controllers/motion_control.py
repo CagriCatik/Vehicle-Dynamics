@@ -113,6 +113,8 @@ class ActuationConfig:
     enable_slip_control: bool = True
     distribution: object = None     # BrakeDistributionConfig (EBD) or None: allocation's own grip distribution
     ibc: object = None              # IntegratedBrakeConfig or None: ABS targets from the calibration table
+    traction: object = None         # TractionDistributionConfig (open / eLSD / free, motor envelope; M18) or None
+    enable_tcs: bool = True         # drive slip control (TCS) on/off independently of ABS (M18 comparisons)
 
 
 class ActuationLayer:
@@ -132,6 +134,10 @@ class ActuationLayer:
             from vehicle_model.controllers.integrated_brake import ibc_slip_config
             abs_cfg = ibc_slip_config(self.config.ibc, abs_cfg)
         self.abs = WheelSlipController(abs_cfg)
+        self.traction = None
+        if self.config.traction is not None:
+            from vehicle_model.controllers.traction_distribution import TractionDistributionStrategy
+            self.traction = TractionDistributionStrategy(self.config.traction, params.Reff)
         self.distribution = None
         if self.config.distribution is not None:
             from vehicle_model.controllers.brake_distribution import BrakeDistributionStrategy
@@ -148,7 +154,7 @@ class ActuationLayer:
         self.last_allocation = None
         self.last_issued = np.zeros(2)
 
-    def actuate(self, Fx_des: float, Mz_des: float, wheel_steer, Fz, mu, Fy, telemetry, vx, dt):
+    def actuate(self, Fx_des: float, Mz_des: float, wheel_steer, Fz, mu, Fy, telemetry, vx, dt, omega=None):
         share = limit = None
         if self.distribution is not None and Fx_des < 0.0:       # EBD acts on braking demands only
             prev = None if self.last_allocation is None else np.maximum(-self.last_allocation.F, 0.0)
@@ -159,13 +165,18 @@ class ActuationLayer:
             # steady turn at 80 km/h with the brake-functions-only law)
             g = np.asarray(mu, float) * np.maximum(np.asarray(Fz, float), 1.0)
             share = np.repeat([(g[0] + g[1]) / 2.0, (g[2] + g[3]) / 2.0], 2) / np.sum(g)
+        dlim = None
+        if self.traction is not None and Fx_des > 0.0:           # drive coupling acts on drive demands only
+            upper = self.allocator.bounds(Fz, mu, Fy if Fy is not None else np.zeros(4), self.health)[1]
+            dlim = self.traction.drive_limit(upper, omega)
         alloc = self.allocator.allocate(Fx_des, Mz_des, wheel_steer, Fz, mu, Fy, self.health, share=share,
-                                        brake_limit=limit)
+                                        brake_limit=limit, drive_limit=dlim)
         self.last_allocation = alloc
         T_drive, T_brake = alloc.T_drive, alloc.T_brake
         if self.config.enable_slip_control:
             T_brake = self.abs.update(T_brake, telemetry, vx, dt)
-            T_drive = self.tcs.update(T_drive, telemetry, vx, dt)
+            if self.config.enable_tcs:
+                T_drive = self.tcs.update(T_drive, telemetry, vx, dt)
         F = (T_drive - T_brake) / self.params.Reff
         self.last_issued = self.allocator.effectiveness(wheel_steer) @ F      # (F_x, M_z) of the issued torques
         achieved_Mz = float(self.last_issued[1])
@@ -236,23 +247,26 @@ class MotionController:
         mu_hat = float(np.mean(mu))
         r_ref = self.reference.yaw_rate(steer, state.vx, mu_hat)
 
+        acfg = c.actuation.allocator
+        Fx_des = (target.driver_accel_pedal * sum(acfg.driven) * acfg.max_drive_torque
+                  - target.driver_brake_pedal * 4.0 * acfg.max_brake_torque) / p.Reff
         if abs(state.vx) >= c.min_speed:
             ctx = MotionContext(steer, r_ref, mu_hat, dt, c.max_yaw_moment, p.max_steer_r)
             req = self.law.request(state, ctx)
         else:
+            # law inactive at low speed. Braking to a stop: M_z = 0 (symmetric, no yaw jerk before standstill).
+            # Driving off: no yaw request (None). Measured (M18): with M_z = 0 and both motors of one side failed
+            # the allocation could not drive at all below min_speed (deadlock); with None while braking, split-mu
+            # stops turned by 0.6 deg in the last metres (asymmetric grip-proportional braking).
             self.law.reset()
-            req = MotionRequest()
+            req = MotionRequest(yaw_moment=None if Fx_des >= 0.0 else 0.0)
         steer_r = float(np.clip(req.rear_steer, -p.max_steer_r, p.max_steer_r))
-
-        acfg = c.actuation.allocator
-        Fx_des = (target.driver_accel_pedal * sum(acfg.driven) * acfg.max_drive_torque
-                  - target.driver_brake_pedal * 4.0 * acfg.max_brake_torque) / p.Reff
         law_mz = None if req.yaw_moment is None else float(req.yaw_moment)
         cbc_mz = self.cbc.request(state, r_ref, Fx_des, mu_hat) if (self.cbc is not None and abs(state.vx) >= c.min_speed) else None
         Mz_raw, winner = arbitrate_yaw(law_mz, cbc_mz)
         Mz_des = None if Mz_raw is None else float(np.clip(Mz_raw, -c.max_yaw_moment, c.max_yaw_moment))
         T_drive, T_brake, alloc, achieved_Mz, slip_active = self.actuation.actuate(
-            Fx_des, Mz_des, wheel_steer, Fz, mu, Fy, telemetry, state.vx, dt)
+            Fx_des, Mz_des, wheel_steer, Fz, mu, Fy, telemetry, state.vx, dt, omega=state.omega)
 
         status = alloc.status
         if status != "infeasible" and slip_active:
