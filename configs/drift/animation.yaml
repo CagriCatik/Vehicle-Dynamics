@@ -1,0 +1,13 @@
+# Drift plan D6: animated and fully exported drift runs (all from recorded 7-DOF data).
+name: drift_animation
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+powertrain: {layout: rwd}
+reference: {speed_mps: 13.0, beta_deg: 20.0, mu: 0.9, branch_beta_deg: [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26]}
+scenarios:
+  circle_hold: {duration_s: 14.0, perturbation_beta_deg: 3.0, circle_offset_m: 2.0}
+  full_sequence: {duration_s: 30.0, exit_s: 20.0}
+  figure_eight: {left_hold_s: 10.0, right_hold_s: 10.0, duration_s: 42.0}
+visualization: {enable_gif: true, enable_plots: true, fps: 20, dpi: 80, playback_speed: {circle_hold: 1.0, full_sequence: 2.0, figure_eight: 2.0}}
+simulation: {dt_s: 0.005}
+outputs: {directory: output/drift/runs}

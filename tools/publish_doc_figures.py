@@ -164,6 +164,30 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "der Stellgröße). Quelle: "
          "`python -m vehicle_model.experiments run configs/experiments/dynamic_nmpc_solver_benchmark.yaml`."),
     ],
+    "DRIFT_MODEL_VALIDITY.md": [
+        ("drift/tyre_audit/tyre_audit.png",
+         "Reifenaudit bis ±45° Schräglauf: Seitenkraft (grau: außerhalb der erklärten Gültigkeit), Längskraft und "
+         "Ausnutzung im kombinierten Schlupf für MF, Simplified Combined und Fiala. Quelle: `python examples/drift_tyre_audit.py`."),
+    ],
+    "DRIFT_RESULTS.md": [
+        ("drift/runs/full_sequence/supervised/drift_animation.gif",
+         "Überwachter Drift aus der Geradeausfahrt (13 m/s, µ 0,9, Ziel β −20°): Annäherung, Einleitung durch den LQR, "
+         "Halten, Austritt mit Gegenlenken, Normalfahrt. Nur aufgezeichnete Daten der 7-DOF-Strecke; doppelte "
+         "Wiedergabegeschwindigkeit. Quelle: `python examples/drift_figure_eight_demo.py`."),
+        ("drift/equilibrium_sweep/equilibrium_sweep.png",
+         "Stationäre Driftgleichgewichte (D2) über |β| je Geschwindigkeit und Reibwert: Radius, Lenkwinkel, Moment je "
+         "Hinterrad, Hinterradschlupf; offene Kreise: Reifen extrapoliert, Kreuze: kein Gleichgewicht. Quelle: "
+         "`python examples/drift_equilibria_demo.py`."),
+        ("drift/lqr_hold/sideslip_and_yaw.png",
+         "D3: Halten und Störungen links/rechts, offen (gestrichelt) gegen LQR (durchgezogen). Quelle: "
+         "`python examples/drift_hold_demo.py`."),
+        ("drift/initiation/initiation_sequence.png",
+         "D4: Moduswechsel und Zeitverläufe einer Einleitung bis zum Austritt (11 m/s, 15°, µ 0,9). Quelle: "
+         "`python examples/drift_initiation_demo.py`."),
+        ("drift/circle_tracking/trajectory.png",
+         "D5: Kreisbahnen bei ±2 m Startversatz (offen, ESC, Drift-LQR fest, mit Außenschleife) und die Acht-Sequenz "
+         "(Geometrie nicht erreicht). Quelle: `python examples/drift_circle_demo.py`."),
+    ],
     "REAR_WHEEL_STEERING.md": [
         ("four_wheel_steering/parking/u_turn.gif",
          "Wenden auf schmaler Straße, 2WS (grau) gegen 4WS (türkis): unten die Radlenkwinkel über der Zeit. Die "

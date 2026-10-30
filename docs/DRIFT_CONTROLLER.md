@@ -1,4 +1,4 @@
-# Drift-Regler: Verfahren (Drift-Plan D1–D5)
+# Drift-Regler: Verfahren (Drift-Plan D1–D6)
 
 Autonomer Drift auf der bestehenden 7-DOF-Strecke nach `Plan_v3.md`. Dieses Dokument beschreibt die Verfahren;
 Ergebnisse stehen in [DRIFT_RESULTS.md](DRIFT_RESULTS.md), Modellgrenzen und Konventionen in
@@ -23,6 +23,9 @@ reales Fahrzeug.
 | Pfadreferenzen (Kreis, Acht) | `drift/path_reference.py` | D5 |
 | Geplanter Drift-LQR mit Sollpunktrampe und Radial-Außenschleife | `drift/control_adapter.py` (`ScheduledDriftController`) | D5 |
 | Kreisführung, Übergang, Acht | `simulation/drift/tracking.py` | D5 |
+| Aufzeichnung und vollständiger Export | `simulation/drift/runner.py` | D6 |
+| Animierte Läufe (Konfiguration) | `simulation/drift/showcase.py`, `configs/drift/animation.yaml` | D6 |
+| GIF-Renderer | `visualization/drift_animation.py` | D6 |
 | Plots | `visualization/drift_plots.py` | D1–D3 |
 
 Abhängigkeitsrichtung wie im Plan (3.2): `drift/` kennt weder Matplotlib noch Dateien; `simulation/drift/` liest
@@ -192,7 +195,26 @@ berührende Kreise, Mittelpunktabstand / (R_links + R_rechts) = 1 (Toleranz 0,15
 wiederverwendete Strecke trug den Startwert der Lastverlagerungsiteration von Lauf zu Lauf weiter; auf dem instabilen
 Driftgleichgewicht entschied das (1e-7) darüber, wann der offene Kreis abfällt (Befund in D5, Regressionstest).
 
-## 7. Reproduktion
+## 7. Animation und Export (D6)
+
+**Aufzeichnung** (`simulation/drift/runner.py`): `record` simuliert über `simulate` (frische Streckenkopie,
+ScenarioRunner) und hält je Schritt die Reglerdiagnose fest (Modus, Status, Sättigung, Sollwerte). `export_run` schreibt je
+Lauf nach `<out>/<szenario>/<variante>/` genau die Pflichtausgaben des Plans: `run_config_resolved.yaml`,
+`metadata.json`, `state_history.csv` (Zustand, `χ`, β, Raddrehzahlen, alle Stellgrößen), `wheel_forces.csv` (κ, α, F_z, µ,
+F_x, F_y, Ausnutzung je Rad), `controller_diagnostics.csv`, `kpi.json`, `drift_animation.gif`, `trajectory.png`,
+`sideslip_and_yaw.png`, `wheel_torques_and_slip.png`, `phase_plane.png`, `equilibrium_residuals.png`, `report.md`.
+CSV, Bilder und GIF stammen aus demselben aufgezeichneten Objekt.
+
+**GIF** (`visualization/drift_animation.py`): Bild k zeigt die aufgezeichnete Probe `i = round(k · v_Wiedergabe / (fps · Δt))`;
+nichts wird interpoliert oder korrigiert. Fahrzeug über `vehicle_polygons` aus `plan_view` (Grundlage von `draw_vehicle`)
+an den aufgezeichneten `X, Y, ψ` mit dem aufgezeichneten Lenkwinkel. Übersicht (gesamte Bahn, Sollkreis und Mittelpunkt,
+Spuren aller Läufe), Nahansicht im echten Maßstab (Längsachse gestrichelt, Geschwindigkeitsvektor als Pfeil, der Winkel
+dazwischen ist β, Gegenlenken sichtbar), HUD (Zeit, km/h, β, r, δ_v, κ HL/HR, T HL/HR, Sättigung, Modus) und β, r, δ_v/T
+über der Zeit mit synchronem Cursor. Mehrere Läufe teilen die Achsen; gescheiterte tragen ihr Etikett. fps, dpi und
+Wiedergabegeschwindigkeit aus `configs/drift/animation.yaml`. Die bestehenden Animationen und Live-Plots bleiben
+unverändert.
+
+## 8. Reproduktion
 
 ```bash
 python examples/drift_tyre_audit.py                      # D1
@@ -200,13 +222,14 @@ python examples/drift_equilibria_demo.py                 # D2, configs/drift/equ
 python examples/drift_hold_demo.py                       # D3, configs/drift/drift_lqr.yaml (~3 min)
 python examples/drift_initiation_demo.py                 # D4, configs/drift/initiation.yaml (36 Läufe, ~16 min parallel)
 python examples/drift_circle_demo.py                     # D5, configs/drift/circle_hold.yaml (~10 min)
+python examples/drift_figure_eight_demo.py               # D6, configs/drift/animation.yaml (GIFs, ~6 min)
 python -m pytest tests/vehicle_model/drift -q
 ```
 
 Konfigurationen werden streng geprüft (unbekannte Schlüssel, Wertebereiche, Dateien, Reifennamen, Gewichtsdimensionen)
 und aufgelöst in den Ergebnisordner geschrieben (`run_config_resolved.yaml`).
 
-## 8. Grenzen (Stand D5)
+## 9. Grenzen (Stand D6)
 
 - Nur Hinterradantrieb mit offenem Differential und Frontlenkung; Torque Vectoring und Allrad folgen nicht vor D7.
 - Informationsmodus nur `ideal_full_state`; geschätzte und sensorbeschränkte Rückführung folgen (D7).

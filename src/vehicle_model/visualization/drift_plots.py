@@ -234,4 +234,108 @@ def plot_tracking(traj: dict, path: str | Path, name: str = "") -> Path:
     return out
 
 
-__all__ = ("plot_equilibrium_sweep", "plot_hold_runs", "plot_initiation", "plot_tracking", "plot_tyre_audit")
+def plot_run_set(res, out_dir: str | Path) -> None:
+    """The five per-run figures of D6 from one recorded history (trajectory, sideslip/yaw, wheels, phase plane,
+    equilibrium residuals)."""
+    import math
+
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from vehicle_model.visualization.theme import TEXT_MUTED, apply_dark_theme, style_axis
+    apply_dark_theme()
+    out = Path(out_dir)
+    h = res.history
+    t = h.time
+    beta = np.degrees(np.unwrap(np.arctan2(h.vy, h.vx)))
+    title = f"{res.scenario} / {res.variant}" + (f" [{res.label}]" if res.label else "")
+    modes = [d.get("mode", "") for d in res.diagnostics]
+
+    def bands(ax):
+        start = 0
+        for k in range(1, len(modes) + 1):
+            if k == len(modes) or modes[k] != modes[start]:
+                m = modes[start]
+                if m in ("HOLD", "TRANSITION"):
+                    ax.axvspan(t[start], t[min(k, len(t) - 1)], color=_COLOURS[2], alpha=0.12, lw=0)
+                elif m in ("EXIT", "RECOVER", "FAILED"):
+                    ax.axvspan(t[start], t[min(k, len(t) - 1)], color=_COLOURS[1], alpha=0.12, lw=0)
+                start = k
+
+    # trajectory
+    fig, ax = plt.subplots(figsize=(8, 8))
+    if res.circle is not None:
+        cx, cy = res.circle.points()
+        ax.plot(cx, cy, color=TEXT_MUTED, ls="--", lw=1.2, label="reference circle")
+    ax.plot(h.X, h.Y, color=_COLOURS[0], lw=1.4, label="CoG path")
+    ax.plot(h.X[0], h.Y[0], "o", color=_COLOURS[0])
+    ax.set_aspect("equal", adjustable="datalim")
+    ax.legend(fontsize=8)
+    style_axis(ax, f"{title}: path", "X [m]", "Y [m]")
+    fig.tight_layout(); fig.savefig(out / "trajectory.png", dpi=110, facecolor=fig.get_facecolor()); plt.close(fig)
+    # sideslip and yaw
+    fig, axs = plt.subplots(2, 1, figsize=(12, 7), sharex=True)
+    axs[0].plot(t, beta, color="white", lw=1.3)
+    axs[1].plot(t, np.degrees(h.r), color="white", lw=1.3)
+    if res.reference_beta is not None:
+        axs[0].axhline(math.degrees(res.reference_beta), color=TEXT_MUTED, ls=":")
+    if res.reference_r is not None:
+        axs[1].axhline(math.degrees(res.reference_r), color=TEXT_MUTED, ls=":")
+    refs = [d.get("beta_ref") for d in res.diagnostics]
+    if any(b is not None for b in refs):
+        axs[0].plot(t[:len(refs)], [np.nan if b is None else math.degrees(b) for b in refs], color=_COLOURS[3], lw=1, ls="--",
+                    label="beta_ref (schedule)")
+        axs[0].legend(fontsize=8)
+    for a in axs:
+        bands(a)
+    style_axis(axs[0], f"{title}: sideslip (green: HOLD/TRANSITION, orange: EXIT/RECOVER)", None, "beta [deg]")
+    style_axis(axs[1], None, "time [s]", "r [deg/s]")
+    fig.tight_layout(); fig.savefig(out / "sideslip_and_yaw.png", dpi=110, facecolor=fig.get_facecolor()); plt.close(fig)
+    # wheel torques and slip
+    fig, axs = plt.subplots(3, 1, figsize=(12, 9), sharex=True)
+    axs[0].plot(t, h.T_drive[:, 2], color=_COLOURS[0], lw=1.2, label="T RL")
+    axs[0].plot(t, h.T_drive[:, 3], color=_COLOURS[1], lw=1.2, ls="--", label="T RR")
+    axs[1].plot(t, h.kappa[:, 2], color=_COLOURS[0], lw=1.2, label="kappa RL")
+    axs[1].plot(t, h.kappa[:, 3], color=_COLOURS[1], lw=1.2, label="kappa RR")
+    axs[2].plot(t, np.degrees(h.steer_f), color="white", lw=1.2)
+    for a in axs:
+        bands(a)
+    axs[0].legend(fontsize=8); axs[1].legend(fontsize=8)
+    style_axis(axs[0], f"{title}: rear drive torque", None, "[N m]")
+    style_axis(axs[1], "rear longitudinal slip (plant definition, bounded to [-1, 1])", None, "kappa [-]")
+    style_axis(axs[2], "front steer", "time [s]", "delta_f [deg]")
+    fig.tight_layout(); fig.savefig(out / "wheel_torques_and_slip.png", dpi=110, facecolor=fig.get_facecolor()); plt.close(fig)
+    # phase plane
+    fig, ax = plt.subplots(figsize=(8, 7))
+    ax.plot(beta, np.degrees(h.r), color=_COLOURS[0], lw=1.2)
+    ax.plot(beta[0], math.degrees(h.r[0]), "o", color=_COLOURS[0], label="start")
+    if res.reference_beta is not None and res.reference_r is not None:
+        ax.plot(math.degrees(res.reference_beta), math.degrees(res.reference_r), "*", color=_COLOURS[3], ms=14,
+                label="drift equilibrium")
+    ax.legend(fontsize=8)
+    style_axis(ax, f"{title}: phase plane", "beta [deg]", "r [deg/s]")
+    fig.tight_layout(); fig.savefig(out / "phase_plane.png", dpi=110, facecolor=fig.get_facecolor()); plt.close(fig)
+    # equilibrium residuals
+    fig, ax = plt.subplots(figsize=(8, 5))
+    if res.equilibrium:
+        from vehicle_model.handling_analysis.equilibrium import RESIDUAL_TOL
+        r = res.equilibrium["residual"]
+        names = list(r)
+        ax.bar(names, [r[n] / RESIDUAL_TOL[n] for n in names], color=_COLOURS[0])
+        ax.axhline(1.0, color=_COLOURS[1], ls="--", label="tolerance")
+        ax.set_yscale("log")
+        ax.legend(fontsize=8)
+        ex = res.equilibrium.get("extrapolating")
+        style_axis(ax, f"target equilibrium residuals / tolerance ({res.equilibrium['validity']}"
+                       + (f"; tyre extrapolates: {[w for w, x in zip(('FL', 'FR', 'RL', 'RR'), ex) if x]}" if ex and any(ex) else "")
+                       + ")", None, "residual / tolerance")
+    else:
+        ax.text(0.5, 0.5, "no target equilibrium for this run", ha="center", va="center", color=TEXT_MUTED,
+                transform=ax.transAxes)
+        ax.axis("off")
+    fig.tight_layout(); fig.savefig(out / "equilibrium_residuals.png", dpi=110, facecolor=fig.get_facecolor()); plt.close(fig)
+
+
+__all__ = ("plot_equilibrium_sweep", "plot_hold_runs", "plot_initiation", "plot_run_set", "plot_tracking",
+           "plot_tyre_audit")

@@ -186,7 +186,7 @@ def run(spec: TrackingSpec, out_dir=None) -> dict:
     if spec.transition:
         results["transition"] = _transition(spec, m, plant, sch, out)
     if spec.figure_eight:
-        results["figure_eight"], fe_h = _figure_eight(spec, m, out)
+        results["figure_eight"], fe_h, _ = _figure_eight(spec, m, out)
         if fe_h is not None:
             traj[("figure-eight", "supervised")] = (fe_h, None)
     (out / "run_config_resolved.yaml").write_text(yaml.safe_dump(spec.raw, sort_keys=False), encoding="utf-8")
@@ -341,7 +341,7 @@ def _figure_eight(spec, m, out):
     else:
         res["geometry_success"] = False
     res["success"] = res["sequence_success"] and res["geometry_success"]
-    return res, h
+    return res, h, [f"{sc}:{md}" for sc, md in seq.log]
 
 
 def _report(spec, res, eq) -> str:

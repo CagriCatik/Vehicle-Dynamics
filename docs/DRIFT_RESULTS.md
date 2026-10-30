@@ -1,6 +1,6 @@
 # Drift-Regler: Ergebnisse und Abnahme (Drift-Plan)
 
-Ergebnisse der Pakete D0–D5 mit Gate-Bewertung (PASS / FAIL / INFEASIBLE). Verfahren:
+Ergebnisse der Pakete D0–D6 mit Gate-Bewertung (PASS / FAIL / INFEASIBLE). Verfahren:
 [DRIFT_CONTROLLER.md](DRIFT_CONTROLLER.md); Modellgrenzen: [DRIFT_MODEL_VALIDITY.md](DRIFT_MODEL_VALIDITY.md). Alle
 Parameter synthetisch, nur virtuelle Modellvalidierung.
 
@@ -14,6 +14,7 @@ Parameter synthetisch, nur virtuelle Modellvalidierung.
 | D3 Halten mit LQR | PASS | Gleichgewicht offen instabil (Eigenwert +3,4 1/s), stabilisierbar (PBH 7/7); LQR hält in beiden Richtungen und regelt alle 14 Störfälle aus, ohne Driftverlust; offen geht jede Störung verloren |
 | D4 Einleitung, Austritt, Recovery | PASS mit Grenze | End-to-End aus Geradeausfahrt ohne Zustandseingriff: 30 von 36 Läufen erfolgreich (83 %), µ 0,6 18/18, µ 0,9 12/18; nicht erreicht: 25° bei µ 0,9 (Einleitung überschwingt, korrekter Abbruch bei 13 und 15 m/s, Dreher in der Recovery bei 11 m/s → FAILED gemeldet). Überwachter Austritt ohne Überschwingen gegenüber 21–47° bei sofortiger Abschaltung |
 | D5 Kreisführung, Übergang, Acht | Kreis PASS, Übergang PASS, Acht: Ablauf PASS / Geometrie FAIL | Radiale Außenschleife beseitigt ±2 m Startversatz (0,00 / 0,06 m), fester LQR behält 1,4 m; gestufte Einleitung auf 25° bei µ 0,9 erreicht (die D4-Grenze), mit 8° Überschwingen; Acht: beide Driftkreise erreicht und symmetrisch, aber Mittelpunktabstand 1,34 × (R_l + R_r) statt 1 (Kreise berühren sich nicht) |
+| D6 Animation und Export | PASS | Vier Läufe mit je allen 13 Pflichtdateien; GIF öffnet, 280–420 Bilder, jedes Bild eine aufgezeichnete Probe; Bahn in CSV = Aufzeichnung (Test, 1e-9 m); Etiketten für gescheiterte Läufe und Abschnitte |
 
 ## D2: Driftgleichgewichte
 
@@ -150,11 +151,57 @@ Ablauf: PASS (beide Abschnitte, kein FAILED, exakt gespiegelt). **Geometrie: FAI
 Außenschleife kann nur den Radius, nicht den Mittelpunkt verschieben. Eine echte Acht braucht eine Mittelpunkt- bzw.
 Querablagenführung oder einen direkten Wechsel links → rechts ohne Austritt (offen).
 
-## Offene Punkte nach D5
+## D6: Animation und Export
+
+`configs/drift/animation.yaml` → `output/drift/runs/` (Beispiel `examples/drift_figure_eight_demo.py`):
+
+| Szenario / Variante | Ergebnis | Inhalt |
+|---|---|---|
+| `circle_hold/open_loop` | drift lost | Gleichgewicht + 3° Schwimmwinkel, konstante Stellgrößen |
+| `circle_hold/drift_tracking` | PASS | dieselbe Störung, Sollkreis 2 m versetzt, Schedule + Außenschleife |
+| `circle_hold/comparison.gif` | | beide Läufe auf gemeinsamen Achsen (17,6 MB, nur lokal) |
+| `full_sequence/supervised` | PASS | Geradeausfahrt → APPROACH (0,5 s) → INITIATE (1,2 s) → HOLD (8,1 s) → EXIT (20 s) → Normalfahrt (22,4 s) |
+| `figure_eight/supervised` | sequence PASS / geometry FAIL | Links 10 s (R 26,5 m), Austritt 3,1 s, rechts 10 s (R 26,5 m); Mittelpunktabstand 1,33 × (R_l + R_r) |
+
+Jeder Ordner enthält die 13 Pflichtdateien. Die GIFs sind 10–18 MB groß; in die Dokumentation übernommen ist nur die
+vollständige Sequenz (verkleinert, 4,2 MB).
+
+## Offene Punkte nach D6
 
 - Einfangbereich systematisch bestimmen (größere Störungen, Rasterung wie in M11), statt nur der definierten Störungen.
 - Kein Integralanteil: Bei Parameterabweichungen bleibt eine stationäre Abweichung zu erwarten (D7).
 - 25° bei µ 0,9 direkt nicht einleitbar; gestuft (D5) erreicht, mit 8° Überschwingen nach dem Sollpunktwechsel.
 - Der Austritt verliert bis 16 % Geschwindigkeit; die Recovery bei 11 m/s nach misslungener Einleitung dreht sich.
 - Acht geometrisch nicht erreicht (Mittelpunktführung fehlt).
-- Nächstes Paket: D6, Animation (GIF) und vollständiger Telemetrieexport.
+- GIFs sind groß (10–18 MB); für die Dokumentation wird nur eine verkleinerte Sequenz veröffentlicht.
+- Nächstes Paket: D7, Robustheit (Parameter, Reifen, Aktuatoren, Sensoren, Reibwertsprung).
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![drift_animation](assets/drift_results/drift_animation.gif)
+
+*Überwachter Drift aus der Geradeausfahrt (13 m/s, µ 0,9, Ziel β −20°): Annäherung, Einleitung durch den LQR, Halten, Austritt mit Gegenlenken, Normalfahrt. Nur aufgezeichnete Daten der 7-DOF-Strecke; doppelte Wiedergabegeschwindigkeit. Quelle: `python examples/drift_figure_eight_demo.py`.*
+
+![equilibrium_sweep](assets/drift_results/equilibrium_sweep.png)
+
+*Stationäre Driftgleichgewichte (D2) über |β| je Geschwindigkeit und Reibwert: Radius, Lenkwinkel, Moment je Hinterrad, Hinterradschlupf; offene Kreise: Reifen extrapoliert, Kreuze: kein Gleichgewicht. Quelle: `python examples/drift_equilibria_demo.py`.*
+
+![sideslip_and_yaw](assets/drift_results/sideslip_and_yaw.png)
+
+*D3: Halten und Störungen links/rechts, offen (gestrichelt) gegen LQR (durchgezogen). Quelle: `python examples/drift_hold_demo.py`.*
+
+![initiation_sequence](assets/drift_results/initiation_sequence.png)
+
+*D4: Moduswechsel und Zeitverläufe einer Einleitung bis zum Austritt (11 m/s, 15°, µ 0,9). Quelle: `python examples/drift_initiation_demo.py`.*
+
+![trajectory](assets/drift_results/trajectory.png)
+
+*D5: Kreisbahnen bei ±2 m Startversatz (offen, ESC, Drift-LQR fest, mit Außenschleife) und die Acht-Sequenz (Geometrie nicht erreicht). Quelle: `python examples/drift_circle_demo.py`.*
+
+<!-- figures:end -->
