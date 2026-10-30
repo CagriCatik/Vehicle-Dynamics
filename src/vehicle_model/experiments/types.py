@@ -18,6 +18,9 @@ existing specifications stay valid.
     design_optimization    :mod:`.design_optimization`              vehicle design: NSGA-II Pareto analysis, independent
                                                                     re-check of the selected designs
     rollover_benchmark     :mod:`.rollover`                         roll stability control on the 14-DOF model (V4 M19)
+    ride_benchmark         :mod:`.ride`                             predictive damping and active pitch, 14-DOF (V4 M21)
+    hill_descent_benchmark :mod:`.hill_descent`                     hill descent control on graded roads, 7-DOF (V4 M22)
+    fault_tolerance_benchmark :mod:`.fault_tolerance`               fault catalogue, health monitor, degraded modes (V4 M23)
 
 Interface of a type (:class:`ExperimentType`):
 
@@ -52,7 +55,7 @@ class ExperimentType:
 
 def _registry() -> dict[str, ExperimentType]:
     # imported here: the type modules import the shared helpers of this module
-    from . import critical_search, design_optimization, equilibrium_analysis, rollover, robust_benchmark, runner, solver_benchmark, spec, stability_map
+    from . import critical_search, design_optimization, equilibrium_analysis, fault_tolerance, hill_descent, ride, rollover, robust_benchmark, runner, solver_benchmark, spec, stability_map
 
     types = (
         ExperimentType(DEFAULT_TYPE, spec.parse_controller_comparison, runner.run_controller_comparison,
@@ -66,6 +69,9 @@ def _registry() -> dict[str, ExperimentType]:
         ExperimentType(design_optimization.KIND, design_optimization.parse, design_optimization.run,
                        design_optimization.describe),
         ExperimentType(rollover.KIND, rollover.parse, rollover.run, rollover.describe),
+        ExperimentType(ride.KIND, ride.parse, ride.run, ride.describe),
+        ExperimentType(hill_descent.KIND, hill_descent.parse, hill_descent.run, hill_descent.describe),
+        ExperimentType(fault_tolerance.KIND, fault_tolerance.parse, fault_tolerance.run, fault_tolerance.describe),
     )
     return {t.name: t for t in types}
 

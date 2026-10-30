@@ -16,6 +16,9 @@ Categories:
     critical_scenarios    YAML critical scenario searches (M13): search, verification, minimal cases, replay
     design                YAML design optimisations (M14): NSGA-II Pareto analysis, independent re-check
     roll_stability        YAML roll stability benchmarks on the 14-DOF model (V4 M19): RSC, active roll
+    ride_comfort          YAML ride and pitch benchmarks on the 14-DOF model (V4 M21): preview damping, active pitch
+    hill_descent          YAML hill descent benchmarks on graded roads (V4 M22): HDC, grade x surface matrix
+    fault_tolerance       YAML fault catalogues on the 7-DOF loop (V4 M23): health monitor, degraded modes
     validation            the validation matrix (configs/validation/matrix.yaml), one scenario at a time
 """
 
@@ -27,7 +30,8 @@ from pathlib import Path
 from typing import Callable
 
 CATEGORIES = ("parking", "four_wheel_steering", "split_mu", "yaw_stability", "solver", "nonlinear_stability",
-              "robust_control", "critical_scenarios", "design", "roll_stability", "validation")
+              "robust_control", "critical_scenarios", "design", "roll_stability", "ride_comfort", "hill_descent",
+              "fault_tolerance", "validation")
 VEHICLE = "configs/vehicles/seven_dof_passenger.yaml"
 
 
@@ -241,6 +245,24 @@ def _build() -> dict[str, ScenarioEntry]:
                              f"Runs {path} (edit the YAML to change variants, manoeuvres, friction, controllers).",
                              _experiment(str(path)), {}, "~3-5 min (parallel, 14-DOF at 1 ms)",
                              "report.md, kpis.csv, results.json, histories, rollover_timeseries.png"))
+            continue
+        if kind == "ride_benchmark":
+            entries.append(E(f"exp_{path.stem}", "ride_comfort", f"Ride and pitch benchmark {path.stem}",
+                             f"Runs {path} (edit the YAML to change roads, manoeuvres, damping modes, preview, active pitch).",
+                             _experiment(str(path)), {}, "~1-2 min (parallel, 14-DOF at 1 ms)",
+                             "report.md, kpis.csv, results.json, histories"))
+            continue
+        if kind == "hill_descent_benchmark":
+            entries.append(E(f"exp_{path.stem}", "hill_descent", f"Hill descent benchmark {path.stem}",
+                             f"Runs {path} (edit the YAML to change grades, surfaces, named cases, controllers).",
+                             _experiment(str(path)), {}, "~10 min (parallel, 7-DOF with road grade)",
+                             "report.md, kpis.csv, results.json, histories"))
+            continue
+        if kind == "fault_tolerance_benchmark":
+            entries.append(E(f"exp_{path.stem}", "fault_tolerance", f"Fault tolerance benchmark {path.stem}",
+                             f"Runs {path} (edit the YAML to change manoeuvres, fault sets, controllers).",
+                             _experiment(str(path)), {}, "~5-10 min (parallel, 7-DOF)",
+                             "report.md, kpis.csv, results.json, histories"))
             continue
         if kind == "stability_map":
             entries.append(E(f"exp_{path.stem}", "nonlinear_stability", f"Stability map {path.stem}",

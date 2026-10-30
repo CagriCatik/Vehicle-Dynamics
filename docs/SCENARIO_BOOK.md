@@ -108,6 +108,24 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 |---|---|---|---|---|
 | `exp_v4_m19_rollover` | **Roll stability benchmark v4_m19_rollover** – Runs configs/experiments/v4_m19_rollover.yaml (edit the YAML to change variants, manoeuvres, friction, controllers). | – | ~3-5 min (parallel, 14-DOF at 1 ms) | report.md, kpis.csv, results.json, histories, rollover_timeseries.png |
 
+## ride_comfort
+
+| name | scenario | parameters (defaults) | runtime | outputs |
+|---|---|---|---|---|
+| `exp_v4_m21_ride` | **Ride and pitch benchmark v4_m21_ride** – Runs configs/experiments/v4_m21_ride.yaml (edit the YAML to change roads, manoeuvres, damping modes, preview, active pitch). | – | ~1-2 min (parallel, 14-DOF at 1 ms) | report.md, kpis.csv, results.json, histories |
+
+## hill_descent
+
+| name | scenario | parameters (defaults) | runtime | outputs |
+|---|---|---|---|---|
+| `exp_v4_m22_hdc` | **Hill descent benchmark v4_m22_hdc** – Runs configs/experiments/v4_m22_hdc.yaml (edit the YAML to change grades, surfaces, named cases, controllers). | – | ~10 min (parallel, 7-DOF with road grade) | report.md, kpis.csv, results.json, histories |
+
+## fault_tolerance
+
+| name | scenario | parameters (defaults) | runtime | outputs |
+|---|---|---|---|---|
+| `exp_v4_m23_faults` | **Fault tolerance benchmark v4_m23_faults** – Runs configs/experiments/v4_m23_faults.yaml (edit the YAML to change manoeuvres, fault sets, controllers). | – | ~5-10 min (parallel, 7-DOF) | report.md, kpis.csv, results.json, histories |
+
 ## validation
 
 | name | scenario | parameters (defaults) | runtime | outputs |

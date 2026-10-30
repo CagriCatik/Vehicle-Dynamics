@@ -48,3 +48,6 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **33** | V4.0 M18: virtuelles eLSD, Traktionsverteilung, Motorhüllkurve, Integrated Traction Control | [V4_TRACTION.md](V4_TRACTION.md) |
 | **34** | V4.0 M19: Roll Stability Control (14-DOF) und Active Front Steering | [V4_STABILITY_STEERING.md](V4_STABILITY_STEERING.md) |
 | **35** | V4.0 M20: GVC-artige Lasttransferregelung (eigene Referenzstrategie) | [V4_GVC.md](V4_GVC.md) |
+| **36** | V4.0 M21: prädiktive Dämpfung, aktive Nickregelung, vertikale Kraftallokation (14-DOF) | [V4_SUSPENSION.md](V4_SUSPENSION.md) |
+| **37** | V4.0 M22: Straßenneigung im Plant, Hill Descent Control | [V4_HDC.md](V4_HDC.md) |
+| **38** | V4.0 M23: Fehlerkatalog, Health-Monitor, degradierte Modi | [V4_FAULT_TOLERANCE.md](V4_FAULT_TOLERANCE.md) |
