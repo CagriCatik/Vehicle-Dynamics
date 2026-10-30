@@ -56,6 +56,10 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 | `exp_v4_m17_regen_braking` | **YAML experiment v4_m17_regen_braking** – Runs configs/experiments/v4_m17_regen_braking.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 | `exp_v4_m17_split_mu` | **YAML experiment v4_m17_split_mu** – Runs configs/experiments/v4_m17_split_mu.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 | `exp_v4_m17_straight_braking` | **YAML experiment v4_m17_straight_braking** – Runs configs/experiments/v4_m17_straight_braking.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m18_corner_exit` | **YAML experiment v4_m18_corner_exit** – Runs configs/experiments/v4_m18_corner_exit.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m18_drive_faults` | **YAML experiment v4_m18_drive_faults** – Runs configs/experiments/v4_m18_drive_faults.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m18_mu_step_launch` | **YAML experiment v4_m18_mu_step_launch** – Runs configs/experiments/v4_m18_mu_step_launch.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m18_split_mu_launch` | **YAML experiment v4_m18_split_mu_launch** – Runs configs/experiments/v4_m18_split_mu_launch.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 
 ## solver
 

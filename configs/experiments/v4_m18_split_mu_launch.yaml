@@ -1,0 +1,23 @@
+# Plan V4.0 M18: full-acceleration launch from 5 km/h on split friction (left 1.0, right 0.2), steering held
+# straight, 6 s, dynamic actuators (motor torque/power envelope, battery limit). Passive equal torques (no TCS),
+# TCS with an open-differential coupling, eLSD (300 N m), free 4-motor distribution, TV only (yaw-rate PI) and ITC
+# (TCS + eLSD + motor envelope + TV outside a yaw-rate band of 0.5 or 2 deg/s); open and ITC also in mode C.
+type: controller_comparison
+name: v4_m18_split_mu_launch
+description: Split-mu launch, traction functions against the passive car.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+road: {type: split_mu, mu_left: 1.0, mu_right: 0.2}
+manoeuvre: {type: launch, speed_kph: 5, accel_pedal: 1.0, duration_s: 6.0}
+controllers:
+  - {law: passive, actuators: dynamic}
+  - {law: no_yaw, actuators: dynamic, traction: {distribution: open, tcs: false}}
+  - {law: no_yaw, actuators: dynamic, traction: {distribution: open}}
+  - {law: no_yaw, actuators: dynamic, traction: {distribution: elsd, lock_torque: 300}}
+  - {law: no_yaw, actuators: dynamic}
+  - {law: pi, actuators: dynamic}
+  - {law: pi, actuators: dynamic, traction: {distribution: elsd, lock_torque: 300, envelope: true, yaw_tolerance: 0.5}}
+  - {law: pi, actuators: dynamic, traction: {distribution: elsd, lock_torque: 300, envelope: true, yaw_tolerance: 2.0}}
+  - {law: no_yaw, actuators: dynamic, feedback: sensor_constrained, traction: {distribution: open}}
+  - {law: pi, actuators: dynamic, feedback: sensor_constrained, traction: {distribution: elsd, lock_torque: 300, envelope: true, yaw_tolerance: 2.0}}
+outputs: {directory: output/v4/m18/split_mu_launch, formats: [csv, json, png, md]}

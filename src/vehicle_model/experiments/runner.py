@@ -36,6 +36,8 @@ from vehicle_model.roads.surface import MuSplitRoad, UniformRoad
 from vehicle_model.simulation.controller_benchmark import (
     brake_in_turn_scenario,
     coast_scenario,
+    corner_exit_scenario,
+    launch_scenario,
     run_scenario,
     sine_with_dwell_scenario,
     straight_braking_scenario,
@@ -52,7 +54,7 @@ SCHEDULE_SPEEDS = (5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0)
 _HISTORY_KEYS = ("t", "X", "Y", "psi", "vx", "vy", "speed", "r", "r_ref", "beta", "ax", "ay", "steer_f", "steer_r",
                  "Mz_demand", "Mz_allocated", "Mz_requested", "Mz_alloc_pre_slip", "Mz_issued", "Mz_realised",
                  "T_issued_abs", "T_realised_abs", "regen_power_w", "friction_power_w", "abs_active_n",
-                 "alloc_residual_fx", "tyre_utilisation", "max_abs_slip", "T_brake_total",
+                 "alloc_residual_fx", "drive_power_w", "tyre_utilisation", "max_abs_slip", "T_brake_total",
                  "status",
                  *(f"{q}_{w}" for q in ("Fz", "Fx", "Fy") for w in ("FL", "FR", "RL", "RR")))
 
@@ -89,6 +91,11 @@ def make_scenario(spec: ExperimentSpec):
                                     float(m.get("brake_start_s", 2.0)), float(m.get("duration_s", 6.0)))
     elif m["type"] == "coast":
         sc = coast_scenario(v, float(m.get("duration_s", 8.0)))
+    elif m["type"] == "launch":
+        sc = launch_scenario(v, float(m.get("accel_pedal", 1.0)), float(m.get("duration_s", 6.0)))
+    elif m["type"] == "corner_exit":
+        sc = corner_exit_scenario(v, math.radians(float(m.get("steer_deg", 4.0))), float(m.get("accel_pedal", 1.0)),
+                                  float(m.get("accel_start_s", 2.0)), float(m.get("duration_s", 6.0)))
     else:
         sc = split_mu_braking_scenario(v)
     return dataclasses.replace(sc, road=lambda: make_road(spec))
@@ -111,11 +118,15 @@ def controller_factories(spec: ExperimentSpec) -> dict:
                 law = LQRYawLaw(design, inputs, design_speed=20.0)
             elif c.law == "gs_lqr":
                 law = LQRYawLaw(design, inputs, design_speed=None, schedule_speeds=SCHEDULE_SPEEDS)
-            elif c.law == "brakes":
+            elif c.law in ("brakes", "no_yaw"):
                 law = NoYawLaw()
             else:
                 law = LTVMPCYawLaw(design, inputs)
-            ctrl = MotionController(p, law, _motion_config(c))
+            yt = dict(c.traction).get("yaw_tolerance")
+            if yt is not None:                    # ITC: the yaw law only acts outside a yaw-rate band (M18.2)
+                from vehicle_model.controllers.integrated_traction import YawToleranceLaw
+                law = YawToleranceLaw(law, math.radians(float(yt)))
+            ctrl = MotionController(p, law, _motion_config(c), _health(c))
             if c.feedback == "ideal":
                 return ctrl
             return EstimatedStateFeedback(ctrl, BlendedSideslipObserver(p), seed=spec.seed,
@@ -124,13 +135,34 @@ def controller_factories(spec: ExperimentSpec) -> dict:
     return out
 
 
+def _health(c):
+    """Actuator health of the entry's traction block (failed motors, Plan V4.0 M18) or None."""
+    from vehicle_model.allocation import ActuatorHealth
+    failed = dict(c.traction).get("failed", ())
+    if not failed:
+        return None
+    names = ("FL", "FR", "RL", "RR")
+    return ActuatorHealth(drive_ok=tuple(n not in failed for n in names))
+
+
 def _motion_config(c):
-    """MotionControllerConfig with the brake functions of the controller entry (Plan V4.0 M17; default: none)."""
+    """MotionControllerConfig with the brake (M17) and traction (M18) functions of the controller entry."""
+    from vehicle_model.allocation import AllocatorConfig
     from vehicle_model.controllers.motion_control import ActuationConfig, MotionControllerConfig
-    b = dict(c.brake)
+    b, tr = dict(c.brake), dict(c.traction)
     dist = ibc = cbc = None
+    traction, tcs, alloc = None, True, AllocatorConfig()
+    if tr:
+        from vehicle_model.controllers.traction_distribution import TractionDistributionConfig
+        if tr.get("distribution", "free") != "free" or tr.get("envelope"):
+            traction = TractionDistributionConfig(mode=tr.get("distribution", "free"),
+                                                  lock_torque=float(tr.get("lock_torque", 300.0)),
+                                                  envelope=bool(tr.get("envelope", False)))
+        tcs = bool(tr.get("tcs", True))
+        driven = {"awd": (True,) * 4, "fwd": (True, True, False, False), "rwd": (False, False, True, True)}[tr.get("driven", "awd")]
+        alloc = AllocatorConfig(driven=driven)
     if not b:
-        return MotionControllerConfig()
+        return MotionControllerConfig(actuation=ActuationConfig(allocator=alloc, traction=traction, enable_tcs=tcs))
     from vehicle_model.controllers.brake_distribution import BrakeDistributionConfig, brake_functions_config
     bf = brake_functions_config()                     # configs/braking/brake_functions.yaml
     if b.get("distribution", "grip") != "grip":
@@ -140,7 +172,8 @@ def _motion_config(c):
         ibc = IntegratedBrakeConfig(regen_policy=b.get("regen", "cut_on_abs"), **bf["ibc"])
     if b.get("cbc"):
         cbc = bf["cbc"]
-    return MotionControllerConfig(actuation=ActuationConfig(distribution=dist, ibc=ibc), cbc=cbc)
+    return MotionControllerConfig(actuation=ActuationConfig(allocator=alloc, distribution=dist, ibc=ibc, traction=traction,
+                                                            enable_tcs=tcs), cbc=cbc)
 
 
 def _with_actuators(factory, c=None):

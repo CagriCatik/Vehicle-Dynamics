@@ -1,0 +1,15 @@
+# Plan V4.0 M18: full acceleration from 5 km/h onto a friction drop (mu 1.0 -> 0.2 at X = 10 m), dynamic actuators:
+# without and with TCS, eLSD and ITC.
+type: controller_comparison
+name: v4_m18_mu_step_launch
+description: Launch onto a friction drop with the traction functions.
+vehicle: configs/vehicles/seven_dof_passenger.yaml
+tyres: {front: magic_formula_passenger_synthetic, rear: magic_formula_passenger_synthetic}
+road: {type: mu_step, mu_before: 1.0, mu_after: 0.2, x_step: 10.0}
+manoeuvre: {type: launch, speed_kph: 5, accel_pedal: 1.0, duration_s: 6.0}
+controllers:
+  - {law: passive, actuators: dynamic}
+  - {law: no_yaw, actuators: dynamic, traction: {tcs: false}}
+  - {law: no_yaw, actuators: dynamic}
+  - {law: pi, actuators: dynamic, traction: {distribution: elsd, lock_torque: 300, envelope: true, yaw_tolerance: 2.0}}
+outputs: {directory: output/v4/m18/mu_step_launch, formats: [csv, json, md]}

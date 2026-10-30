@@ -45,3 +45,4 @@ Dieser Ordner enthält die vollständige wissenschaftliche und technische Dokume
 | **30** | Interactive Engineering Workbench: Weboberfläche über der Experiment-Engine (M15) | [WORKBENCH.md](WORKBENCH.md) |
 | **31** | V4.0: Ausgangsstand, Blocker A–H, M16 Stellgrößenkette und Aktuatordynamik | [V4_BASELINE.md](V4_BASELINE.md) |
 | **32** | V4.0 M17: EBD, CBC, IBC, regenerative Schlupfregelung (MSR) | [V4_BRAKING.md](V4_BRAKING.md) |
+| **33** | V4.0 M18: virtuelles eLSD, Traktionsverteilung, Motorhüllkurve, Integrated Traction Control | [V4_TRACTION.md](V4_TRACTION.md) |
