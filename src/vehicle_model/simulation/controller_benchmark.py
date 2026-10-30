@@ -243,6 +243,9 @@ def compute_kpis(h: dict, sc: Scenario) -> dict:
     if "T_issued_abs" in h and len(h["t"]) > 2:   # actuation trace (Plan V4.0 M16)
         out["issued_to_realised_lag_ms"] = actuation_lag(h["t"], h["T_issued_abs"], h["T_realised_abs"]) * 1e3
         out["regen_energy_kj"] = float(np.sum(h["regen_power_w"]) * (h["t"][1] - h["t"][0]) / 1e3)
+    if len(t) > 1 and "steer_f" in h:   # realised front steering (Plan V4.0 M19.2: AFS authority and rate)
+        out["max_front_steer_deg"] = float(np.degrees(np.max(np.abs(h["steer_f"]))))
+        out["max_front_steer_rate_degps"] = float(np.degrees(np.max(np.abs(np.diff(h["steer_f"])))) / (t[1] - t[0]))
     out["computation_ms_mean"] = float(np.mean(h["computation_ms"]))
     out["computation_ms_max"] = float(np.max(h["computation_ms"]))
     statuses, counts = np.unique(h["status"], return_counts=True)

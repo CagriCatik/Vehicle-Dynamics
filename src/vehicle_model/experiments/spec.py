@@ -41,7 +41,8 @@ _LAW_NAMES = {"pi": "PI", "lqr": "LQR", "gs_lqr": "GS-LQR", "ltv_mpc": "LTV-MPC"
 TRACTION_KEYS = {"distribution", "lock_torque", "tcs", "envelope", "driven", "failed", "yaw_tolerance"}   # Plan V4.0 M18
 WHEEL_NAMES = ("FL", "FR", "RL", "RR")
 BRAKE_KEYS = {"distribution", "ibc", "cbc", "regen", "coast_torque"}   # Plan V4.0 M17
-INPUT_SETS = ("tv", "4ws_tv")
+INPUT_SETS = ("tv", "4ws_tv", "afs", "afs_tv")
+STEERING_KEYS = {"ratio", "afs_failed"}       # Plan V4.0 M19.2
 ROADS = {"uniform": {"mu"}, "split_mu": {"mu_left", "mu_right"}, "mu_step": {"mu_before", "mu_after", "x_step"}}
 MANOEUVRES = {
     "step_steer": {"speed_kph", "steer_deg", "duration_s"},
@@ -67,6 +68,7 @@ class ControllerSpec:
     actuators: str = "ideal"        # Plan V4.0 M16: ideal (command = plant input) or dynamic (actuator models)
     brake: tuple = ()               # Plan V4.0 M17: sorted (key, value) pairs of the brake-function block
     traction: tuple = ()            # Plan V4.0 M18: sorted (key, value) pairs of the traction block
+    steering: tuple = ()            # Plan V4.0 M19.2: sorted (key, value) pairs of the steering block
 
     @property
     def estimated_state(self) -> bool:
@@ -87,6 +89,9 @@ class ControllerSpec:
                                  (str(tr.get("driven", "")).upper(), tr.get("driven") not in (None, "awd")),
                                  ("failed " + "+".join(tr.get("failed", ())), bool(tr.get("failed"))),
                                  (f"ITC band {tr.get('yaw_tolerance')} deg/s", "yaw_tolerance" in tr))
+                 if on]
+        st = dict(self.steering)
+        tags += [t for t, on in (("variable ratio", st.get("ratio") == "variable"), ("AFS failed", st.get("afs_failed")))
                  if on]
         act += f" [{', '.join(tags)}]" if tags else ""
         if self.law == "passive":
@@ -130,7 +135,8 @@ class ExperimentSpec:
                               **({"actuators": c.actuators} if c.actuators != "ideal" else {}),
                               **({"brake": dict(c.brake)} if c.brake else {}),
                               **({"traction": {k: (list(v) if k == "failed" else v) for k, v in c.traction}}
-                                 if c.traction else {})} for c in self.controllers]}
+                                 if c.traction else {}),
+                              **({"steering": dict(c.steering)} if c.steering else {})} for c in self.controllers]}
         if self.kc:
             d["kc"] = self.kc
         if self.sweep:
@@ -198,8 +204,8 @@ def parse_controller_comparison(data: dict, source: str = "<dict>") -> Experimen
     _require(isinstance(ctrls, list) and ctrls, f"{source}: controllers must be a non-empty list")
     specs = []
     for i, c in enumerate(ctrls):
-        _keys(c, {"law", "inputs", "estimated_state", "feedback", "actuators", "brake", "traction"}, f"{source}: controllers[{i}]",
-              {"law"})
+        _keys(c, {"law", "inputs", "estimated_state", "feedback", "actuators", "brake", "traction", "steering"},
+              f"{source}: controllers[{i}]", {"law"})
         _require(c["law"] in LAWS, f"{source}: controllers[{i}].law must be one of {LAWS}")
         inputs = c.get("inputs", "tv")
         _require(inputs in INPUT_SETS, f"{source}: controllers[{i}].inputs must be one of {INPUT_SETS}")
@@ -214,7 +220,19 @@ def parse_controller_comparison(data: dict, source: str = "<dict>") -> Experimen
         _require(actuators in ACTUATOR_MODES, f"{source}: controllers[{i}].actuators must be one of {ACTUATOR_MODES}")
         brake = _brake_block(c.get("brake"), c["law"], actuators, feedback, f"{source}: controllers[{i}].brake")
         traction = _traction_block(c.get("traction"), c["law"], f"{source}: controllers[{i}].traction")
-        specs.append(ControllerSpec(c["law"], inputs, feedback, actuators, brake, traction))
+        steering = c.get("steering")
+        if steering is not None:
+            where = f"{source}: controllers[{i}].steering"
+            _require(isinstance(steering, dict), f"{where} must be a mapping")
+            _keys(steering, STEERING_KEYS, where)
+            _require(c["law"] != "passive", f"{where}: the passive car steers with the fixed ratio")
+            _require(steering.get("ratio", "fixed") in ("fixed", "variable"), f"{where}.ratio must be fixed or variable")
+            _require(isinstance(steering.get("afs_failed", False), bool), f"{where}.afs_failed must be true or false")
+            _require(not steering.get("afs_failed") or inputs.startswith("afs"), f"{where}.afs_failed needs inputs afs or afs_tv")
+        _require(not (inputs.startswith("afs") and c["law"] not in ("lqr", "gs_lqr", "ltv_mpc")),
+                 f"{source}: controllers[{i}]: AFS inputs need an LQR/GS-LQR/LTV-MPC law")
+        specs.append(ControllerSpec(c["law"], inputs, feedback, actuators, brake, traction,
+                                    tuple(sorted((steering or {}).items()))))
     labels = [c.label for c in specs]
     _require(len(set(labels)) == len(labels), f"{source}: controllers must differ (duplicate entry: {labels})")
 

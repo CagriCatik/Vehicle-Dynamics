@@ -50,7 +50,11 @@ from vehicle_model.handling_analysis import LinearSingleTrack, LinearSingleTrack
 
 INPUTS_TV = ("yaw_moment",)
 INPUTS_4WS_TV = ("rear_steer", "yaw_moment")
-_INDEX = {"rear_steer": 1, "yaw_moment": 2}  # columns of the full input matrix [delta_f, delta_r, M_z]
+INPUTS_AFS = ("front_steer",)                    # active front steering overlay (Plan V4.0 M19.2)
+INPUTS_AFS_TV = ("front_steer", "yaw_moment")
+_INPUT_SETS = (INPUTS_TV, INPUTS_4WS_TV, INPUTS_AFS, INPUTS_AFS_TV)
+_INDEX = {"front_steer": 0, "rear_steer": 1, "yaw_moment": 2}  # columns of the full input matrix [delta_f, delta_r, M_z]
+_LABEL = {INPUTS_TV: "TV", INPUTS_4WS_TV: "4WS+TV", INPUTS_AFS: "AFS", INPUTS_AFS_TV: "AFS+TV"}
 
 
 # ----------------------------------------------------------------------------- PI
@@ -101,8 +105,8 @@ class YawDesignModel:
     """Linear single track + yaw-moment input + yaw-rate integrator, for a chosen input set."""
 
     def __init__(self, params: LinearSingleTrackParams, inputs=INPUTS_TV):
-        if tuple(inputs) not in (INPUTS_TV, INPUTS_4WS_TV):
-            raise ValueError(f"inputs must be {INPUTS_TV} or {INPUTS_4WS_TV}")
+        if tuple(inputs) not in _INPUT_SETS:
+            raise ValueError(f"inputs must be one of {_INPUT_SETS}")
         self.params = params
         self.inputs = tuple(inputs)
         self.cols = [_INDEX[i] for i in self.inputs]
@@ -127,25 +131,25 @@ class YawDesignModel:
         """``(x_ss = [v_y, r], u_ss)`` holding ``r = r_ref`` (and ``v_y = 0`` with rear steer)."""
         A, B_all = self.matrices(vx)
         b_f = B_all[:, 0] * delta_f
-        if self.inputs == INPUTS_TV:
-            # unknowns v_y, M_z:  A[:,0] v_y + B_M M_z = -(A[:,1] r_ref + b_f)
-            M = np.column_stack([A[:, 0], B_all[:, 2]])
-            vy, Mz = np.linalg.solve(M, -(A[:, 1] * r_ref + b_f))
-            return np.array([vy, r_ref]), np.array([Mz])
-        M = B_all[:, 1:3]  # unknowns delta_r, M_z with v_y = 0
+        if len(self.cols) == 1:
+            # unknowns v_y and the single input (M_z, or the front-steer overlay for AFS)
+            M = np.column_stack([A[:, 0], B_all[:, self.cols[0]]])
+            vy, u = np.linalg.solve(M, -(A[:, 1] * r_ref + b_f))
+            return np.array([vy, r_ref]), np.array([u])
+        M = B_all[:, self.cols]  # two inputs: unknowns are the inputs, with v_y = 0
         u = np.linalg.solve(M, -(A[:, 1] * r_ref + b_f))
         return np.array([0.0, r_ref]), u
 
 
 def _input_limits(inputs, ctx: MotionContext):
-    lim = {"rear_steer": ctx.max_rear_steer, "yaw_moment": ctx.max_yaw_moment}
+    lim = {"rear_steer": ctx.max_rear_steer, "yaw_moment": ctx.max_yaw_moment, "front_steer": ctx.max_front_overlay}
     return np.array([lim[i] for i in inputs])
 
 
 def _to_request(inputs, u, status=NOMINAL, diagnostics=None) -> MotionRequest:
     d = dict(zip(inputs, map(float, u)))
     return MotionRequest(yaw_moment=d.get("yaw_moment", 0.0), rear_steer=d.get("rear_steer", 0.0),
-                         status=status, diagnostics=diagnostics or {})
+                         front_steer=d.get("front_steer", 0.0), status=status, diagnostics=diagnostics or {})
 
 
 # ----------------------------------------------------------------------------- LQR
@@ -155,11 +159,13 @@ class LQRWeights:
     q_r: float = 50.0          # [1/(rad/s)^2]
     q_z: float = 5000.0        # [1/rad^2]     integral of the yaw-rate error (see tuning note below)
     r_rear_steer: float = 400.0     # [1/rad^2]
+    r_front_steer: float = 400.0    # [1/rad^2]  AFS overlay
     r_yaw_moment: float = 1.0e-6    # [1/(N m)^2]
 
     def matrices(self, inputs):
         Q = np.diag([self.q_vy, self.q_r, self.q_z])
-        R = np.diag([{"rear_steer": self.r_rear_steer, "yaw_moment": self.r_yaw_moment}[i] for i in inputs])
+        R = np.diag([{"rear_steer": self.r_rear_steer, "yaw_moment": self.r_yaw_moment,
+                      "front_steer": self.r_front_steer}[i] for i in inputs])
         return Q, R
 
 
@@ -184,7 +190,7 @@ class LQRYawLaw:
         self.speeds = np.array([design_speed] if schedule_speeds is None else sorted(schedule_speeds), dtype=float)
         self.gains = np.array([lqr_gain(*self.model.augmented(v), Q, R) for v in self.speeds])
         kind = "LQR" if schedule_speeds is None else "GS-LQR"
-        self.name = f"{kind} ({'4WS+TV' if self.model.inputs == INPUTS_4WS_TV else 'TV'})"
+        self.name = f"{kind} ({_LABEL[self.model.inputs]})"
         self._z = 0.0
 
     def reset(self) -> None:
@@ -239,7 +245,7 @@ class LTVMPCYawLaw:
         self.model = YawDesignModel(design, inputs)
         self.settings = settings or MPCSettings(
             weights=LQRWeights(q_vy=0.0 if tuple(inputs) == INPUTS_TV else 20.0, q_z=_MPC_Q_Z))
-        self.name = f"LTV-MPC ({'4WS+TV' if self.model.inputs == INPUTS_4WS_TV else 'TV'})"
+        self.name = f"LTV-MPC ({_LABEL[self.model.inputs]})"
         self.monitor = SolverMonitor(self.settings.max_consecutive_failures, self.settings.time_budget_ms)
         self.feasibility = FeasibilityMonitor()
         self.reset()
@@ -338,6 +344,8 @@ class LTVMPCYawLaw:
 __all__ = (
     "NoYawLaw",
     "INPUTS_4WS_TV",
+    "INPUTS_AFS",
+    "INPUTS_AFS_TV",
     "INPUTS_TV",
     "LQRWeights",
     "LQRYawLaw",

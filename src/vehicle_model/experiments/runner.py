@@ -29,7 +29,8 @@ import numpy as np
 from vehicle_model.controllers.estimated_feedback import EstimatedStateFeedback
 from vehicle_model.controllers.framework import PassiveBaselineController
 from vehicle_model.controllers.motion_control import MotionController
-from vehicle_model.controllers.yaw_laws import INPUTS_4WS_TV, INPUTS_TV, LQRYawLaw, LTVMPCYawLaw, NoYawLaw, YawRatePI
+from vehicle_model.controllers.yaw_laws import (INPUTS_4WS_TV, INPUTS_AFS, INPUTS_AFS_TV, INPUTS_TV, LQRYawLaw, LTVMPCYawLaw,
+                                                NoYawLaw, YawRatePI)
 from vehicle_model.estimation.blended_sideslip import BlendedSideslipObserver
 from vehicle_model.handling_analysis import linear_params_from_seven_dof
 from vehicle_model.roads.surface import MuSplitRoad, UniformRoad
@@ -109,7 +110,7 @@ def controller_factories(spec: ExperimentSpec) -> dict:
         if c.law == "passive":
             out[c.label] = None if c.actuators == "ideal" else _with_actuators(lambda p: PassiveBaselineController(p))
             continue
-        inputs = INPUTS_4WS_TV if c.inputs == "4ws_tv" else INPUTS_TV
+        inputs = {"tv": INPUTS_TV, "4ws_tv": INPUTS_4WS_TV, "afs": INPUTS_AFS, "afs_tv": INPUTS_AFS_TV}[c.inputs]
 
         def factory(p, c=c, inputs=inputs):
             if c.law == "pi":
@@ -126,13 +127,25 @@ def controller_factories(spec: ExperimentSpec) -> dict:
             if yt is not None:                    # ITC: the yaw law only acts outside a yaw-rate band (M18.2)
                 from vehicle_model.controllers.integrated_traction import YawToleranceLaw
                 law = YawToleranceLaw(law, math.radians(float(yt)))
-            ctrl = MotionController(p, law, _motion_config(c), _health(c))
+            ctrl = MotionController(p, law, _with_steering(_motion_config(c), c), _health(c))
             if c.feedback == "ideal":
                 return ctrl
             return EstimatedStateFeedback(ctrl, BlendedSideslipObserver(p), seed=spec.seed,
                                           mode="C" if c.feedback == "sensor_constrained" else "B", params=p)
         out[c.label] = factory if c.actuators == "ideal" else _with_actuators(factory, c)
     return out
+
+
+def _with_steering(cfg, c):
+    """Add the AFS steering overlay (variable ratio, overlay authority, failure) of the entry (Plan V4.0 M19.2)."""
+    st = dict(c.steering)
+    if not st and not c.inputs.startswith("afs"):
+        return cfg
+    from vehicle_model.controllers.active_front_steering import SteeringOverlayConfig
+    gains = (1.25, 1.0, 0.85) if st.get("ratio") == "variable" else (1.0, 1.0, 1.0)
+    overlay = SteeringOverlayConfig(ratio_gains=gains, max_overlay=0.0 if not c.inputs.startswith("afs") else math.radians(5.0),
+                                    failed=bool(st.get("afs_failed", False)))
+    return dataclasses.replace(cfg, steering=overlay)
 
 
 def _health(c):

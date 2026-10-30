@@ -60,6 +60,8 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 | `exp_v4_m18_drive_faults` | **YAML experiment v4_m18_drive_faults** – Runs configs/experiments/v4_m18_drive_faults.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 | `exp_v4_m18_mu_step_launch` | **YAML experiment v4_m18_mu_step_launch** – Runs configs/experiments/v4_m18_mu_step_launch.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 | `exp_v4_m18_split_mu_launch` | **YAML experiment v4_m18_split_mu_launch** – Runs configs/experiments/v4_m18_split_mu_launch.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m19_afs_step` | **YAML experiment v4_m19_afs_step** – Runs configs/experiments/v4_m19_afs_step.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
+| `exp_v4_m19_afs_swd` | **YAML experiment v4_m19_afs_swd** – Runs configs/experiments/v4_m19_afs_swd.yaml (edit the YAML to change vehicle, manoeuvre, controllers, sweep). | – | ~1 min | report.md, kpis.csv, results.json, histories, plots |
 
 ## solver
 
@@ -95,6 +97,12 @@ Outputs go to `output/scenario_book/<name>/` unless `--out` is given. All vehicl
 | name | scenario | parameters (defaults) | runtime | outputs |
 |---|---|---|---|---|
 | `exp_design_chassis_tv` | **Design optimisation design_chassis_tv** – Runs configs/experiments/design_chassis_tv.yaml (edit the YAML to change design parameters, objectives, scenario sets, search). | – | ~5-10 min (parallel) | report.md, evaluations.csv, pareto_designs.csv, design_<label>.yaml, Pareto fronts, distributions, sensitivities, results.json |
+
+## roll_stability
+
+| name | scenario | parameters (defaults) | runtime | outputs |
+|---|---|---|---|---|
+| `exp_v4_m19_rollover` | **Roll stability benchmark v4_m19_rollover** – Runs configs/experiments/v4_m19_rollover.yaml (edit the YAML to change variants, manoeuvres, friction, controllers). | – | ~3-5 min (parallel, 14-DOF at 1 ms) | report.md, kpis.csv, results.json, histories, rollover_timeseries.png |
 
 ## validation
 

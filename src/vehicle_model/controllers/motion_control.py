@@ -85,12 +85,14 @@ class MotionContext:
     dt: float               # [s]
     max_yaw_moment: float   # [N m]
     max_rear_steer: float   # [rad]
+    max_front_overlay: float = 0.0   # [rad] AFS: largest front-steer overlay (0: no AFS)
 
 
 @dataclass(frozen=True)
 class MotionRequest:
     yaw_moment: float | None = 0.0  # [N m] demand to the allocation; None: no yaw request (yaw left free), not 0
     rear_steer: float = 0.0       # [rad] rear road-wheel angle command
+    front_steer: float = 0.0      # [rad] AFS overlay on the driver's front road-wheel angle (Plan V4.0 M19.2)
     status: str = "nominal"       # law/solver status
     diagnostics: dict = field(default_factory=dict)
 
@@ -192,6 +194,7 @@ class MotionControllerConfig:
     min_speed: float = 3.0                    # [m/s] law inactive below
     actuation: ActuationConfig = field(default_factory=ActuationConfig)
     cbc: object = None                        # CorneringBrakeConfig (Plan V4.0 M17.2) or None
+    steering: object = None                   # SteeringOverlayConfig (AFS: variable ratio, overlay limits; M19.2) or None
 
 
 class MotionController:
@@ -205,6 +208,10 @@ class MotionController:
         c = self.mc_config
         self.reference = YawReference(params.wheelbase, params.g, c.understeer_gradient_ref, c.mu_utilisation)
         self.actuation = ActuationLayer(params, c.actuation, health)
+        self.steering = None
+        if c.steering is not None:
+            from vehicle_model.controllers.active_front_steering import SteeringOverlay
+            self.steering = SteeringOverlay(c.steering)
         self.cbc = None
         if c.cbc is not None:
             from vehicle_model.controllers.cornering_brake import CorneringBrakeControl
@@ -229,6 +236,8 @@ class MotionController:
     def reset(self) -> None:
         self.law.reset()
         self.actuation.reset()
+        if self.steering is not None:
+            self.steering.reset()
 
     def reference_yaw_rate(self, steer: float, vx: float, mu_hat: float) -> float:
         return self.reference.yaw_rate(steer, vx, mu_hat)
@@ -238,6 +247,8 @@ class MotionController:
         t0 = time.perf_counter()
         p, c = self.params, self.mc_config
         steer = float(np.clip(target.driver_steer_f, -p.max_steer_f, p.max_steer_f))
+        if self.steering is not None:          # variable ratio: the driver's effective road-wheel angle (M19.2)
+            steer = float(np.clip(steer * self.steering.config.gain(state.vx), -p.max_steer_f, p.max_steer_f))
         if telemetry is not None:
             Fz, mu, Fy, wheel_steer = telemetry.Fz, telemetry.mu, telemetry.Fy_wheel, telemetry.steer_angles
         else:
@@ -251,7 +262,8 @@ class MotionController:
         Fx_des = (target.driver_accel_pedal * sum(acfg.driven) * acfg.max_drive_torque
                   - target.driver_brake_pedal * 4.0 * acfg.max_brake_torque) / p.Reff
         if abs(state.vx) >= c.min_speed:
-            ctx = MotionContext(steer, r_ref, mu_hat, dt, c.max_yaw_moment, p.max_steer_r)
+            ctx = MotionContext(steer, r_ref, mu_hat, dt, c.max_yaw_moment, p.max_steer_r,
+                                0.0 if self.steering is None else self.steering.authority)
             req = self.law.request(state, ctx)
         else:
             # law inactive at low speed. Braking to a stop: M_z = 0 (symmetric, no yaw jerk before standstill).
@@ -261,6 +273,12 @@ class MotionController:
             self.law.reset()
             req = MotionRequest(yaw_moment=None if Fx_des >= 0.0 else 0.0)
         steer_r = float(np.clip(req.rear_steer, -p.max_steer_r, p.max_steer_r))
+        steer_drv = steer
+        if self.steering is not None:          # the one place where the front angle is finalised (M19.2)
+            g = self.steering.config.gain(state.vx)
+            steer, _, overlay = self.steering.finalise(steer / g, state.vx, req.front_steer, p.max_steer_f, dt)
+        else:
+            overlay = 0.0
         law_mz = None if req.yaw_moment is None else float(req.yaw_moment)
         cbc_mz = self.cbc.request(state, r_ref, Fx_des, mu_hat) if (self.cbc is not None and abs(state.vx) >= c.min_speed) else None
         Mz_raw, winner = arbitrate_yaw(law_mz, cbc_mz)
@@ -285,6 +303,7 @@ class MotionController:
                 "information": self.law.information,
                 "feasibility": req.diagnostics.get("feasibility"),
                 "arbitration": {"law": law_mz, "cbc": cbc_mz, "winner": winner},
+                "steering": {"driver": steer_drv, "overlay": overlay, "final": steer},
                 "trace": {"requested": [float(Fx_des), float("nan") if Mz_des is None else Mz_des], "allocated": [float(x) for x in alloc.achieved],
                           "issued": [float(x) for x in self.actuation.last_issued]},
             },
