@@ -277,40 +277,52 @@ sie ist nicht umgesetzt.
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![equilibria](assets/nonlinear_stability/equilibrium_steer_sweep_equilibria.png)
+![equilibria](assets/20_nonlinear_stability/equilibrium_steer_sweep_equilibria.png)
 
 *Gleichgewichte über dem Vorderachslenkwinkel bei 90 km/h, µ = 1,0 und 0,6 (Linie: Hauptast, gefüllt: stabil, offen: instabil). Bei µ = 0,6 sättigt a_y bei 5,85 m/s², die Dämpfung des Quer-/Giermodes fällt von 0,98 auf 0,14; ab 2° erscheinen auf der Schleuderseite ein Sattel und ein instabiler Fokus. Quelle: `python -m vehicle_model.experiments run configs/experiments/equilibrium_steer_sweep.yaml`.*
 
-![eigenvalues](assets/nonlinear_stability/eigenvalues.png)
+![eigenvalues](assets/20_nonlinear_stability/eigenvalues.png)
 
 *Quer-/Gier-Eigenwerte entlang des Hauptastes (Beschriftung: Lenkwinkel in Grad): Mit dem Lenkwinkel wandern sie zur imaginären Achse, bei µ = 0,6 deutlich schneller. Quelle: wie oben.*
 
-![equilibria](assets/nonlinear_stability/equilibrium_speed_stiffness_equilibria.png)
+![equilibria](assets/20_nonlinear_stability/equilibrium_speed_stiffness_equilibria.png)
 
 *Geradeausfahrt über der Geschwindigkeit mit Hinterachs-Schräglaufsteifigkeit × 1,0 / 0,6 / 0,45: rechts unten der größte Realteil, der bei der kritischen Geschwindigkeit (linear 108 bzw. 79 km/h) das Vorzeichen wechselt. Quelle: `python -m vehicle_model.experiments run configs/experiments/equilibrium_speed_stiffness.yaml`.*
 
-![equilibria](assets/nonlinear_stability/equilibrium_tv_4ws_equilibria.png)
+![equilibria](assets/20_nonlinear_stability/equilibrium_tv_4ws_equilibria.png)
 
 *Konstantes TV-Giermoment und festes Hinterachslenkverhältnis bei 90 km/h, 1°, µ = 0,6: Mit positivem Moment steigt a_y immer steiler bis zu einer Faltung (ab etwa 450 Nm ohne Hinterachslenkung kein Gleichgewicht, Reibkreis der Hinterräder ausgeschöpft); gleichsinnige Hinterachslenkung verschiebt sie. Quelle: `python -m vehicle_model.experiments run configs/experiments/equilibrium_tv_4ws.yaml`.*
 
-![stability_maps](assets/nonlinear_stability/stability_map_cornering_stability_maps.png)
+![stability_maps](assets/20_nonlinear_stability/stability_map_cornering_stability_maps.png)
 
 *Numerische Rückführregionen bei 80 km/h, 1° gehaltenem Lenkwinkel, µ = 0,6, 15 × 15 Anfangszustände je Regler. Kreuze: empfindliche Punkte (Klasse ändert sich mit halbem Zeitschritt oder doppelter Dauer); gestrichelt: heuristische Phase-Plane-Grenze S = 1. Quelle: `python -m vehicle_model.experiments run configs/experiments/stability_map_cornering.yaml`.*
 
-![region_comparison](assets/nonlinear_stability/region_comparison.png)
+![region_comparison](assets/20_nonlinear_stability/region_comparison.png)
 
 *Anteil zurückgekehrter Anfangszustände je Regler mit Schranken aus Rand- und empfindlichen Punkten und dem Anteil auf dem verfeinerten Gitter (Raute). Quelle: wie oben.*
 
-![stability_maps](assets/nonlinear_stability/stability_map_robust_stability_maps.png)
+![stability_maps](assets/20_nonlinear_stability/stability_map_robust_stability_maps.png)
 
-*Rückführregionen der Regler aus robuste Regelung (alle mit Hinterachslenkung und Giermoment) neben passiv und TV, gleicher Betriebspunkt: Die Regionen schrumpfen auf ein Band um β0 = 0. Quelle: `python -m vehicle_model.experiments run configs/experiments/stability_map_robust.yaml`.*
+*Rückführregionen der Regler aus robust control (alle mit Hinterachslenkung und Giermoment) neben passiv und TV, gleicher Betriebspunkt: Die Regionen schrumpfen auf ein Band um β0 = 0. Quelle: `python -m vehicle_model.experiments run configs/experiments/stability_map_robust.yaml`.*
 
-![stability_maps](assets/nonlinear_stability/stability_map_rear_steer_stability_maps.png)
+![stability_maps](assets/20_nonlinear_stability/stability_map_rear_steer_stability_maps.png)
 
 *Ursache: der unveränderte baseline GS-LQR mit Hinterachslenkung (33 %) gegen GS-LQR und Robust LQR nur mit Giermoment (je 94 %). Quelle: `python -m vehicle_model.experiments run configs/experiments/stability_map_rear_steer.yaml`.*
 
-![phase_portraits](assets/nonlinear_stability/phase_portraits.png)
+![phase_portraits](assets/20_nonlinear_stability/phase_portraits.png)
 
 *Phasenporträts (β–r, β–β̇, r–ṙ) für passiv, TV und IVMC; Farbe = Klasse, Punkt = Start. Quelle: wie oben.*
+
+![comparison](assets/20_nonlinear_stability/stability_map_cornering_comparison.gif)
+
+*Rückkehr aus β 12°, r −25 °/s: Läufe mit den Reglern der Stabilitätskarte; Bahn aus den aufgezeichneten Zuständen integriert.*
+
+![comparison](assets/20_nonlinear_stability/equilibrium_speed_stiffness_comparison.gif)
+
+*180 km/h nach 0,3° Lenkwinkel: Mit geringerer Hinterachssteifigkeit entsteht eine große Gierschwingung.*
+
+![comparison](assets/20_nonlinear_stability/equilibrium_steer_sweep_comparison.gif)
+
+*Einschwingen auf die stationäre Kurvenfahrt, 90 km/h, Richtung Haftgrenze.*
 
 <!-- figures:end -->

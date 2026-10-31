@@ -197,8 +197,12 @@ python examples/tyre_models_demo.py                  # MF Mz, combined slip, mu 
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![tyre_models_m3](assets/tyre_models/tyre_models_overview.png)
+![tyre_models_overview](assets/03_tyre_models/tyre_models_overview.png)
 
 *Magic-Formula-Reifen (synthetisch) gegen Fiala: Seitenkraft und Rückstellmoment bei drei Radlasten, kombinierter Schlupf, Selbstähnlichkeit in µ, Relaxation und Lenkwinkelsprung des 7-DOF-Modells mit Relaxationslängen. Quelle: `examples/tyre_models_demo.py`.*
+
+![tyre_models_step_steer](assets/03_tyre_models/tyre_models_step_steer.gif)
+
+*Gleiches Manöver mit linearem, Fiala- und Magic-Formula-Reifen: Lenkwinkelsprung 5°, 80 km/h.*
 
 <!-- figures:end -->

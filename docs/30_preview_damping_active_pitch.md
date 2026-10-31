@@ -143,3 +143,29 @@ Tests: `tests/vehicle_model/test_preview_damping_active_pitch.py` (14 Tests, dav
 ## Literatur
 
 Küçükay 2022, Kap. 19 (Reduzierung von Bremsnicken und Anfahrnicken), Kap. 32–35 (Fahrbahnanregung, Vertikaldynamik, Sitzkomfort, Aufbaufedern und -dämpfer); Karnopp, Crosby & Harwood 1974. Vollständige Angaben: [Literaturverzeichnis](44_references.md).
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![ride](assets/30_preview_damping_active_pitch/ride.png)
+
+*Fahrkomfort und Nicken über alle Szenarien. Quelle: `examples/ride_control_figures.py`.*
+
+![brake_pitch](assets/30_preview_damping_active_pitch/brake_pitch.gif)
+
+*Bremsen auf welliger Straße: Nicken mit und ohne aktive Nickregelung.*
+
+![bump_preview](assets/30_preview_damping_active_pitch/bump_preview.gif)
+
+*Hindernis: Skyhook gegen Vorschau-Skyhook.*
+
+![iso_C_comfort](assets/30_preview_damping_active_pitch/iso_C_comfort.gif)
+
+*ISO C: Komfort gegen Radlast.*
+
+<!-- figures:end -->

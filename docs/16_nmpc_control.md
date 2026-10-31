@@ -98,11 +98,11 @@ Quantitative results (tracking error, sideslip) will be produced reproducibly by
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![dynamic_two_track_nmpc_tracking](assets/nmpc_control/dynamic_two_track_nmpc_tracking.png)
+![dynamic_two_track_nmpc_tracking](assets/16_nmpc_control/dynamic_two_track_nmpc_tracking.png)
 
 *Dynamisches Zweispur-NMPC, Ausweichen bei 90 km/h: Bahn, Lenkwinkel vorn/hinten, Reibkreisausnutzung bezogen auf µF_z. Die Bahn schießt auf 4,8 m über (Ziel 3,5 m). Werte knapp über 1 sind keine Verletzung: Die Spitzenreibung des MF-Reifens liegt bei geringer Radlast über µ. Quelle: `examples/driver_and_nmpc_dynamics_demo.py`.*
 
-![e2e_nmpc_kamm_friction_evasion](assets/nmpc_control/e2e_nmpc_kamm_friction_evasion.png)
+![e2e_nmpc_kamm_friction_evasion](assets/16_nmpc_control/e2e_nmpc_kamm_friction_evasion.png)
 
 *NMPC-Spurwechsel 90 km/h (E2E-Test): Bahn, koordinierte Lenkwinkel, Radmomente und Reibkreisausnutzung. Quelle: `examples/e2e_deep_analysis_and_benchmarking.py`.*
 

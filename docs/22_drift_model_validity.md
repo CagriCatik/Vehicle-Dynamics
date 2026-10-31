@@ -121,7 +121,7 @@ python -m pytest -q                                      # volle Suite (Testbasi
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![tyre_audit](assets/drift_model_validity/tyre_audit.png)
+![tyre_audit](assets/22_drift_model_validity/tyre_audit.png)
 
 *Reifenaudit bis ±45° Schräglauf: Seitenkraft (grau: außerhalb der erklärten Gültigkeit), Längskraft und Ausnutzung im kombinierten Schlupf für MF, Simplified Combined und Fiala. Quelle: `python examples/drift_tyre_audit.py`.*
 

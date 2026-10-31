@@ -169,8 +169,12 @@ Ausgaben in `output/handling_analysis/` (nicht versioniert): `reference_vehicle_
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![reference_vehicle_handling](assets/handling_analysis/reference_vehicle_handling.png)
+![reference_vehicle_handling](assets/06_handling_analysis/reference_vehicle_handling.png)
 
 *Lineare Fahrdynamik des Referenzfahrzeugs: stationäre Gierverstärkung (charakteristische Geschwindigkeit ≈ 194 km/h), Eigenfrequenz, Dämpfung, Frequenzgang der Gierrate und Lenkwinkelsprung 7-DOF gegen linear. Quelle: `examples/handling_analysis_reference_vehicle.py`.*
+
+![step_steer_speeds](assets/06_handling_analysis/step_steer_speeds.gif)
+
+*Lenkwinkelsprung 2° bei 60, 100 und 140 km/h, passives Fahrzeug.*
 
 <!-- figures:end -->

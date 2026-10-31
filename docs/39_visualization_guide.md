@@ -4,7 +4,7 @@ Visualizing vehicle trajectories and wheel-ground kinematics is essential for va
 
 This document details the visualization engine implemented in `src/vehicle_model/visualization/`:
 1. **2D Planar Vehicle Footprint Renderer** (`draw_vehicle`, `VehicleParams`)
-2. **Synchronized 20 FPS Multi-Vehicle Animation Generator** (`animate_maneuver`)
+2. **One Animation Renderer** (`animate_runs`, `animate_side_view`, `animate_slope`)
 3. **NMPC Real-Time Telemetry Dashboard** (`RealTimeDashboard`)
 
 ---
@@ -53,42 +53,41 @@ The wheel vertices are first rotated by steer angle $\delta_i$, translated to th
 
 ---
 
-## 2. Synchronized 20 FPS Multi-Vehicle Animation Generator (`animation.py`)
+## 2. One Renderer for All Animations (`run_animation.py`)
 
-The high-definition animation engine ([animation.py](https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/src/vehicle_model/visualization/animation.py)) generates synchronized 20 FPS animated GIFs of multi-vehicle comparative maneuvers.
+Every GIF of the platform comes from [run_animation.py](https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/src/vehicle_model/visualization/run_animation.py): the same vehicle, layout and colours, so results can be compared at a glance. Older entry points (`animate_maneuver`, `animate_drift`, the split-µ and 4WS animators, the experiment and critical-scenario GIFs) keep their signatures and only prepare their data for this renderer.
 
-### 2.1 Multi-Panel Ergonomic Layout
-
-```
-┌──────────────────────────────────────────────────────────┬───────────────────────────┐
-│  Global Track View (Top 65% width)                       │  Tracking Camera (1:1)    │
-│  - Road corridors, split-mu friction shading             │  - Close-up centered on   │
-│  - Dynamic comparative multi-vehicle trails              │    focus vehicle          │
-│  - Real-time steerable rubber tyres & heading arrows     │  - True physical scale    │
-│  - Digital Telemetry HUD (speed, yaw rate, sideslip)     │  - Slalom cones & line    │
-├──────────────────────────────────────────────────────────┼───────────────────────────┤
-│  Telemetry Graph 1: Chassis Yaw Rate r(t) [deg/s]        │  Telemetry Graph 2:       │
-│  - Full maneuver static background curves                │  Body Sideslip Angle      │
-│  - Dynamic progressive colored traces                    │  |beta(t)| [deg]          │
-│  - Synchronized vertical time cursor line (t_current)    │  - Time cursor line       │
-└──────────────────────────────────────────────────────────┴───────────────────────────┘
+```mermaid
+flowchart LR
+    H["Recorded histories<br/>CSV or SimulationHistory"] --> C["history_dict"]
+    C --> P["animate_runs<br/>plan view"]
+    S["Ride runs"] --> V["animate_side_view"]
+    G["Grade runs"] --> L["animate_slope"]
+    P --> O["output/&lt;topic&gt;/*.gif"]
+    V --> O
+    L --> O
 ```
 
-### 2.2 Key Architectural Features
+| View | Function | Used for |
+| :--- | :--- | :--- |
+| Plan view | `animate_runs` | All manoeuvres: overview path, close-up with tyre forces, HUD, up to three time traces with a cursor; 14-DOF runs add a rear view with lifted wheels in red |
+| Side view, road | `animate_side_view` | Heave and pitch over the road profile (vertical motions magnified, stated in the panel) |
+| Side view, grade | `animate_slope` | True-scale car on the road height, with speed, grade and HDC status |
 
-1. **True Physical Scale Tracking Camera (1:1):**
-   - The right upper panel automatically tracks the primary vehicle in an $18\text{ m} \times 9\text{ m}$ window, keeping tire steering angles, wheel slip, and body orientation clearly visible at true physical scale.
-2. **Synchronized Telemetry Cursors:**
-   - Synchronized vertical dashed lines advance smoothly across both bottom telemetry subplots ($r(t)$ and $|\beta(t)|$), pinpointing the exact physical instant of peak yaw acceleration, lift-off oversteer, or ESC intervention.
-3. **Slalom Cones & Target Trajectory Overlay:**
-   - Supports `reference_path=(ref_x, ref_y)` (dashed target trajectory) and `pylons=[(x1, y1), ...]` (orange cone markers), dynamically rendered across both global track and tracking camera.
-4. **Optimized Render Performance:**
-   - Pre-interpolates all simulation channels (`interp_data`) onto the master animation frame clock (`fps = 20`, $\Delta t_{\text{frame}} = 50\text{ ms}$).
-   - Employs selective artist popping (`len(ax.lines) > base_lines`), stripping vehicle polygons every frame while keeping static track lines, background curves, and cones permanently cached in Matplotlib memory.
+Plan view uses `vehicle_polygons`; both side views share one side-view vehicle (`_side_vehicle`). Side views exist because pitch and grade cannot be seen from above. Only recorded samples are drawn; runs that end early hold their last sample and are marked "(ended)".
 
 ---
 
-## 3. Generating All Maneuver Animations
+## 3. Generating Animations
+
+Regenerate everything with `python tools/run_all_results.py`. Individually:
+
+```bash
+python examples/chassis_control_animations.py brake_functions hill_descent   # comparison GIFs by topic
+python examples/stage_animations.py                                          # one GIF for every experiment and demo still without one
+```
+
+Analyses without a vehicle run get a representative closed-loop simulation of their own operating point, not an illustration: recovery runs for stability maps, settling runs for equilibria, the extreme Pareto designs for the design optimisation.
 
 Generate all 9 standardized automotive maneuver animations:
 ```bash
@@ -118,7 +117,7 @@ Generated animation files are saved to `output/validation_report/animations/` an
 | Component | Source File | Unit Tests |
 | :--- | :--- | :--- |
 | **Plan-View Renderer** | [plan_view.py](https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/src/vehicle_model/visualization/plan_view.py) | [test_plan_view.py](https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/tests/vehicle_model/test_plan_view.py) |
-| **Animation Generator** | [animation.py](https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/src/vehicle_model/visualization/animation.py) | [test_animation.py](https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/tests/vehicle_model/test_animation.py) |
+| **Animation Renderer** | [run_animation.py](https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/src/vehicle_model/visualization/run_animation.py) | [test_animation.py](https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/tests/vehicle_model/test_animation.py) |
 | **NMPC Dashboard** | [dashboard.py](https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/src/vehicle_model/visualization/dashboard.py) | N/A |
 
 ---
@@ -129,11 +128,11 @@ Generated animation files are saved to `output/validation_report/animations/` an
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![multi_mu_lane_change_comparison](assets/visualization_guide/multi_mu_lane_change_comparison.gif)
+![multi_mu_lane_change_comparison](assets/39_visualization_guide/multi_mu_lane_change_comparison.gif)
 
 *Spurwechsel auf mehreren Reibwerten mit Nahkamera-Panel und HUD. Quelle: `examples/multi_mu_scenarios_benchmark.py`.*
 
-![tight_alley](assets/visualization_guide/tight_alley.gif)
+![tight_alley](assets/39_visualization_guide/tight_alley.gif)
 
 *4WS-Animation mit Lenkwinkel-Panel: unten Vorder- und Hinterachswinkel mit Cursor auf dem aktuellen Bild. Fahrzeuge werden an der Hinterachse gezeichnet, aus dem Schwerpunkt über l_r berechnet (`VehicleParams.cog_to_rear_axle`). Quelle: `examples/parking_4ws_demo.py`.*
 

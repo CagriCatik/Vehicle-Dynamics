@@ -171,3 +171,29 @@ Tests: `tests/vehicle_model/test_brake_functions.py` (14 Tests, 2 davon `slow`).
 ## Literatur
 
 Küçükay 2022, Kap. 5 (Rad- und Achskräfte) und Kap. 18 (Abbremsung und Bremssysteme); Breuer & Bill 2004. Vollständige Angaben: [Literaturverzeichnis](44_references.md).
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![braking_functions](assets/26_brake_functions/braking_functions.png)
+
+*Ergebnisse der Bremsfunktionen. Quelle: `examples/brake_functions_figures.py`.*
+
+![split_mu](assets/26_brake_functions/split_mu.gif)
+
+*Split-µ-Vollbremsung: Stabilität gegen Bremsweg.*
+
+![brake_in_turn](assets/26_brake_functions/brake_in_turn.gif)
+
+*Bremsen in der Kurve ohne Gierregelung, mit PI, mit PI + CBC.*
+
+![regen_coast_low_mu](assets/26_brake_functions/regen_coast_low_mu.gif)
+
+*Schleppmoment auf µ 0,2: Rekuperation abschalten gegen Schlupfregelung.*
+
+<!-- figures:end -->

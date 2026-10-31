@@ -243,19 +243,19 @@ Weil durch die Zentrifugalkraft über 70% der vertikalen Achslast auf die kurven
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![scenario_1_split_mu_braking](assets/split_mu_dynamics/scenario_1_split_mu_braking.gif)
+![scenario_1_split_mu_braking](assets/14_split_mu_dynamics/scenario_1_split_mu_braking.gif)
 
 *Split-µ-Bremsung aus 100 km/h mit Fahrermodell, das die Spur hält, und 1600 N m *gesamtem* Bremsmoment (60/40), also einer moderaten Bremsung (im Bild als „Emergency Braking“ bezeichnet). Quelle: `examples/split_mu_scenarios_demo.py`.*
 
-![scenario_1_split_mu_braking](assets/split_mu_dynamics/scenario_1_split_mu_braking.png)
+![scenario_1_split_mu_braking](assets/14_split_mu_dynamics/scenario_1_split_mu_braking.png)
 
 *Dieselbe Bremsung als Dashboard: Bahnen, Gierrate, Querabweichung und Störgiermoment. Der lenkende Fahrer ist der Unterschied zur Konfigurationsmatrix in 11_motion_control.md, in der die Lenkung gerade gehalten wird und IVMC mit der alten additiven Stellkette sich eindreht (über die gemeinsame Allokation, Standard, bleibt er gerade). Quelle: `examples/split_mu_scenarios_demo.py`.*
 
-![split_mu_friction_sweep_analysis](assets/split_mu_dynamics/split_mu_friction_sweep_analysis.png)
+![split_mu_friction_sweep_analysis](assets/14_split_mu_dynamics/split_mu_friction_sweep_analysis.png)
 
 *Reibwert-Sweep der Niedrig-µ-Seite: Gierrate, Gierwinkel, Querabweichung, Bremsweg und Schwimmwinkel je Regler. Quelle: `examples/split_mu_scenarios_demo.py`.*
 
-![multi_mu_scenarios_dashboard](assets/split_mu_dynamics/multi_mu_scenarios_dashboard.png)
+![multi_mu_scenarios_dashboard](assets/14_split_mu_dynamics/multi_mu_scenarios_dashboard.png)
 
 *Multi-µ-Matrix: Kennwerte von acht Manövern über dem Reibwert für vier Konfigurationen. Quelle: `examples/multi_mu_scenarios_benchmark.py`.*
 

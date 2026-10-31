@@ -34,6 +34,25 @@ flowchart LR
 | **Anhang** | Audits, Rückverfolgbarkeit, Literatur, Pläne | [44 Literatur](44_references.md) |
 
 <!-- gallery:start -->
+## Ergebnisse im Überblick
+
+Alle Animationen stammen aus demselben Renderer und zeigen aufgezeichnete Simulationsläufe.
+
+| Split-µ-Bremsung: Stabilität gegen Bremsweg | Sine with Dwell über die Konfigurationsstufen |
+|---|---|
+| ![Split-µ-Bremsung](assets/26_brake_functions/split_mu.gif) | ![Sine with Dwell](assets/33_motion_management_benchmark/levels_sine_with_dwell.gif) |
+
+| Hill Descent bei 20 % Gefälle | Bremsnicken mit aktiver Nickregelung |
+|---|---|
+| ![Hill Descent](assets/31_hill_descent_control/hdc_20pct_dry.gif) | ![Bremsnicken](assets/30_preview_damping_active_pitch/brake_pitch.gif) |
+
+| Drei ausgefallene Bremsen, mit und ohne Monitor | Fishhook mit Wankstabilitätsregelung |
+|---|---|
+| ![Fehlertoleranz](assets/32_fault_tolerance/split_mu_three_brakes_failed.gif) | ![Fishhook](assets/28_roll_stability_active_steering/fishhook_rsc.gif) |
+
+![Benchmark-Matrix](assets/33_motion_management_benchmark/matrix.png)
+
+*Primärkennzahl je Manöver: Medianänderung gegenüber der Stufe `passive` über die gepaarten Ziehungen.*
 <!-- gallery:end -->
 
 ## Stichwortverzeichnis

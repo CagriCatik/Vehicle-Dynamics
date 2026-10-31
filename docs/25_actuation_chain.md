@@ -16,7 +16,7 @@ flowchart LR
     P --> M
 ```
 
-## 1. Ausgangsstand (Plan 0, Schritte 1–3)
+## 1. Ausgangsstand
 
 | Punkt | Wert |
 |---|---|
@@ -142,3 +142,21 @@ Wirkungsgrad- und Thermomodell; der Verzug ist eine Kreuzkorrelationsschätzung 
 ## Literatur
 
 Johansen & Fossen 2013; Rajamani 2012. Vollständige Angaben: [Literaturverzeichnis](44_references.md).
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![actuation_trace](assets/25_actuation_chain/actuation_trace.png)
+
+*Stellgrößen-Trace requested, allocated, issued, realised bei Split-µ-Bremsung. Quelle: `examples/actuation_trace.py`.*
+
+![split_mu_braking](assets/25_actuation_chain/split_mu_braking.gif)
+
+*Split-µ-Vollbremsung mit Aktuatordynamik.*
+
+<!-- figures:end -->

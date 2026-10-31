@@ -255,8 +255,12 @@ For complete bibliographic details, ISBNs, and full citations, refer to the mast
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![seven_dof_maneuver](assets/vehicle_models/seven_dof_maneuver.png)
+![seven_dof_maneuver](assets/02_vehicle_models/seven_dof_maneuver.png)
 
 *7-DOF-Zweispurmodell mit Hinterachslenkung und Torque Vectoring auf Split-µ: Bahn, Längs- und Querbewegung, Gierrate und Lenkwinkel, Raddrehzahlen, Längsschlupf, Radlasten, Antriebs- und Bremsmomente, Reifenkräfte. Quelle: `examples/seven_dof_4ws_tv_demo.py`.*
+
+![split_mu_4ws_tv](assets/02_vehicle_models/split_mu_4ws_tv.gif)
+
+*7-DOF-Modell: Split-µ-Bremsung passiv gegen GS-LQR mit 4WS und Torque Vectoring.*
 
 <!-- figures:end -->

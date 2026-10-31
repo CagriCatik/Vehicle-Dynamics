@@ -9,6 +9,6 @@ road: {type: uniform, mu: 0.6}
 operating_point: {speed_kph: 80, steer_deg: 1.0}
 grid: {beta_deg: [-20, 20, 15], r_degps: [-45, 45, 15]}
 simulation: {dt: 0.01, duration_s: 6.0}
-controllers: [v2_gs_lqr, gs_lqr_tv, robust_lqr_tv]
-portraits: {controllers: [v2_gs_lqr], points: 5}
+controllers: [baseline_gs_lqr, gs_lqr_tv, robust_lqr_tv]
+portraits: {controllers: [baseline_gs_lqr], points: 5}
 outputs: {directory: output/experiments/stability_map_rear_steer}

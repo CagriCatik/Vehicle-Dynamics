@@ -160,16 +160,20 @@ python -m pytest tests/vehicle_model/experiments/test_design_optimization.py -q
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![pareto_fronts](assets/design_optimization/pareto_fronts.png)
+![pareto_fronts](assets/37_design_optimization/pareto_fronts.png)
 
 *Pareto-Analyse der Fahrwerks-, Lenk- und TV-Auslegung: alle Zielpaare (grau gültige Entwürfe, blau die Pareto-Menge über alle vier Ziele, Kreuz Referenzfahrzeug, Sterne ausgewählte Entwürfe). Quelle: `python -m vehicle_model.experiments run configs/experiments/design_chassis_tv.yaml`.*
 
-![sensitivities](assets/design_optimization/sensitivities.png)
+![sensitivities](assets/37_design_optimization/sensitivities.png)
 
 *Standardisierte Regressionskoeffizienten jedes Ziels auf die normierten Auslegungsparameter (R² je Zeile). Quelle: wie oben.*
 
-![objective_distributions](assets/design_optimization/objective_distributions.png)
+![objective_distributions](assets/37_design_optimization/objective_distributions.png)
 
 *Verteilung der Zielwerte über alle gültigen Entwürfe, Referenz grün. Quelle: wie oben.*
+
+![comparison](assets/37_design_optimization/comparison.gif)
+
+*Extreme Pareto-Auslegungen im Sine with Dwell auf µ 0,6.*
 
 <!-- figures:end -->

@@ -128,3 +128,29 @@ Tests: `tests/vehicle_model/test_hill_descent_control.py` (9 Tests, davon einer 
 ## Literatur
 
 Küçükay 2022, Kap. 4 (Fahrwiderstände) und Kap. 18 (Abbremsung und Bremssysteme). Vollständige Angaben: [Literaturverzeichnis](44_references.md).
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![hdc](assets/31_hill_descent_control/hdc.png)
+
+*Hill Descent Control über Gefälle und Oberflächen. Quelle: `examples/hill_descent_figures.py`.*
+
+![hdc_20pct_dry](assets/31_hill_descent_control/hdc_20pct_dry.gif)
+
+*20 % Gefälle, trocken: HDC hält 10 km/h.*
+
+![hdc_ice_infeasible](assets/31_hill_descent_control/hdc_ice_infeasible.gif)
+
+*20 % Gefälle auf Eis: physikalisch nicht haltbar, als infeasible gemeldet.*
+
+![hdc_grade_change](assets/31_hill_descent_control/hdc_grade_change.gif)
+
+*Gefällewechsel 5 → 20 → 5 %, mit und ohne ausgefallene Bremse.*
+
+<!-- figures:end -->

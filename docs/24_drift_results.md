@@ -285,24 +285,24 @@ Befunde:
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![drift_animation](assets/drift_results/drift_animation.gif)
+![drift_animation](assets/24_drift_results/drift_animation.gif)
 
 *Überwachter Drift aus der Geradeausfahrt (13 m/s, µ 0,9, Ziel β −20°): Annäherung, Einleitung durch den LQR, Halten, Austritt mit Gegenlenken, Normalfahrt. Nur aufgezeichnete Daten der 7-DOF-Strecke; doppelte Wiedergabegeschwindigkeit. Quelle: `python examples/drift_figure_eight_demo.py`.*
 
-![equilibrium_sweep](assets/drift_results/equilibrium_sweep.png)
+![equilibrium_sweep](assets/24_drift_results/equilibrium_sweep.png)
 
 *Stationäre Driftgleichgewichte über |β| je Geschwindigkeit und Reibwert: Radius, Lenkwinkel, Moment je Hinterrad, Hinterradschlupf; offene Kreise: Reifen extrapoliert, Kreuze: kein Gleichgewicht. Quelle: `python examples/drift_equilibria_demo.py`.*
 
-![sideslip_and_yaw](assets/drift_results/sideslip_and_yaw.png)
+![sideslip_and_yaw](assets/24_drift_results/sideslip_and_yaw.png)
 
-*Drift-LQR: Halten und Störungen links/rechts, offen (gestrichelt) gegen LQR (durchgezogen). Quelle: `python examples/drift_hold_demo.py`.*
+*Halten und Störungen links/rechts, offen (gestrichelt) gegen LQR (durchgezogen). Quelle: `python examples/drift_hold_demo.py`.*
 
-![initiation_sequence](assets/drift_results/initiation_sequence.png)
+![initiation_sequence](assets/24_drift_results/initiation_sequence.png)
 
-*Drift-Einleitung und -Rückkehr: Moduswechsel und Zeitverläufe einer Einleitung bis zum Austritt (11 m/s, 15°, µ 0,9). Quelle: `python examples/drift_initiation_demo.py`.*
+*Moduswechsel und Zeitverläufe einer Einleitung bis zum Austritt (11 m/s, 15°, µ 0,9). Quelle: `python examples/drift_initiation_demo.py`.*
 
-![trajectory](assets/drift_results/trajectory.png)
+![trajectory](assets/24_drift_results/trajectory.png)
 
-*Drift-Bahnführung: Kreisbahnen bei ±2 m Startversatz (offen, ESC, Drift-LQR fest, mit Außenschleife) und die Acht-Sequenz (Geometrie nicht erreicht). Quelle: `python examples/drift_circle_demo.py`.*
+*Kreisbahnen bei ±2 m Startversatz (offen, ESC, Drift-LQR fest, mit Außenschleife) und die Acht-Sequenz (Geometrie nicht erreicht). Quelle: `python examples/drift_circle_demo.py`.*
 
 <!-- figures:end -->

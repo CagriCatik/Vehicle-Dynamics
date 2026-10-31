@@ -139,3 +139,25 @@ Tests: `tests/vehicle_model/test_traction_control.py` (7 Tests, 1 `slow`).
 ## Literatur
 
 Küçükay 2022, Kap. 4 (Fahrwiderstände, Zugkraft), Kap. 12 (Achsgetriebe, Sperren und Allradantriebe) und Kap. 29 (Aktive Fahrwerksysteme und Regelsysteme). Vollständige Angaben: [Literaturverzeichnis](44_references.md).
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![traction_functions](assets/27_traction_control/traction_functions.png)
+
+*Ergebnisse der Traktionsfunktionen. Quelle: `examples/traction_figures.py`.*
+
+![split_mu_launch](assets/27_traction_control/split_mu_launch.gif)
+
+*Anfahren auf Split-µ: ohne TCS, offene Kopplung, eLSD, ITC.*
+
+![comparison](assets/27_traction_control/comparison.gif)
+
+*Beschleunigen aus der Kurve.*
+
+<!-- figures:end -->

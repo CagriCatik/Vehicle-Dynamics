@@ -122,7 +122,7 @@ Ergebnisse: `output/motion_management/matrix/` (`kpis.csv`, `stats.csv`, `result
   Eine Auslegung mit Aktuatormodell ist offen.
 - **Brems- und Bremszeitkosten der Stabilität**: Auf Split-µ halten alle geregelten Stufen die Spur (passive dreht sich,
   β 90°), mit Bremswegen nahe der select-low-Grenze (147–157 m; ohne Lenkkorrektur des Fahrers). EBD/IBC/Regen mit
-  Aktuatordynamik (brake_functions) verlängern den Bremsweg um 2–4 m (Druckaufbau).
+  Aktuatordynamik (brake_functions) verlängern den Bremsweg auf homogener Fahrbahn um 2–4 m (Druckaufbau), auf Split-µ um etwa 10 m.
 - **Bremsausfall**: Nur fault_tolerant (Health-Monitor) hält in allen Ziehungen die Spur (0,0025 m gegenüber 0,08–0,96 m bei afs_gvc_rsc
   ohne Monitor), steht aber wie esc–afs_gvc_rsc am Laufende noch nicht (20 km/h): Stabilität vor Bremsweg.
 - **Robustheit gegen Signalfehler**: 100 ms Eingangsverzögerung **oder** +60 % Reibwertüberschätzung allein lassen den
@@ -182,3 +182,29 @@ Tests: `tests/vehicle_model/test_motion_management.py` (7 Tests, davon einer `sl
 ## Literatur
 
 Küçükay 2022, Kap. 29 (Aktive Fahrwerksysteme und Regelsysteme); Johansen & Fossen 2013. Vollständige Angaben: [Literaturverzeichnis](44_references.md).
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![matrix](assets/33_motion_management_benchmark/matrix.png)
+
+*Primärkennzahl je Manöver: Medianänderung gegenüber der Stufe passive über die gepaarten Ziehungen.*
+
+![levels_sine_with_dwell](assets/33_motion_management_benchmark/levels_sine_with_dwell.gif)
+
+*Sine with Dwell über die Konfigurationsstufen.*
+
+![levels_actuator_fault](assets/33_motion_management_benchmark/levels_actuator_fault.gif)
+
+*Zwei ausgefallene Bremsen auf Split-µ über die Stufen.*
+
+![levels_corner_exit](assets/33_motion_management_benchmark/levels_corner_exit.gif)
+
+*Beschleunigen aus der Kurve über die Stufen.*
+
+<!-- figures:end -->

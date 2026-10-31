@@ -94,3 +94,21 @@ Tests: `tests/vehicle_model/test_g_vectoring.py` (5 Tests).
 ## Literatur
 
 Yamakado et al. 2010 (veröffentlichtes Prinzip); Küçükay 2022, Kap. 28 (Instationäre Anregungen). Vollständige Angaben: [Literaturverzeichnis](44_references.md).
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![gvc](assets/29_g_vectoring/gvc.png)
+
+*GVC-artige Lasttransferregelung. Quelle: `examples/g_vectoring_figures.py`.*
+
+![lane_change](assets/29_g_vectoring/lane_change.gif)
+
+*Spurwechsel mit konstantem Pedal, GVC aus und an.*
+
+<!-- figures:end -->

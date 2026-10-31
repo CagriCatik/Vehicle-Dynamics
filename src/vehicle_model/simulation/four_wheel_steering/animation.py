@@ -56,109 +56,18 @@ def animate_4ws_detailed_vehicle(
     max_frames: int = 70,
     footer: str | None = None,
 ) -> None:
-    """Animated GIF: both vehicles with steered wheels, live HUD and the steering angles over time."""
-    out_path = Path(output_file)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    """4WS against 2WS in the platform's one plan-view renderer, with scene elements and steering traces."""
+    from vehicle_model.visualization.run_animation import animate_runs, history_dict
 
-    f_oh, r_oh = body_overhangs(lf, lr)
-    v_params = VehicleParams(wheelbase=lf + lr, width=BODY_WIDTH, length=BODY_LENGTH, tire_radius=0.32,
-                             tire_width=0.22, wheel_track=1.60, rear_overhang=r_oh, front_overhang=f_oh)
-
-    fig = plt.figure(figsize=figsize, dpi=120, facecolor=BG)
-    gs = fig.add_gridspec(2, 1, height_ratios=(3.2, 1.0), hspace=0.28)
-    ax = fig.add_subplot(gs[0])
-    ax_s = fig.add_subplot(gs[1])
-    _style(ax)
-    _style(ax_s)
-
-    pad_x, pad_y = (8.0, 4.0) if x_lim is None and y_lim is None else (0.0, 0.0)
-    all_x = np.concatenate([result_4ws.X, result_2ws.X])
-    all_y = np.concatenate([result_4ws.Y, result_2ws.Y])
-    ax.set_xlim(x_lim if x_lim is not None else (all_x.min() - pad_x, all_x.max() + pad_x))
-    ax.set_ylim(y_lim if y_lim is not None else (all_y.min() - pad_y, all_y.max() + pad_y))
-    ax.set_aspect("equal", adjustable="box")
-    ax.set_title(title, color=TEXT, fontsize=12, fontweight="bold", pad=10)
-    ax.set_xlabel("X [m]", color=MUTED)
-    ax.set_ylabel("Y [m]", color=MUTED)
-
-    for (x0, y0, w, h) in obstacles:
-        ax.add_patch(Rectangle((x0, y0), w, h, facecolor="#475569", edgecolor="#64748b", alpha=0.85, zorder=1))
-    ax.plot(result_2ws.X, result_2ws.Y, color=C_2WS, linestyle="--", linewidth=1.5, label="2WS path (CoG, front steering only)")
-    ax.plot(result_4ws.X, result_4ws.Y, color="#0284c7", linestyle="-", linewidth=2.0, label="4WS path (CoG, calibrated LUT)")
-    if setup_ax_fn is not None:
-        setup_ax_fn(ax)
-    ax.legend(loc="lower right", facecolor="#1e293b", edgecolor="#475569", labelcolor=TEXT, fontsize=9)
-
-    # Steering panel: one axis (deg), three series; legend and direct labels
-    t4, t2 = result_4ws.time, result_2ws.time
-    ax_s.axhline(0.0, color=GRID, linewidth=1.0)
-    ax_s.plot(t2, result_2ws.steer_f_deg, color=C_2WS, linestyle="--", linewidth=1.4, label="2WS front δ_f")
-    ax_s.plot(t4, result_4ws.steer_f_deg, color=C_4WS, linewidth=2.0, label="4WS front δ_f")
-    ax_s.plot(t4, result_4ws.steer_r_deg, color=C_4WS_REAR, linewidth=2.0, label="4WS rear δ_r")
-    ax_s.set_xlim(0.0, max(t4[-1], t2[-1]))
-    ax_s.set_xlabel("time [s]", color=MUTED)
-    ax_s.set_ylabel("road-wheel angle [deg]", color=MUTED)
-    ax_s.legend(loc="upper right", facecolor="#1e293b", edgecolor="#475569", labelcolor=TEXT, fontsize=8, ncol=3)
-    cursor = ax_s.axvline(0.0, color=TEXT, linewidth=1.0, alpha=0.7)
-    (dot_f,) = ax_s.plot([], [], "o", color=C_4WS, markersize=8, markeredgecolor=PANEL, markeredgewidth=2)
-    (dot_r,) = ax_s.plot([], [], "o", color=C_4WS_REAR, markersize=8, markeredgecolor=PANEL, markeredgewidth=2)
-    if footer:
-        fig.text(0.5, 0.01, footer, ha="center", color=MUTED, fontsize=9)
-
-    hud_text = ax.text(0.02, 0.96, "", transform=ax.transAxes, color=TEXT, fontsize=9, fontfamily="monospace",
-                       verticalalignment="top",
-                       bbox=dict(boxstyle="round,pad=0.5", facecolor="#111827", edgecolor="#38bdf8", alpha=0.92, linewidth=1.2))
-
-    n4, n2 = len(t4), len(t2)
-    n_frames = max(n4, n2)
-    step_skip = max(1, n_frames // max_frames)
-    frame_indices = list(range(0, n_frames, step_skip)) + [n_frames - 1]
-    initial_n_lines = len(ax.lines)
-    initial_n_patches = len(ax.patches)
-
-    def rear_axle(res: ScenarioRunResult, i: int) -> tuple[float, float]:
-        return res.X[i] - lr * math.cos(res.psi[i]), res.Y[i] - lr * math.sin(res.psi[i])
-
-    def update(frame_idx: int):
-        while len(ax.lines) > initial_n_lines:
-            ax.lines[-1].remove()
-        while len(ax.patches) > initial_n_patches:
-            ax.patches[-1].remove()
-        k = frame_indices[frame_idx]
-        i4, i2 = min(k, n4 - 1), min(k, n2 - 1)
-
-        x2, y2 = rear_axle(result_2ws, i2)
-        draw_vehicle(x=x2, y=y2, yaw=result_2ws.psi[i2], steer_front=math.radians(result_2ws.steer_f_deg[i2]),
-                     params=v_params, steer_rear=0.0, ax=ax, color=C_2WS, alpha=0.65, fill_alpha=0.20)
-        x4, y4 = rear_axle(result_4ws, i4)
-        sr = result_4ws.steer_r_deg[i4]
-        draw_vehicle(x=x4, y=y4, yaw=result_4ws.psi[i4], steer_front=math.radians(result_4ws.steer_f_deg[i4]),
-                     params=v_params, steer_rear=math.radians(sr), ax=ax, color=C_4WS, color_front="#38bdf8",
-                     color_rear=C_4WS_REAR if abs(sr) > 0.3 else C_4WS, alpha=0.95, fill_alpha=0.35)
-
-        t = t4[i4]
-        cursor.set_xdata([t, t])
-        dot_f.set_data([t], [result_4ws.steer_f_deg[i4]])
-        dot_r.set_data([t], [sr])
-
-        sf = result_4ws.steer_f_deg[i4]
-        if abs(sr) < 0.3:
-            mode = "rear straight"
-        elif sr * sf < 0:
-            mode = "COUNTER-PHASE: rear opposite to front (smaller radius)"
-        else:
-            mode = "IN-PHASE: rear with front (less yaw, stable lane change)"
-        hud_text.set_text(
-            f"t = {t:5.2f} s   v = {result_4ws.vx[i4] * 3.6:+5.1f} km/h\n"
-            f"4WS  δ_f = {sf:+6.2f}°   δ_r = {sr:+6.2f}°   {mode}\n"
-            f"2WS  δ_f = {result_2ws.steer_f_deg[i2]:+6.2f}°   δ_r =  +0.00°\n"
-            f"yaw rate 4WS {math.degrees(result_4ws.r[i4]):+6.1f}°/s | 2WS {math.degrees(result_2ws.r[i2]):+6.1f}°/s"
-        )
-        return (hud_text,)
-
-    anim = animation.FuncAnimation(fig, update, frames=len(frame_indices), interval=1000 // fps, blit=False)
-    anim.save(out_path, writer=animation.PillowWriter(fps=fps))
-    plt.close(fig)
+    def scene(ax, xlim, ylim):
+        if setup_ax_fn is not None:
+            setup_ax_fn(ax)
+        for (x, y, w, h) in obstacles:
+            ax.add_patch(Rectangle((x, y), w, h, fc="#475569", ec="#94a3b8", lw=1.0, zorder=2))
+    traces = (("front road-wheel angle", "steer_f", 180.0 / math.pi, "deg"), ("rear road-wheel angle", "steer_r", 180.0 / math.pi, "deg"),
+              ("yaw rate", "r", 180.0 / math.pi, "deg/s"))
+    animate_runs([("4WS", history_dict(result_4ws)), ("2WS", history_dict(result_2ws))], output_file, title, traces, fps=fps,
+                 decorate=scene, max_frames=max_frames, footer=footer)
 
 
 def plot_4ws_comparison(

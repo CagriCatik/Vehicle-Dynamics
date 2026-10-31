@@ -59,7 +59,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "Quelle: `examples/handling_limits_and_understeer_demo.py`."),
     ],
     "10_control_allocation.md": [
-        ("m5/slip_and_allocation.png",
+        ("slip_and_allocation/slip_and_allocation.png",
          "Schlupfregelung und beschränkte Allokation: mittlere Verzögerung bezogen auf µg ohne ABS, mit Alt-ABS und mit "
          "PI-Schlupfregelung (Werte über 1, weil die Spitzenreibung des MF-Reifens bei geringer Radlast über µ liegt); "
          "Split-µ-Bremsung mit fester Lenkung; Lenkwinkelsprung mit TV; Bremsenausfall vorn links. "
@@ -289,7 +289,7 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
         ("animations/nmpc_slalom.gif",
          "Kinematisches Pfadfolge-NMPC im Slalom mit Hinterachslenkung aus der Lookup-Tabelle. "
          "Quelle: `examples/generate_maneuver_animations.py`."),
-        ("nmpc_path_tracking_simulation.png",
+        ("nmpc_path_tracking/nmpc_path_tracking_simulation.png",
          "Pfadfolge-NMPC (Maßstabsmodell): Bahn, Lenkwinkel, Querfehler und Geschwindigkeit. Quelle: "
          "`python examples/nmpc_path_tracking_simulation.py --headless`."),
     ],
@@ -330,6 +330,60 @@ FIGURES: dict[str, list[tuple[str, str]]] = {
          "(`VehicleParams.cog_to_rear_axle`). Quelle: `examples/parking_4ws_demo.py`."),
     ],
 }
+
+# Animations of every topic, all from the one renderer (visualization/run_animation.py). Experiments:
+# examples/stage_animations.py and examples/chassis_control_animations.py; side views for ride and grade.
+ANIMATIONS: dict[str, list[tuple[str, str]]] = {
+    "02_vehicle_models.md": [("demo_7dof/split_mu_4ws_tv.gif", "7-DOF-Modell: Split-µ-Bremsung passiv gegen GS-LQR mit 4WS und Torque Vectoring.")],
+    "03_tyre_models.md": [("tyres/tyre_models_step_steer.gif", "Gleiches Manöver mit linearem, Fiala- und Magic-Formula-Reifen: Lenkwinkelsprung 5°, 80 km/h.")],
+    "04_chassis_kinematics.md": [("kc_analysis/step_steer_kc.gif", "Lenkwinkelsprung 80 km/h mit und ohne Kinematik und Elastokinematik.")],
+    "06_handling_analysis.md": [("handling_analysis/step_steer_speeds.gif", "Lenkwinkelsprung 2° bei 60, 100 und 140 km/h, passives Fahrzeug.")],
+    "07_handling_limits.md": [("handling_limits/towards_the_limit.gif", "Lenkwinkelsprung 2°, 4° und 8° bei 80 km/h: Annäherung an die Haftgrenze.")],
+    "08_vertical_dynamics.md": [("vertical_dynamics/bump_response.gif", "Hindernis 6 cm bei 60 km/h, passiv gegen Skyhook (Seitenansicht, Vertikalbewegung überhöht).")],
+    "09_suspension_dynamics.md": [("suspension/damping_iso_c.gif", "ISO-8608-Klasse C bei 60 km/h: passiv, Skyhook, Groundhook.")],
+    "10_control_allocation.md": [("slip_and_allocation/low_mu_braking.gif", "Vollbremsung auf µ 0,3: blockierende Räder gegen Allokation mit Schlupfregelung.")],
+    "11_motion_control.md": [("controller_benchmark/sine_with_dwell.gif", "Reglerbibliothek im Sine with Dwell, 80 km/h, 6°."),
+                             ("split_mu_matrix/split_mu_matrix.gif", "Split-µ-Vollbremsung mit gerader Lenkung über die Konfigurationen.")],
+    "12_chassis_control.md": [("advanced_control/lift_off.gif", "Gaswegnahme in der Kurve: ohne Gierregelung gegen Gierraten-PI.")],
+    "18_state_estimation.md": [("estimation/feedback_modes.gif", "Gleicher Regler mit idealer, geschätzter und rein sensorbasierter Rückführung.")],
+    "19_estimation_robustness.md": [("monte_carlo/mu_variation.gif", "Sine with Dwell mit PI bei drei Reibwerten.")],
+    "20_nonlinear_stability.md": [("experiments/stability_map_cornering/comparison.gif", "Rückkehr aus β 12°, r −25 °/s: Läufe mit den Reglern der Stabilitätskarte; Bahn aus den aufgezeichneten Zuständen integriert."),
+                                  ("experiments/equilibrium_speed_stiffness/comparison.gif", "180 km/h nach 0,3° Lenkwinkel: Mit geringerer Hinterachssteifigkeit entsteht eine große Gierschwingung."),
+                                  ("experiments/equilibrium_steer_sweep/comparison.gif", "Einschwingen auf die stationäre Kurvenfahrt, 90 km/h, Richtung Haftgrenze.")],
+    "21_robust_control.md": [("experiments/robust_benchmark_sine_with_dwell/comparison.gif", "Sine with Dwell mit Aktuatorverzögerung: Basisregler gegen robuste Verfahren.")],
+    "25_actuation_chain.md": [("actuation_chain/split_mu_braking/actuation_trace.png", "Stellgrößen-Trace requested, allocated, issued, realised bei Split-µ-Bremsung. Quelle: `examples/actuation_trace.py`."),
+                              ("actuation_chain/split_mu_braking.gif", "Split-µ-Vollbremsung mit Aktuatordynamik.")],
+    "26_brake_functions.md": [("brake_functions/braking_functions.png", "Ergebnisse der Bremsfunktionen. Quelle: `examples/brake_functions_figures.py`."),
+                              ("brake_functions/split_mu.gif", "Split-µ-Vollbremsung: Stabilität gegen Bremsweg."),
+                              ("brake_functions/brake_in_turn.gif", "Bremsen in der Kurve ohne Gierregelung, mit PI, mit PI + CBC."),
+                              ("brake_functions/regen_coast_low_mu.gif", "Schleppmoment auf µ 0,2: Rekuperation abschalten gegen Schlupfregelung.")],
+    "27_traction_control.md": [("traction_control/traction_functions.png", "Ergebnisse der Traktionsfunktionen. Quelle: `examples/traction_figures.py`."),
+                               ("traction_control/split_mu_launch.gif", "Anfahren auf Split-µ: ohne TCS, offene Kopplung, eLSD, ITC."),
+                               ("traction_control/corner_exit/comparison.gif", "Beschleunigen aus der Kurve.")],
+    "28_roll_stability_active_steering.md": [("roll_stability/rsc_afs.png", "Wankstabilität und aktive Vorderachslenkung. Quelle: `examples/roll_stability_steering_figures.py`."),
+                                             ("roll_stability/fishhook_rsc.gif", "14-DOF-Fishhook: Radabheben (rote Räder) passiv, mit RSC, nur aktive Wankregelung."),
+                                             ("active_front_steering/sine_with_dwell.gif", "Sine with Dwell: aktive Vorderachslenkung gegen 2WS und Torque Vectoring.")],
+    "29_g_vectoring.md": [("g_vectoring/gvc.png", "GVC-artige Lasttransferregelung. Quelle: `examples/g_vectoring_figures.py`."),
+                          ("g_vectoring/lane_change.gif", "Spurwechsel mit konstantem Pedal, GVC aus und an.")],
+    "30_preview_damping_active_pitch.md": [("ride_control/ride.png", "Fahrkomfort und Nicken über alle Szenarien. Quelle: `examples/ride_control_figures.py`."),
+                                           ("ride_control/brake_pitch.gif", "Bremsen auf welliger Straße: Nicken mit und ohne aktive Nickregelung."),
+                                           ("ride_control/bump_preview.gif", "Hindernis: Skyhook gegen Vorschau-Skyhook."),
+                                           ("ride_control/iso_C_comfort.gif", "ISO C: Komfort gegen Radlast.")],
+    "31_hill_descent_control.md": [("hill_descent/hdc.png", "Hill Descent Control über Gefälle und Oberflächen. Quelle: `examples/hill_descent_figures.py`."),
+                                   ("hill_descent/hdc_20pct_dry.gif", "20 % Gefälle, trocken: HDC hält 10 km/h."),
+                                   ("hill_descent/hdc_ice_infeasible.gif", "20 % Gefälle auf Eis: physikalisch nicht haltbar, als infeasible gemeldet."),
+                                   ("hill_descent/hdc_grade_change.gif", "Gefällewechsel 5 → 20 → 5 %, mit und ohne ausgefallene Bremse.")],
+    "32_fault_tolerance.md": [("fault_tolerance/split_mu_three_brakes_failed.gif", "Split-µ-Bremsung mit drei ausgefallenen Bremsen, ohne und mit Monitor."),
+                              ("fault_tolerance/imu_lost_split_mu.gif", "Verlust des Gierratensensors: Rückfall auf ausgeglichene Bremskräfte."),
+                              ("fault_tolerance/sequence_recovery.gif", "Fehlerfolge mit degradierten Modi und Rückkehr zu nominal.")],
+    "33_motion_management_benchmark.md": [("motion_management/matrix/matrix.png", "Primärkennzahl je Manöver: Medianänderung gegenüber der Stufe passive über die gepaarten Ziehungen."),
+                                          ("motion_management/levels_sine_with_dwell.gif", "Sine with Dwell über die Konfigurationsstufen."),
+                                          ("motion_management/levels_actuator_fault.gif", "Zwei ausgefallene Bremsen auf Split-µ über die Stufen."),
+                                          ("motion_management/levels_corner_exit.gif", "Beschleunigen aus der Kurve über die Stufen.")],
+    "37_design_optimization.md": [("experiments/design_chassis_tv/comparison.gif", "Extreme Pareto-Auslegungen im Sine with Dwell auf µ 0,6.")],
+}
+for _doc, _items in ANIMATIONS.items():
+    FIGURES.setdefault(_doc, []).extend(_items)
 
 
 def asset_path(doc: str, src: str) -> Path:

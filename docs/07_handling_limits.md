@@ -244,8 +244,12 @@ python examples/run_validation_platform.py
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![steady_state_handling_characteristics](assets/handling_limits/steady_state_handling_characteristics.png)
+![steady_state_handling_characteristics](assets/07_handling_limits/steady_state_handling_characteristics.png)
 
 *Stationäre Kreisfahrt nach dem Vorbild von ISO 4138 (Simulation): Lenkwinkel und lokaler Eigenlenkgradient über der Querbeschleunigung, dynamischer Schwimmwinkel und g-g-Diagramm für vier Konfigurationen. Quelle: `examples/handling_limits_and_understeer_demo.py`.*
+
+![towards_the_limit](assets/07_handling_limits/towards_the_limit.gif)
+
+*Lenkwinkelsprung 2°, 4° und 8° bei 80 km/h: Annäherung an die Haftgrenze.*
 
 <!-- figures:end -->

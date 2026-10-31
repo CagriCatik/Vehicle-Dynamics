@@ -247,7 +247,7 @@ Befunde:
   GS-LQR (selbst die Basisversion) ist in den Fällen ohne Verzögerung besser als der PI; der klare Gewinn eines neuen Verfahrens ist
   auf GS-LQR + DOB bei Parameterabweichungen und die Tightening MPC bei niedrigem Reibwert beschränkt.
 
-**Rückführregionen** (Plan 6.4, [20_nonlinear_stability.md](20_nonlinear_stability.md) 4.5): Bei 80 km/h, 1°, µ = 0,6
+**Rückführregionen** ([20_nonlinear_stability.md](20_nonlinear_stability.md) 4.5): Bei 80 km/h, 1°, µ = 0,6
 kehren mit den Gesetzen A–D (alle mit Hinterachslenkung) nur 23–44 % der Anfangszustände zurück, weniger als beim
 passiven Fahrzeug (74 %). Dieselbe Schwäche hat der unveränderte baseline GS-LQR mit Hinterachslenkung (33 %); mit
 Giermoment allein erreichen GS-LQR und Robust LQR 94 %. Die Hinterachslenkung des linearen Entwurfs schadet jenseits des
@@ -274,20 +274,24 @@ mediane relative KKT-Residuum ist höher (0,13 gegen 0,08).
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![matrix_max_sideslip_deg](assets/robust_control/matrix_max_sideslip_deg.png)
+![matrix_max_sideslip_deg](assets/21_robust_control/matrix_max_sideslip_deg.png)
 
 *Maximaler Schwimmwinkel je Regler und Unsicherheitsfall in den drei Rückführmodi (logarithmische Farbskala; ≈ 90° = Kontrollverlust). Die Aktuatorverzögerung destabilisiert alle Gesetze mit hoher Verstärkung; der Basis-PI, die Tightening MPC und die überwachte Variante bleiben beherrschbar. Quelle: `python -m vehicle_model.experiments run configs/experiments/robust_benchmark_sine_with_dwell.yaml`.*
 
-![matrix_yaw_rate_rms_error_degps](assets/robust_control/matrix_yaw_rate_rms_error_degps.png)
+![matrix_yaw_rate_rms_error_degps](assets/21_robust_control/matrix_yaw_rate_rms_error_degps.png)
 
 *Gierratenfehler (RMS) gegen die gemeinsame Referenz, gleiche Anordnung. Quelle: wie oben.*
 
-![yaw_rate_histories](assets/robust_control/yaw_rate_histories.png)
+![yaw_rate_histories](assets/21_robust_control/yaw_rate_histories.png)
 
 *Gierrate über der Zeit bei idealer Rückführung, ein Feld je Unsicherheitsfall. Quelle: wie oben.*
 
-![solver_benchmark](assets/robust_control/solver_benchmark.png)
+![solver_benchmark](assets/21_robust_control/solver_benchmark.png)
 
 *Dynamisches NMPC im Spurwechsel mit der constraint-aware Variante (weiche Stabilitätsgrenzen, Projektion der Stellgröße). Quelle: `python -m vehicle_model.experiments run configs/experiments/dynamic_nmpc_solver_benchmark.yaml`.*
+
+![comparison](assets/21_robust_control/comparison.gif)
+
+*Sine with Dwell mit Aktuatorverzögerung: Basisregler gegen robuste Verfahren.*
 
 <!-- figures:end -->

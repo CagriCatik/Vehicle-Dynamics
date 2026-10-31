@@ -132,7 +132,7 @@ den bestehenden `ScenarioRunner` aus dem Gleichgewicht (`hold`) und aus definier
 Gierrate ±0,1 rad/s, Geschwindigkeit ±1 m/s, kurveninneres Hinterrad −10 rad/s; für Rechtsdrift gespiegelt), jeweils
 mit konstantem `u*` (offen) und mit LQR. Nichts wird teleportiert: Der Runner integriert die Strecke vom Anfangszustand.
 
-Kennzahlen (`drift/metrics.py`, Plan 7.1): RMS von `β − β_ref`, `r − r_ref`, `v − v_ref` im Haltefenster
+Kennzahlen (`drift/metrics.py`): RMS von `β − β_ref`, `r − r_ref`, `v − v_ref` im Haltefenster
 (`t ≥ settle_s`), maximaler Schwimmwinkelfehler, Fehlernorm am Anfang und Ende
 (`√((Δβ/0,05 rad)² + (Δr/0,1 rad/s)² + (Δv/1 m/s)²)`), Sättigungsanteil, Driftverlust (`|β − β_ref| ≥ 30°`).
 

@@ -792,52 +792,9 @@ def _zone(spec, values, ax) -> None:
 
 
 def _gif_case(spec, crit, nominal, path: Path, fps: int = 10) -> None:
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    from matplotlib.animation import FuncAnimation, PillowWriter
-    from matplotlib.patches import Polygon
-    from vehicle_model.core.types import SevenDOFParams
-    from vehicle_model.visualization.plan_view import VehicleParams, vehicle_polygons
-    from vehicle_model.visualization.theme import apply_dark_theme, style_axis
-    apply_dark_theme()
-    vp = VehicleParams.from_seven_dof_params(SevenDOFParams())
-    runs = [(crit["history"], "#d95926", "critical"), (nominal["history"], "#3987e5", "nominal")]
-    t = crit["history"]["t"]
-    dt = float(t[1] - t[0])
-    idx = np.arange(0, t.size, max(1, int(round(1.0 / (fps * dt)))))
-    fig, (ax, axb) = plt.subplots(1, 2, figsize=(13, 4.8), gridspec_kw={"width_ratios": [2.2, 1]})
-    allx = np.concatenate([h["X"] for h, _, _ in runs])
-    ally = np.concatenate([h["Y"] for h, _, _ in runs])
-    ax.set_xlim(allx.min() - 5, allx.max() + 5)
-    ax.set_ylim(ally.min() - 5, ally.max() + 5)
-    ax.set_aspect("equal", adjustable="datalim")
-    _zone(spec, crit["values"], ax)
-    style_axis(ax, "recorded paths (7-DOF), vehicle at true scale", "X [m]", "Y [m]")
-    bodies = []
-    for h, col, lab in runs:
-        ax.plot(h["X"], h["Y"], color=col, lw=0.7, alpha=0.35)
-        axb.plot(h["t"], np.degrees(h["beta"]), color=col, lw=1.3, label=lab)
-        pg = Polygon(np.zeros((4, 2)), closed=True, fc=col, ec=col, alpha=0.6)
-        ax.add_patch(pg)
-        bodies.append(pg)
-    axb.legend(fontsize=7)
-    style_axis(axb, "sideslip beta [deg]", "time [s]", None)
-    cur = axb.axvline(t[0], color="#f5f5f5", lw=1)
-    fig.suptitle(f"{spec.name}: minimal critical case (recorded samples only)")
-    fig.tight_layout()
-
-    def update(fi):
-        i = int(idx[fi])
-        for (h, _, _), pg in zip(runs, bodies):
-            j = min(i, h["t"].size - 1)
-            body = vehicle_polygons(float(h["X"][j]), float(h["Y"][j]), float(h["psi"][j]), float(h["steer_f"][j]), vp,
-                                    steer_rear=float(h["steer_r"][j]))[0]
-            pg.set_xy(body.T)
-        cur.set_xdata([t[i], t[i]])
-        return bodies + [cur]
-    FuncAnimation(fig, update, frames=len(idx), interval=1000 / fps).save(path, writer=PillowWriter(fps=fps), dpi=70)
-    plt.close(fig)
+    """Critical against nominal run in the platform's one plan-view renderer."""
+    from vehicle_model.visualization.run_animation import animate_runs
+    animate_runs([("critical", crit["history"]), ("nominal", nominal["history"])], path, f"critical scenario: {spec.name}", fps=fps)
 
 
 def _fmt_vals(vals: dict) -> str:

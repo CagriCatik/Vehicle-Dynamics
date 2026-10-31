@@ -92,23 +92,23 @@ This generates:
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![iso_3888_dlc](assets/validation_platform/iso_3888_dlc.gif)
+![iso_3888_dlc](assets/38_validation_platform/iso_3888_dlc.gif)
 
 *Doppelspurwechsel nach dem Vorbild von ISO 3888-2 mit allen vier Konfigurationen. Quelle: `python examples/run_validation_platform.py --animations`.*
 
-![iso_3888_dlc](assets/validation_platform/iso_3888_dlc.png)
+![iso_3888_dlc](assets/38_validation_platform/iso_3888_dlc.png)
 
 *Doppelspurwechsel: Bahn mit Pylonen, Gierrate, Schwimmwinkel, Querbeschleunigung. Quelle: `examples/run_validation_platform.py`.*
 
-![sine_with_dwell](assets/validation_platform/sine_with_dwell.png)
+![sine_with_dwell](assets/38_validation_platform/sine_with_dwell.png)
 
 *Sine with Dwell nach dem Vorbild von FMVSS 126 (Simulation, keine Prüfung nach Vorschrift). Quelle: `examples/run_validation_platform.py`.*
 
-![mu_split_braking](assets/validation_platform/mu_split_braking.png)
+![mu_split_braking](assets/38_validation_platform/mu_split_braking.png)
 
 *Split-µ-Bremsung mit gerader Lenkung und 1450 N m *gesamtem* Bremsmoment, also etwa 12 % Pedal: eine moderate Bremsung, keine Vollbremsung. Mit der alten additiven Stellkette bleibt IVMC hier unter der 15°-Grenze (≈ 10°) und dreht sich ab etwa 20 % Pedal ein; über die gemeinsame Allokation (Standard) bleibt er bei jedem Pedal gerade (Konfigurationsmatrix in 11_motion_control.md, Test `test_additive_esc_holds_only_at_the_moderate_brake_level_of_the_validation_matrix`). Quelle: `examples/run_validation_platform.py`.*
 
-![fishhook_ncap](assets/validation_platform/fishhook_ncap.png)
+![fishhook_ncap](assets/38_validation_platform/fishhook_ncap.png)
 
 *Fishhook nach NCAP-Vorbild. Quelle: `examples/run_validation_platform.py`.*
 

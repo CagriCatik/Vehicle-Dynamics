@@ -103,3 +103,41 @@ def test_animate_maneuver_with_reference_and_pylons(tmp_path: Path):
     assert res.exists()
     assert res.stat().st_size > 1000
 
+
+
+def _ride_history(n: int = 12) -> dict:
+    t = np.arange(1, n + 1) * 0.1
+    h = {"t": t, "s_road": 10.0 * t, "zs": 0.01 * np.sin(t), "theta": 0.01 * np.sin(t), "ddzs": np.cos(t), "Fz_FL": 3000.0 + 0 * t}
+    for w in ("FL", "RL"):
+        h[f"zr_{w}"], h[f"zu_{w}"] = 0.01 * np.sin(t), 0.01 * np.sin(t)
+    return h
+
+
+def _slope_history(n: int = 12) -> dict:
+    t = np.arange(1, n + 1) * 0.5
+    return {"t": t, "X": 3.0 * t, "Z": -0.6 * t, "speed": 3.0 + 0 * t, "grade_pct": -20.0 + 0 * t, "abs_active_n": 0 * t,
+            "hdc_active": 1.0 + 0 * t, "hdc_infeasible": 0 * t}
+
+
+def test_side_views_share_one_vehicle_and_render(tmp_path: Path):
+    from vehicle_model.visualization.run_animation import animate_side_view, animate_slope
+    a = animate_side_view([("passive", _ride_history()), ("skyhook", _ride_history())], tmp_path / "ride.gif", "ride",
+                          [("pitch", "theta", 57.3, "deg")], max_frames=4)
+    b = animate_slope([("HDC", _slope_history())], tmp_path / "slope.gif", "slope", [("speed", "speed", 3.6, "km/h")], v_set_kph=10.0, max_frames=4)
+    assert a.stat().st_size > 0 and b.stat().st_size > 0
+
+
+def test_plan_view_scene_elements_and_history_conversion(tmp_path: Path):
+    from types import SimpleNamespace
+
+    from vehicle_model.visualization.run_animation import animate_runs, history_dict
+    t = np.arange(1, 13) * 0.1
+    z = 0 * t
+    r = SimpleNamespace(time=t, X=20.0 * t, Y=z, psi=z, vx=20.0 + z, vy=2.0 + z, r=z, steer_f_deg=2.0 + z, steer_r_deg=z)
+    h = history_dict(r)
+    assert h["steer_f"][0] == pytest.approx(np.radians(2.0)) and h["speed"][0] == pytest.approx(np.hypot(20.0, 2.0))
+    assert h["beta"][0] == pytest.approx(np.arctan2(2.0, 20.0))
+    calls = []
+    out = animate_runs([("run", h)], tmp_path / "plan.gif", "plan", decorate=lambda ax, x, y: calls.append(ax), reference=(h["X"], h["Y"]),
+                       pylons=[(5.0, 1.0)], max_frames=4, footer="note")
+    assert out.stat().st_size > 0 and len(calls) == 2                # overview and close-up

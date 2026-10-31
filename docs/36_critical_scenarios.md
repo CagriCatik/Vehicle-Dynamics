@@ -25,7 +25,7 @@ flowchart LR
 Jeder gesuchte Parameter hat Grenzen und einen Nominalwert (`{name, low, high, nominal}`); unbekannte Namen und
 Parameter, die zum Manöver nicht passen, werden beim Laden abgewiesen.
 
-| Gruppe | Parameter | Plan 8.1 |
+| Gruppe | Parameter | Planpunkt |
 |---|---|---|
 | Manöver | `speed_kph`; Sine with Dwell: `amplitude_deg`, `frequency_hz`; Lenkwinkelsprung und Bremsen in der Kurve: `steer_deg`, `steer_rate_degps`; Bremsen in der Kurve: `brake_start_s`, `brake_pedal` | Anfangsgeschwindigkeit, Lenkwinkelamplitude, Lenkwinkelgradient, Bremsbeginn, Bremsmoment |
 | Fahrbahn | `mu`; Niedrigreibwertzone über die volle Breite: `zone_start_m` (Lage der Reibwertgrenze), `zone_length_m`, `zone_mu` | Reibwert, Länge der Zone, Lage der Grenze |
@@ -140,7 +140,7 @@ Befunde:
 - Die Minimierung ist koordinatenweise (je Parameter eine Bisektion); sie findet einen lokal minimalen, nicht den
   global kleinsten Fall. Nichtmonotone Zusammenhänge (Fall 02) können mehrere Grenzen haben.
 - Die Grenze der Totzeit ist auf eine Regelperiode genau (Rundung der Totzeit auf ganze Perioden).
-- Kennzahlen „minimale Stabilitätsreserve“ und „minimale Aktuatorreserve“ aus Plan 8.2 fehlen als eigene KPIs; die
+- Kennzahlen „minimale Stabilitätsreserve“ und „minimale Aktuatorreserve“ aus dem Plan fehlen als eigene KPIs; die
   Sättigungs- und Ausnutzungskennzahlen decken sie näherungsweise ab.
 
 ## 8. Reproduktion
@@ -159,19 +159,19 @@ python -m pytest tests/vehicle_model/experiments/test_critical_search.py -q
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![search](assets/critical_scenarios/search.png)
+![search](assets/36_critical_scenarios/search.png)
 
 *Suche nach kritischen Sine-with-Dwell-Bedingungen für den baseline GS-LQR: Verlauf (links oben, gestrichelt: Kriterium) und Stichproben je Parameterpaar (rot kritisch, blau nicht kritisch, grau verworfen; Stern: minimale Fälle, Kreuz: nominal). Quelle: `python -m vehicle_model.experiments run configs/experiments/critical_search_sine_with_dwell.yaml`.*
 
-![timeseries](assets/critical_scenarios/01_max_sideslip_deg_timeseries.png)
+![timeseries](assets/36_critical_scenarios/01_max_sideslip_deg_timeseries.png)
 
 *Fall 01, minimal: nur 64 ms Aktuatortotzeit, sonst nominal (80 km/h, 5°, µ 1). GS-LQR (rot) dreht sich, gleicher Regler ohne Totzeit (blau) und baseline PI im selben Fall (grün) bleiben stabil. Quelle: wie oben.*
 
-![timeseries](assets/critical_scenarios/02_max_sideslip_deg_timeseries.png)
+![timeseries](assets/36_critical_scenarios/02_max_sideslip_deg_timeseries.png)
 
 *Fall 02, minimal: 88,5 km/h, 3,7° Amplitude (kleiner als nominal), 24 ms Totzeit. Die Hinterachslenkung schwingt auf +9,6° und bleibt an der Grenze −10°. Quelle: wie oben.*
 
-![scenario](assets/critical_scenarios/scenario.gif)
+![scenario](assets/36_critical_scenarios/scenario.gif)
 
 *Fall 01 als Animation aus den aufgezeichneten Daten: kritischer Lauf (rot) gegen Nominalparameter (blau). Quelle: wie oben.*
 

@@ -250,12 +250,20 @@ Alle Regler halten die Grenzwerte in allen drei Varianten deutlich ein.
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![controller_benchmark](assets/motion_control/controller_benchmark.png)
+![controller_benchmark](assets/11_motion_control/controller_benchmark.png)
 
 *Gierrate im Sine with Dwell (80 km/h, 8°) für alle Regler auf derselben Strecke, nominal und auf zwei Streckenvarianten (+15 % Masse/Trägheit, Hinterachs-Schräglaufsteifigkeit −20 %). Quelle: `examples/controller_benchmark.py`.*
 
-![split_mu_matrix](assets/motion_control/split_mu_matrix.png)
+![split_mu_matrix](assets/11_motion_control/split_mu_matrix.png)
 
 *Split-µ-Vollbremsung (100 km/h, µ 1,0/0,2, Lenkung gerade): Bahn und Gierwinkel je Konfiguration. Nur die Allokation, die das Bremsmoment auf der Hoch-µ-Seite reduziert, bleibt gerade. Quelle: `examples/split_mu_matrix_demo.py`.*
+
+![sine_with_dwell](assets/11_motion_control/sine_with_dwell.gif)
+
+*Reglerbibliothek im Sine with Dwell, 80 km/h, 6°.*
+
+![split_mu_matrix](assets/11_motion_control/split_mu_matrix.gif)
+
+*Split-µ-Vollbremsung mit gerader Lenkung über die Konfigurationen.*
 
 <!-- figures:end -->

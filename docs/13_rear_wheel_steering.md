@@ -290,31 +290,31 @@ graph LR
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![u_turn](assets/rear_wheel_steering/u_turn.gif)
+![u_turn](assets/13_rear_wheel_steering/u_turn.gif)
 
 *Wenden auf schmaler Straße, 2WS (grau) gegen 4WS (türkis): unten die Radlenkwinkel über der Zeit. Die Hinterachse lenkt mit −8° gegen die Vorderachse; die überstrichene Breite sinkt von 12,75 m auf 11,10 m. Quelle: `examples/parking_4ws_demo.py`.*
 
-![parallel_exit](assets/rear_wheel_steering/parallel_exit.gif)
+![parallel_exit](assets/13_rear_wheel_steering/parallel_exit.gif)
 
 *Ausparken aus enger Längsparklücke: 4WS braucht 1,88 m statt 1,96 m Lücke zum Vordermann, das Heck schwenkt aber 13 cm näher an den Bordstein (Nachteil der Gegenphase). Quelle: `examples/parking_4ws_demo.py`.*
 
-![perpendicular_parking](assets/rear_wheel_steering/perpendicular_parking.gif)
+![perpendicular_parking](assets/13_rear_wheel_steering/perpendicular_parking.gif)
 
 *Rückwärts senkrecht einparken (90°): überstrichene Fläche 8,76 × 9,35 m (4WS) gegen 9,65 × 9,66 m (2WS). Quelle: `examples/parking_4ws_demo.py`.*
 
-![scenario_3_double_lane_change_4ws](assets/rear_wheel_steering/scenario_3_double_lane_change_4ws.gif)
+![scenario_3_double_lane_change_4ws](assets/13_rear_wheel_steering/scenario_3_double_lane_change_4ws.gif)
 
 *Doppelspurwechsel bei 80 km/h: die Hinterachse lenkt gleichphasig mit. Quelle: `examples/four_wheel_steering_benchmark.py`.*
 
-![textbook_4ws_characteristics](assets/rear_wheel_steering/textbook_4ws_characteristics.png)
+![textbook_4ws_characteristics](assets/13_rear_wheel_steering/textbook_4ws_characteristics.png)
 
 *Kennfeld der Hinterachslenkung: Übersetzungsverhältnis über der Geschwindigkeit, Kennlinienschar, Isolinienfeld und stationäre Schwimmwinkelverstärkung 2WS gegen 4WS. Quelle: `examples/four_wheel_steering_benchmark.py`.*
 
-![lut_3d_surface](assets/rear_wheel_steering/lut_3d_surface.png)
+![lut_3d_surface](assets/13_rear_wheel_steering/lut_3d_surface.png)
 
 *Kalibrierte Lookup-Tabelle δ_r(v_x, δ_f): gegenphasig unter ≈ 36 km/h, gleichphasig darüber. Quelle: `examples/four_wheel_steering_benchmark.py`.*
 
-![four_wheel_steering_dashboard](assets/rear_wheel_steering/four_wheel_steering_dashboard.png)
+![four_wheel_steering_dashboard](assets/13_rear_wheel_steering/four_wheel_steering_dashboard.png)
 
 *Neun 4WS-Szenarien im Überblick (2WS, drehzahlgeführte Kennlinie, Lookup-Tabelle, mit Gierdämpfung). Quelle: `examples/four_wheel_steering_benchmark.py`.*
 

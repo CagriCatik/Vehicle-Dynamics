@@ -183,7 +183,7 @@ Stand: 2026-10-30. Grundlage: [37_design_optimization.md](37_design_optimization
 ## 11. Abnahme Workbench (Plan)
 
 Stand: 2026-10-30. Grundlage: [40_workbench.md](40_workbench.md), Paket `vehicle_model.workbench`, Test `test_workbench.py`.
-Technologie nach Plan 10.5 gewählt (FastAPI + Browseroberfläche, optionales Extra `workbench`).
+Technologie gewählt (FastAPI + Browseroberfläche, optionales Extra `workbench`).
 
 | Kriterium | Bewertung | Nachweis |
 |---|---|---|

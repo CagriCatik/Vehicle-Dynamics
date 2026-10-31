@@ -138,8 +138,12 @@ See [08_vertical_dynamics.md](08_vertical_dynamics.md): analytical frequency res
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![suspension_and_14dof_validation](assets/suspension_dynamics/suspension_and_14dof_validation.png)
+![suspension_and_14dof_validation](assets/09_suspension_dynamics/suspension_and_14dof_validation.png)
 
 *Viertelfahrzeug (passiv, Skyhook, Groundhook) über eine Schwelle und 14-DOF-Fahrzeug bei Bremsen mit Lenken: Nick-, Hub- und Wankbewegung, Radlasten, Bahn. Quelle: `examples/suspension_dynamics_demo.py`.*
+
+![damping_iso_c](assets/09_suspension_dynamics/damping_iso_c.gif)
+
+*ISO-8608-Klasse C bei 60 km/h: passiv, Skyhook, Groundhook.*
 
 <!-- figures:end -->

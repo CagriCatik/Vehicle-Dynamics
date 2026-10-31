@@ -133,8 +133,12 @@ Der Status `infeasible` ist bei Vollbremsung korrekt: Das Pedal fordert etwa 32 
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![slip_and_allocation](assets/control_allocation/slip_and_allocation.png)
+![slip_and_allocation](assets/10_control_allocation/slip_and_allocation.png)
 
 *Schlupfregelung und beschränkte Allokation: mittlere Verzögerung bezogen auf µg ohne ABS, mit Alt-ABS und mit PI-Schlupfregelung (Werte über 1, weil die Spitzenreibung des MF-Reifens bei geringer Radlast über µ liegt); Split-µ-Bremsung mit fester Lenkung; Lenkwinkelsprung mit TV; Bremsenausfall vorn links. Quelle: `examples/slip_and_allocation_demo.py`.*
+
+![low_mu_braking](assets/10_control_allocation/low_mu_braking.gif)
+
+*Vollbremsung auf µ 0,3: blockierende Räder gegen Allokation mit Schlupfregelung.*
 
 <!-- figures:end -->

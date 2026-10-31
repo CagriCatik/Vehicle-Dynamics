@@ -151,3 +151,25 @@ Tests: `tests/vehicle_model/test_roll_stability_active_steering.py` (7 Tests, 2 
 ## Literatur
 
 Küçükay 2022, Kap. 24 (Lenkung, Steer-by-Wire), Kap. 25 (Wanken, lateraler Radlasttransfer) und Kap. 29; Isermann 2006. Vollständige Angaben: [Literaturverzeichnis](44_references.md).
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![rsc_afs](assets/28_roll_stability_active_steering/rsc_afs.png)
+
+*Wankstabilität und aktive Vorderachslenkung. Quelle: `examples/roll_stability_steering_figures.py`.*
+
+![fishhook_rsc](assets/28_roll_stability_active_steering/fishhook_rsc.gif)
+
+*14-DOF-Fishhook: Radabheben (rote Räder) passiv, mit RSC, nur aktive Wankregelung.*
+
+![sine_with_dwell](assets/28_roll_stability_active_steering/sine_with_dwell.gif)
+
+*Sine with Dwell: aktive Vorderachslenkung gegen 2WS und Torque Vectoring.*
+
+<!-- figures:end -->

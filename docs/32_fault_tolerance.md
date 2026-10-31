@@ -127,3 +127,25 @@ Tests: `tests/vehicle_model/test_fault_tolerance.py` (7 Tests, davon einer `slow
 ## Literatur
 
 Isermann 2006 (Überwachung und Fehlerdiagnose); Johansen & Fossen 2013. Vollständige Angaben: [Literaturverzeichnis](44_references.md).
+
+---
+
+<!-- figures:start -->
+
+## Ergebnisbilder
+
+> Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
+
+![split_mu_three_brakes_failed](assets/32_fault_tolerance/split_mu_three_brakes_failed.gif)
+
+*Split-µ-Bremsung mit drei ausgefallenen Bremsen, ohne und mit Monitor.*
+
+![imu_lost_split_mu](assets/32_fault_tolerance/imu_lost_split_mu.gif)
+
+*Verlust des Gierratensensors: Rückfall auf ausgeglichene Bremskräfte.*
+
+![sequence_recovery](assets/32_fault_tolerance/sequence_recovery.gif)
+
+*Fehlerfolge mit degradierten Modi und Rückkehr zu nominal.*
+
+<!-- figures:end -->

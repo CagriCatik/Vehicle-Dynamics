@@ -66,7 +66,7 @@ def _controllers():
         "tightening_mpc": lambda p, d=None: _motion(p, "tightening_mpc", d),
         "adaptive_lqr": lambda p, d=None: _motion(p, "adaptive_lqr", d),
         # references for the rear-steer question: the unchanged baseline GS-LQR (4WS+TV) and yaw-moment-only variants
-        "v2_gs_lqr": lambda p, d=None: _motion(p, "v2_gs_lqr", d),
+        "baseline_gs_lqr": lambda p, d=None: _motion(p, "baseline_gs_lqr", d),
         "gs_lqr_tv": lambda p, d=None: _motion(p, "gs_lqr_tv", d),
         "robust_lqr_tv": lambda p, d=None: _motion(p, "robust_lqr_tv", d),
     }
@@ -84,15 +84,15 @@ def _motion(params, law: str, design):
                                                                    schedule_speeds=DEFAULT_SPEEDS), design),
             "tightening_mpc": lambda: TighteningMPCYawLaw(design, INPUTS_4WS_TV),
             "adaptive_lqr": lambda: AdaptiveLQRYawLaw(design, INPUTS_4WS_TV),
-            "v2_gs_lqr": lambda: LQRYawLaw(design, INPUTS_4WS_TV, design_speed=None, schedule_speeds=DEFAULT_SPEEDS),
+            "baseline_gs_lqr": lambda: LQRYawLaw(design, INPUTS_4WS_TV, design_speed=None, schedule_speeds=DEFAULT_SPEEDS),
             "gs_lqr_tv": lambda: LQRYawLaw(design, INPUTS_TV, design_speed=None, schedule_speeds=DEFAULT_SPEEDS),
             "robust_lqr_tv": lambda: RobustLQRYawLaw(design, INPUTS_TV, alpha=3.0)}
     return MotionController(params, laws[law]())
 
 
 CONTROLLERS = ("passive", "esc", "4ws", "tv", "ivmc", "ivmc_no_phase_plane", "robust_lqr", "gs_lqr_dob",
-               "tightening_mpc", "adaptive_lqr", "v2_gs_lqr", "gs_lqr_tv", "robust_lqr_tv")
-_NEEDS_DESIGN = ("robust_lqr", "gs_lqr_dob", "tightening_mpc", "adaptive_lqr", "v2_gs_lqr", "gs_lqr_tv", "robust_lqr_tv")
+               "tightening_mpc", "adaptive_lqr", "baseline_gs_lqr", "gs_lqr_tv", "robust_lqr_tv")
+_NEEDS_DESIGN = ("robust_lqr", "gs_lqr_dob", "tightening_mpc", "adaptive_lqr", "baseline_gs_lqr", "gs_lqr_tv", "robust_lqr_tv")
 CONTROLLER_DESCRIPTIONS = {
     "passive": "driver steer, open differential, no control",
     "esc": "front steer by the driver, yaw-rate PI through brake/drive allocation, deadband 2 deg/s",
@@ -104,7 +104,7 @@ CONTROLLER_DESCRIPTIONS = {
     "gs_lqr_dob": "robust B: GS-LQR (4WS+TV) with yaw disturbance observer",
     "tightening_mpc": "robust C: constraint-tightening MPC (4WS+TV)",
     "adaptive_lqr": "robust D: adaptive LQR, RLS cornering-stiffness factor (4WS+TV)",
-    "v2_gs_lqr": "baseline GS-LQR (4WS+TV) as of controller library, unchanged",
+    "baseline_gs_lqr": "baseline GS-LQR (4WS+TV) as of controller library, unchanged",
     "gs_lqr_tv": "GS-LQR with yaw moment only (TV)",
     "robust_lqr_tv": "robust A with yaw moment only (TV), alpha = 3",
 }

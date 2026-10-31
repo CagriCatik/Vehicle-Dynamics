@@ -54,9 +54,36 @@ def _road_patches(ax, road: dict | None, xlim, ylim):
                                alpha=0.10 + 0.15 * (1 - float(road["mu"])), zorder=0, label=f"mu {road['mu']}"))
 
 
-def animate_runs(runs: list, path: str | Path, title: str, traces: list, road: dict | None = None, fps: int = 15,
-                 playback: float = 1.0, dpi: int = 75, close_up: float = 9.0, max_frames: int = 220) -> Path:
-    """``runs``: ``[(label, history_dict)]`` sharing one time base; ``traces``: ``[(panel title, key, scale, unit)]``."""
+DEFAULT_TRACES = (("speed", "speed", 3.6, "km/h"), ("yaw rate", "r", 57.29577951308232, "deg/s"),
+                  ("sideslip", "beta", 57.29577951308232, "deg"))
+
+
+def history_dict(h, **extra) -> dict:
+    """The renderer's dict from a simulation history object (``SimulationHistory`` or a scenario result)."""
+    t = np.asarray(h.time, float)
+    d = {"t": t, "X": np.asarray(h.X, float), "Y": np.asarray(h.Y, float), "psi": np.asarray(h.psi, float),
+         "vx": np.asarray(h.vx, float), "vy": np.asarray(h.vy, float), "r": np.asarray(h.r, float)}
+    d["speed"] = np.hypot(d["vx"], d["vy"])
+    d["beta"] = np.arctan2(d["vy"], np.maximum(np.abs(d["vx"]), 0.1))
+    if hasattr(h, "steer_f"):
+        d["steer_f"], d["steer_r"] = np.asarray(h.steer_f, float), np.asarray(h.steer_r, float)
+    elif hasattr(h, "steer_f_deg"):
+        d["steer_f"], d["steer_r"] = np.radians(h.steer_f_deg), np.radians(h.steer_r_deg)
+    if getattr(h, "Fx_wheel", None) is not None:
+        for j, w in enumerate(WHEELS):
+            d[f"Fx_{w}"], d[f"Fy_{w}"] = np.asarray(h.Fx_wheel, float)[:, j], np.asarray(h.Fy_wheel, float)[:, j]
+    d.update(extra)
+    return d
+
+
+def animate_runs(runs: list, path: str | Path, title: str, traces: list = DEFAULT_TRACES, road: dict | None = None, fps: int = 15,
+                 playback: float = 1.0, dpi: int = 75, close_up: float = 9.0, max_frames: int = 220, reference=None,
+                 pylons=None, decorate=None, footer: str | None = None) -> Path:
+    """The one plan-view animation of the platform: overview path, close-up with tyre forces, HUD, traces with a cursor.
+
+    ``runs``: ``[(label, history_dict)]`` sharing one time base; ``traces``: ``[(panel title, key, scale, unit)]``;
+    ``reference``: ``(x, y)`` target path; ``pylons``: ``[(x, y)]`` cones; ``decorate(ax, xlim, ylim)``: draws scene
+    elements (street, lanes, split-mu surface) on the overview and close-up axes."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -98,6 +125,13 @@ def animate_runs(runs: list, path: str | Path, title: str, traces: list, road: d
     ax_w.set_aspect("equal", adjustable="box")
     _road_patches(ax_w, road, xlim, ylim)
     _road_patches(ax_c, road, (xlim[0] - 50, xlim[1] + 50), (ylim[0] - 50, ylim[1] + 50))
+    for ax_, lims in ((ax_w, (xlim, ylim)), (ax_c, ((xlim[0] - 50, xlim[1] + 50), (ylim[0] - 50, ylim[1] + 50)))):
+        if decorate is not None:
+            decorate(ax_, *lims)
+        if reference is not None:
+            ax_.plot(reference[0], reference[1], color=TEXT_MUTED, ls="--", lw=1.1, label="reference" if ax_ is ax_w else None)
+        if pylons:
+            ax_.scatter([q[0] for q in pylons], [q[1] for q in pylons], marker="^", s=14, color="#c98500", zorder=3)
     style_axis(ax_w, "recorded paths (true scale)", "X [m]", "Y [m]")
     ax_c.set_aspect("equal", adjustable="box")
     style_axis(ax_c, f"close-up: {runs[0][0]}", "X [m]", "Y [m]")
@@ -208,6 +242,8 @@ def animate_runs(runs: list, path: str | Path, title: str, traces: list, road: d
             lines.append("red wheel: no contact")
         hud.set_text("\n".join(lines))
         return []
+    if footer:
+        fig.text(0.5, 0.005, footer, ha="center", color=TEXT_MUTED, fontsize=9)
     anim = FuncAnimation(fig, update, frames=len(idx), interval=1000.0 / fps, blit=False)
     out = Path(path)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -229,7 +265,7 @@ def load_history(path) -> dict:
     return out
 
 
-__all__ = ("animate_runs", "animate_side_view", "animate_slope", "frame_indices", "load_history")
+__all__ = ("DEFAULT_TRACES", "animate_runs", "animate_side_view", "animate_slope", "frame_indices", "history_dict", "load_history")
 
 
 # one side-view vehicle for every side animation (ride, grade): outline in the body frame, x from the rear axle, z up
@@ -267,7 +303,7 @@ def animate_side_view(runs: list, path: str | Path, title: str, traces: list, fp
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation, PillowWriter
 
-    from vehicle_model.visualization.theme import TEXT_MUTED, apply_dark_theme, style_axis
+    from vehicle_model.visualization.theme import TEXT_MUTED, TEXT_PRIMARY, apply_dark_theme, style_axis
 
     apply_dark_theme()
     a, b, R = 1.4, 1.4, _SIDE_WHEEL_RADIUS       # drawing geometry of the shared side-view vehicle

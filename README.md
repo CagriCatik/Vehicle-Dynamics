@@ -12,14 +12,14 @@ A modular, physically consistent Python research and engineering platform for no
 
 ### Results at a glance
 
-All results are simulations with synthetic parameters, not measurements. Each document under [docs/](docs/) ends with its own result figures; they are refreshed with `python tools/publish_doc_figures.py` after running the example scripts.
+All results are simulations with synthetic parameters, not measurements. Each chapter under [docs/](docs/) ends with its own result figures and animations; they are refreshed with `python tools/publish_doc_figures.py` after running the example scripts.
 
 | Rear-axle steering at walking pace (U-turn) | Double lane change, four configurations |
 | :---: | :---: |
-| ![U-turn 2WS vs 4WS](docs/assets/rear_wheel_steering/u_turn.gif) | ![Double lane change](docs/assets/validation_platform/iso_3888_dlc.gif) |
+| ![U-turn 2WS vs 4WS](docs/assets/13_rear_wheel_steering/u_turn.gif) | ![Double lane change](docs/assets/38_validation_platform/iso_3888_dlc.gif) |
 | The rear axle steers −8° against the front; the street width needed drops from 12.75 m to 11.10 m ([details](docs/13_rear_wheel_steering.md)). | Passive, 4WS, IVMC and IVMC + 4WS in a lane change modelled on ISO 3888-2 ([details](docs/38_validation_platform.md)). |
 
-![Split-mu braking matrix](docs/assets/motion_control/split_mu_matrix.png)
+![Split-mu braking matrix](docs/assets/11_motion_control/split_mu_matrix.png)
 
 *Split-µ full braking with the steering held straight: only the wheel-force allocation, which reduces brake torque on the high-friction side, keeps the car straight; rear steering and additive ESC cannot ([details](docs/11_motion_control.md)).*
 

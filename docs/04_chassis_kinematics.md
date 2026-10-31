@@ -150,8 +150,12 @@ Die Wanksteifigkeitsverteilung ist bei hohem $a_y$ der stärkste Hebel. Im linea
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![kc_understeer](assets/chassis_kinematics/kc_understeer.png)
+![kc_understeer](assets/04_chassis_kinematics/kc_understeer.png)
 
 *Eigenlenken mit K&C: Untersteuerwinkel und lokaler Eigenlenkgradient mit schrittweise zugeschalteten Rollzentren/Ackermann, Rolllenken und Elastokinematik; lineares Budget 2,19 °/g; Parameterempfindlichkeit. Quelle: `examples/kc_understeer_analysis.py`.*
+
+![step_steer_kc](assets/04_chassis_kinematics/step_steer_kc.gif)
+
+*Lenkwinkelsprung 80 km/h mit und ohne Kinematik und Elastokinematik.*
 
 <!-- figures:end -->

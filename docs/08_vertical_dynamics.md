@@ -89,8 +89,12 @@ Skyhook verbessert den Komfort und bezahlt das mit Radlastschwankungen nahe der 
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![vertical_dynamics](assets/vertical_dynamics/vertical_dynamics.png)
+![vertical_dynamics](assets/08_vertical_dynamics/vertical_dynamics.png)
 
 *Viertelfahrzeug: analytischer gegen simulierten Frequenzgang von Aufbaubeschleunigung und dynamischer Radlast, Skyhook und Groundhook, Straßenklassen A–E nach ISO 8608 mit erzeugtem Klasse-C-Profil. Quelle: `examples/vertical_dynamics_demo.py`.*
+
+![bump_response](assets/08_vertical_dynamics/bump_response.gif)
+
+*Hindernis 6 cm bei 60 km/h, passiv gegen Skyhook (Seitenansicht, Vertikalbewegung überhöht).*
 
 <!-- figures:end -->

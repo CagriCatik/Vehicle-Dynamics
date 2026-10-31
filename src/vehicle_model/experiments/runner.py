@@ -334,50 +334,12 @@ def _kv(d) -> str:
     return ", ".join(f"{k}: {v}" for k, v in d.items())
 
 
-def _animate(runs, path, spec, frames: int = 50, length: float = 4.6, width: float = 1.8):
-    """Plan view: each controller's vehicle as an oriented rectangle on its path (``frames`` frames)."""
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    from matplotlib.animation import FuncAnimation, PillowWriter
-
-    from vehicle_model.visualization.theme import TEXT_MUTED, apply_dark_theme, style_axis
-    colours = ("#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300")
-    apply_dark_theme()
-    fig, ax = plt.subplots(figsize=(9, 4.5))
-    t_end = max(r.history["t"][-1] for _, r in runs)
-    xs = np.concatenate([r.history["X"] for _, r in runs])
-    ys = np.concatenate([r.history["Y"] for _, r in runs])
-    pad = 4.0
-    ax.set_xlim(xs.min() - pad, xs.max() + pad)
-    ax.set_ylim(min(ys.min(), -3.0) - pad, max(ys.max(), 3.0) + pad)
-    ax.set_aspect("equal")
-    style_axis(ax, f"{spec.name}: plan view", "X [m]", "Y [m]")
-    body = np.array([[length / 2, width / 2], [-length / 2, width / 2], [-length / 2, -width / 2], [length / 2, -width / 2]])
-    cols = iter(colours)
-    artists = []
-    for label, r in runs:
-        c = TEXT_MUTED if label == "passive" else next(cols, TEXT_MUTED)
-        trail, = ax.plot([], [], color=c, lw=1.2, alpha=0.8)
-        car = plt.Polygon(body, closed=True, fc=c, ec="#0f172a", alpha=0.9, label=label)
-        ax.add_patch(car)
-        artists.append((r.history, trail, car))
-    ax.legend(loc="upper left", fontsize=8)
-    stamp = ax.text(0.99, 0.02, "", transform=ax.transAxes, ha="right", color=TEXT_MUTED, fontsize=9)
-
-    def draw(i):
-        t = t_end * i / (frames - 1)
-        for h, trail, car in artists:
-            k = int(np.searchsorted(h["t"], min(t, h["t"][-1])))
-            k = min(k, len(h["t"]) - 1)
-            trail.set_data(h["X"][:k + 1], h["Y"][:k + 1])
-            c, s = np.cos(h["psi"][k]), np.sin(h["psi"][k])
-            car.set_xy(body @ np.array([[c, s], [-s, c]]) + [h["X"][k], h["Y"][k]])
-        stamp.set_text(f"t = {t:4.2f} s")
-        return []
-
-    FuncAnimation(fig, draw, frames=frames).save(path, writer=PillowWriter(fps=12), dpi=80)
-    plt.close(fig)
+def _animate(runs, path, spec):
+    """Comparison GIF of all controllers in the platform's one plan-view renderer."""
+    from vehicle_model.visualization.run_animation import animate_runs
+    road = dict(spec.road)
+    animate_runs([(label, r.history) for label, r in runs], path, f"{spec.name}: {spec.manoeuvre['type']} at {spec.manoeuvre['speed_kph']} km/h",
+                 road=road)
 
 
 def _fmt(v):

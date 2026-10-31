@@ -23,6 +23,7 @@ from vehicle_model.controllers.nmpc import (
     get_ref_state,
 )
 from vehicle_model.visualization.nmpc_dashboard import RealTimeDashboard
+from vehicle_model.visualization.run_animation import animate_runs
 from vehicle_model.visualization.plan_view import VehicleParams, draw_vehicle_trajectory
 from vehicle_model.visualization.theme import (
     apply_dark_theme,
@@ -39,7 +40,7 @@ from vehicle_model.visualization.theme import (
 )
 
 
-def run_simulation(headless: bool = False, n_steps: int = 120, output_dir: str = "output"):
+def run_simulation(headless: bool = False, n_steps: int = 120, output_dir: str = "output/nmpc_path_tracking"):
     config = NMPCConfig.from_yaml()
     dt = 0.05
 
@@ -94,6 +95,11 @@ def run_simulation(headless: bool = False, n_steps: int = 120, output_dir: str =
 
     out_p = Path(output_dir)
     out_p.mkdir(parents=True, exist_ok=True)
+    col = {k: np.array([row[k] for row in rows], dtype=float) for k in rows[0]}
+    animate_runs([("NMPC", {"t": col["t"], "X": col["x"], "Y": col["y"], "psi": col["yaw"], "vx": col["v"], "steer_f": col["steer_f"],
+                            "steer_r": col["steer_r"], "ey": col["ey"]})], out_p / "nmpc_path_tracking.gif", "NMPC path tracking",
+                 (("speed", "vx", 3.6, "km/h"), ("lateral error", "ey", 1.0, "m"), ("front road-wheel angle", "steer_f", 57.29577951308232, "deg")),
+                 reference=(col["x"], col["y_ref"]))
     apply_dark_theme()
     fig, axes = plt.subplots(3, 1, figsize=(11, 9), sharex=False, facecolor=BG_COLOR)
     for ax in axes:

@@ -41,6 +41,7 @@ from vehicle_model.controllers.integrated_controller import IntegratedChassisCon
 from vehicle_model.core.types import FL, FR, RL, RR, SevenDOFControlInput, SevenDOFParams, SevenDOFState
 from vehicle_model.roads.surface import UniformRoad
 from vehicle_model.vehicle_models.seven_dof import SevenDOFModel
+from vehicle_model.visualization.run_animation import animate_runs
 from vehicle_model.visualization.plan_view import VehicleParams, draw_vehicle_trajectory
 
 
@@ -291,6 +292,10 @@ def run_driver_in_the_loop_demo(output_dir: Path) -> None:
     plt.tight_layout()
     plot_file = output_dir / "driver_closed_loop_workload.png"
     plt.savefig(plot_file, dpi=300, bbox_inches="tight", facecolor=fig.get_facecolor())
+    animate_runs([("driver only", {**hist_pass, "steer_f": hist_pass["steer_actual"]}), ("driver + assistance", {**hist_asst, "steer_f": hist_asst["steer_actual"]})],
+                 output_dir / "driver_in_the_loop.gif", "Preview driver in a double lane change, with and without assistance",
+                 (("yaw rate", "r", 57.29577951308232, "deg/s"), ("sideslip", "beta", 57.29577951308232, "deg"), ("road-wheel angle", "steer_f", 57.29577951308232, "deg")),
+                 reference=(x_dense, y_dense))
     plt.close()
     print(f"Driver Workload Plot generated at: {plot_file}")
     effort_pct = 100.0 * (1.0 - hist_asst["workload_energy"][-1] / hist_pass["workload_energy"][-1])
@@ -465,6 +470,8 @@ def run_dynamic_two_track_nmpc_demo(output_dir: Path) -> None:
     plt.tight_layout()
     plot_file = output_dir / "dynamic_two_track_nmpc_tracking.png"
     plt.savefig(plot_file, dpi=300, bbox_inches="tight", facecolor=fig.get_facecolor())
+    animate_runs([("two-track NMPC", hist_nmpc)], output_dir / "dynamic_two_track_nmpc.gif", "Dynamic two-track NMPC with friction-circle limits",
+                 (("yaw rate", "r", 57.29577951308232, "deg/s"), ("sideslip", "beta", 57.29577951308232, "deg"), ("front road-wheel angle", "steer_f", 57.29577951308232, "deg")))
     plt.close()
     print(f"Dynamic NMPC Plot generated at: {plot_file}")
     max_kamm = max(

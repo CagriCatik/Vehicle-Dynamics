@@ -186,24 +186,28 @@ For complete bibliographic details, ISBNs, and full citations, refer to the mast
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![double_lane_change_comparison](assets/chassis_control/double_lane_change_comparison.png)
+![double_lane_change_comparison](assets/12_chassis_control/double_lane_change_comparison.png)
 
 *Doppelspurwechsel 80 km/h bei µ = 0,75: passiv, 4WS und IVMC. Quelle: `examples/integrated_control_benchmark.py`.*
 
-![mu_split_comparison](assets/chassis_control/mu_split_comparison.png)
+![mu_split_comparison](assets/12_chassis_control/mu_split_comparison.png)
 
 *Split-µ-Bremsung ohne Regelung gegen IVMC über die gemeinsame Allokation: Gierwinkel 0° statt > 150°. Die Allokation bremst das Eisrad nur leicht (Schlupf ≈ −0,01) und begrenzt die Hoch-µ-Seite entsprechend; die Legende „−0,15 optimal“ im Bild stammt aus der alten ABS-Kette. Quelle: `examples/abs_tcs_esc_benchmark.py`.*
 
-![phase_plane_stability_analysis](assets/chassis_control/phase_plane_stability_analysis.png)
+![phase_plane_stability_analysis](assets/12_chassis_control/phase_plane_stability_analysis.png)
 
 *Phasenebene (β, β̇) mit Eingriffsgrenzen; Schwimmwinkel und Gierrate passiv gegen Phasenebenen-IVMC. Quelle: `examples/advanced_chassis_control_demo.py`.*
 
-![e2e_liftoff_oversteer_phase_plane](assets/chassis_control/e2e_liftoff_oversteer_phase_plane.png)
+![e2e_liftoff_oversteer_phase_plane](assets/12_chassis_control/e2e_liftoff_oversteer_phase_plane.png)
 
 *Lastwechsel beim Bremsen in der Kurve: Bahn in der (β, r)-Ebene, Schwimmwinkel gegen die dynamische Grenze, Bedrohungsmaß und Gierrate. Die Regelung verlangsamt das Ausbrechen, verhindert es aber nicht (β ≈ −33° nach 2,5 s). Quelle: `examples/e2e_deep_analysis_and_benchmarking.py`.*
 
-![14dof_coupled_fishhook_stability](assets/chassis_control/14dof_coupled_fishhook_stability.png)
+![14dof_coupled_fishhook_stability](assets/12_chassis_control/14dof_coupled_fishhook_stability.png)
 
 *14-DOF-Fishhook: Wankwinkel, Lastverlagerungsverhältnis, Radlasten und dynamische Wanksteifigkeitsverteilung passiv gegen Wankregelung. Quelle: `examples/advanced_chassis_control_demo.py`.*
+
+![lift_off](assets/12_chassis_control/lift_off.gif)
+
+*Gaswegnahme in der Kurve: ohne Gierregelung gegen Gierraten-PI.*
 
 <!-- figures:end -->

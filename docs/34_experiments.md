@@ -39,7 +39,7 @@ Der Schlüssel `type` wählt den Experimenttyp; ohne ihn gilt `controller_compar
 | `solver_benchmark` | [`solver_benchmark.py`](https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/src/vehicle_model/experiments/solver_benchmark.py) | Varianten des dynamischen NMPC auf einem Spurwechsel: Statusanteile, KKT-Residuen, Verbesserung ggü. Warmstart, Iterationen, Rechenzeit, Planzulässigkeit, Folgegüte |
 | `equilibrium_analysis` | [`equilibrium_analysis.py`](https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/src/vehicle_model/experiments/equilibrium_analysis.py) | Nichtlineare Gleichgewichte über einem Sweep (optional Kurvenschar): Residuen, Jacobi-Matrix mit Schrittweitenstudie, Eigenwerte, Moden, Vergleich linear/nichtlinear ([20_nonlinear_stability.md](20_nonlinear_stability.md)) |
 | `stability_map` | [`stability_map.py`](https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/src/vehicle_model/experiments/stability_map.py) | Rückführregionen je Regler im (β, r)-Raum mit Klassifikationssicherheit, Gitter-, Schrittweiten- und Dauerstudie, Phasenporträts, Grenzfälle, heuristische Phase-Plane-Grenze als Vergleich |
-| `robust_benchmark` | [`robust_benchmark.py`](https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/src/vehicle_model/experiments/robust_benchmark.py) | Regler × Rückführmodus × Unsicherheitsfall gegen die Baseline, Pflichtkennzahlen aus Plan 7.4, lineare Robustheitsanalyse ([21_robust_control.md](21_robust_control.md)) |
+| `robust_benchmark` | [`robust_benchmark.py`](https://github.com/CagriCatik/Vehicle-Dynamics/blob/main/src/vehicle_model/experiments/robust_benchmark.py) | Regler × Rückführmodus × Unsicherheitsfall gegen die Baseline, Pflichtkennzahlen, lineare Robustheitsanalyse ([21_robust_control.md](21_robust_control.md)) |
 
 Schnittstelle eines Typs: `parse(data, source) -> spec` (unveränderlich, `spec.kind` = Typname), `run(spec, out_dir, verify) -> summary` (mindestens `experiment`, `source`, `provenance`, `verification`, `results`), `describe(spec)` für `list`. Ein unbekannter Typ ist ein Fehler. Die übrigen Typen aus (`monte_carlo`, …) kommen mit ihren Meilensteinen.
 
@@ -240,12 +240,12 @@ Installation in der CI: `pip install -e ".[test]"`; pytest ist das optionale Ext
 
 > Alle Bilder sind Simulationsergebnisse mit synthetischen Parametern, keine Messungen. Neu erzeugen: Quellskript ausführen, dann `python tools/publish_doc_figures.py`.
 
-![base](assets/experiments/base.png)
+![base](assets/34_experiments/base.png)
 
 *Ausgabe des YAML-Experiments `sine_with_dwell_comparison`: Gierrate, Schwimmwinkel und Bahn für passiv, PI, GS-LQR (4WS+TV) und LTV-MPC mit Beobachter. Quelle: `python -m vehicle_model.experiments run configs/experiments/sine_with_dwell_comparison.yaml`.*
 
-![solver_benchmark](assets/experiments/solver_benchmark.png)
+![solver_benchmark](assets/34_experiments/solver_benchmark.png)
 
-*Experimenttyp `solver_benchmark`: dynamisches NMPC im Spurwechsel (90 km/h, 3,5 m, µ = 0,75) mit vier Varianten (die vierte: constraint-aware aus robuste Regelung). Links Querposition (alle überschwingen, N = 6 um 1,2 m), Mitte Rechenzeit je Lösung (Wanduhr), rechts KKT-Stationarität relativ zu den Kosten (logarithmisch): auch als `nominal` gemeldete Lösungen erreichen teils Werte um 1. Quelle: `python -m vehicle_model.experiments run configs/experiments/dynamic_nmpc_solver_benchmark.yaml`.*
+*Experimenttyp `solver_benchmark`: dynamisches NMPC im Spurwechsel (90 km/h, 3,5 m, µ = 0,75) mit vier Varianten (die vierte: constraint-aware aus robust control). Links Querposition (alle überschwingen, N = 6 um 1,2 m), Mitte Rechenzeit je Lösung (Wanduhr), rechts KKT-Stationarität relativ zu den Kosten (logarithmisch): auch als `nominal` gemeldete Lösungen erreichen teils Werte um 1. Quelle: `python -m vehicle_model.experiments run configs/experiments/dynamic_nmpc_solver_benchmark.yaml`.*
 
 <!-- figures:end -->
